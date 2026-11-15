@@ -1132,6 +1132,7 @@ function App() {
   const sidebarRef = useRef<HTMLElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [modal, setModal] = useState<'project' | 'create' | null>(null);
+  const [createPreset, setCreatePreset] = useState<{ id: string; version: string } | null>(null);
   const [openingFolder, setOpeningFolder] = useState(false), [mainChoice, setMainChoice] = useState<{ path: string; name: string; candidates: string[] } | null>(null);
   const folderRequest = useRef(false);
   // Commit drafts survive switching tasks or moving between review and chat.
@@ -1424,6 +1425,12 @@ function App() {
   // File › Open Paper… in the desktop app's menu picks the folder natively.
   const openFolderRef = useRef(openFolder); openFolderRef.current = openFolder;
   useEffect(() => window.papilotDesktop?.onOpenFolder?.(folder => void openFolderRef.current(folder)), []);
+  // A Universe link opens the new-paper dialog with its template chosen.
+  useEffect(() => {
+    const take = () => void window.papilotDesktop?.takeNewPaper?.().then(choice => { if (choice) { setCreatePreset(choice); setModal('create'); } }, () => undefined);
+    take();
+    return window.papilotDesktop?.onNewPaper?.(take);
+  }, []);
   useEffect(() => window.papilotDesktop?.onOpenTask?.(id => {
     if (!snapshotRef.current?.tasks.some(task => task.id === id && task.status !== 'deleting')) return;
     setSelected(id); setSidebar(false); setSettings(false);
@@ -2128,7 +2135,8 @@ function App() {
     }}/>}
     {mainChoice && <MainFileDialog key={mainChoice.path} name={mainChoice.name} candidates={mainChoice.candidates} open={main => openFolder(mainChoice.path, main)} onClose={() => setMainChoice(null)}/>}
     {openingFolder && !mainChoice && <div role="status" className="toast toast-status"><span className="spinner"/><span>{t('Reading paper files…')}</span></div>}
-    {modal === 'create' && <CreatePaperDialog api={api} onClose={() => setModal(null)} onDone={async paper => {
+    {modal === 'create' && <CreatePaperDialog key={createPreset ? createPreset.id + '@' + createPreset.version : 'new'} preset={createPreset ?? undefined} api={api} onClose={() => { setModal(null); setCreatePreset(null); }} onDone={async paper => {
+      setCreatePreset(null);
       await refresh(true);
       setProjectId(paper.id); setSelected(''); setPage('manuscript'); setManuscriptView('pdf'); setModal(null); setSidebar(false);
     }}/>}

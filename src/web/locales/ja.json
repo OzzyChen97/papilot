@@ -1434,5 +1434,13 @@
   "Includes subsections": "下位の節を含む",
   "New paper": "新しい論文",
   "New paper…": "新しい論文…",
-  "Open paper…": "論文を開く…"
+  "Open paper…": "論文を開く…",
+  "Blank paper": "白紙の論文",
+  "Conferences": "学会・会議",
+  "Journals": "ジャーナル",
+  "Other": "その他",
+  "Search templates": "テンプレートを検索",
+  "Template type": "テンプレートの種類",
+  "Templates": "テンプレート",
+  "Theses": "学位論文"
 }

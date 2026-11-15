@@ -1434,5 +1434,13 @@
   "Includes subsections": "하위 절 포함",
   "New paper": "새 논문",
   "New paper…": "새 논문…",
-  "Open paper…": "논문 열기…"
+  "Open paper…": "논문 열기…",
+  "Blank paper": "빈 논문",
+  "Conferences": "학술대회",
+  "Journals": "학술지",
+  "Other": "기타",
+  "Search templates": "템플릿 검색",
+  "Template type": "템플릿 유형",
+  "Templates": "템플릿",
+  "Theses": "학위논문"
 }

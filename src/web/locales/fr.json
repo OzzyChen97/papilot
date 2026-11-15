@@ -58,7 +58,7 @@
   "Agent configuration": "Configuration des agents",
   "Agent settings": "Paramètres de l’agent",
   "Agents": "Agents",
-  "All": "Tout",
+  "All": "Tous",
   "All changes": "Toutes les modifications",
   "All entries": "Toutes les entrées",
   "All skills": "Toutes les compétences",
@@ -1434,5 +1434,13 @@
   "Includes subsections": "Sous-sections incluses",
   "New paper": "Nouvel article",
   "New paper…": "Nouvel article…",
-  "Open paper…": "Ouvrir un article…"
+  "Open paper…": "Ouvrir un article…",
+  "Blank paper": "Article vierge",
+  "Conferences": "Conférences",
+  "Journals": "Revues",
+  "Other": "Autre",
+  "Search templates": "Rechercher des modèles",
+  "Template type": "Type de modèle",
+  "Templates": "Modèles",
+  "Theses": "Thèses"
 }

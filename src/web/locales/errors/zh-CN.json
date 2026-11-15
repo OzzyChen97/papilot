@@ -320,5 +320,18 @@
   "This task is already being restarted.": "此任务正在重新启动。",
   "Wait for this task to restart before deleting it.": "请等待此任务重新启动后再删除。",
   "Wait for this task to restart before sending more instructions.": "请等待此任务重新启动后再发送更多指令。",
-  "Choose valid destination model settings.": "请选择有效的目标模型设置。"
+  "Choose valid destination model settings.": "请选择有效的目标模型设置。",
+  "Choose a template from the list.": "请从列表中选择一个模板。",
+  "Could not download the template. Check the internet connection and try again.": "无法下载模板。请检查网络连接后重试。",
+  "Could not load templates. Check the internet connection and try again.": "无法加载模板。请检查网络连接后重试。",
+  "PAPILOT_UNIVERSE_URL must be an https URL.": "PAPILOT_UNIVERSE_URL 必须是 https URL。",
+  "Templates are not available here.": "此处无法使用模板。",
+  "The ZIP contains the same file twice.": "ZIP 压缩包中包含重复的文件。",
+  "The downloaded template did not match its checksum. Try again later.": "下载的模板与校验和不匹配。请稍后重试。",
+  "The template archive could not be read. Choose another template.": "无法读取模板归档文件。请选择其他模板。",
+  "The template is missing its main file. Choose another template.": "该模板缺少主文件。请选择其他模板。",
+  "This template changed after creation started. Choose another name to start again.": "开始创建后，此模板已发生更改。请另选一个名称重新开始。",
+  "This template version is no longer available. Choose the template again.": "此模板版本已不可用。请重新选择模板。",
+  "too large": "过大",
+  "unsupported index": "不支持的索引"
 }

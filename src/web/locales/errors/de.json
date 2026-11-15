@@ -320,5 +320,18 @@
   "This task is already being restarted.": "Diese Aufgabe wird bereits neu gestartet.",
   "Wait for this task to restart before deleting it.": "Warten Sie, bis diese Aufgabe neu gestartet wurde, bevor Sie sie löschen.",
   "Wait for this task to restart before sending more instructions.": "Warten Sie, bis diese Aufgabe neu gestartet wurde, bevor Sie weitere Anweisungen senden.",
-  "Choose valid destination model settings.": "Wählen Sie gültige Einstellungen für das Zielmodell."
+  "Choose valid destination model settings.": "Wählen Sie gültige Einstellungen für das Zielmodell.",
+  "Choose a template from the list.": "Wählen Sie eine Vorlage aus der Liste aus.",
+  "Could not download the template. Check the internet connection and try again.": "Die Vorlage konnte nicht heruntergeladen werden. Prüfen Sie die Internetverbindung und versuchen Sie es erneut.",
+  "Could not load templates. Check the internet connection and try again.": "Vorlagen konnten nicht geladen werden. Prüfen Sie die Internetverbindung und versuchen Sie es erneut.",
+  "PAPILOT_UNIVERSE_URL must be an https URL.": "PAPILOT_UNIVERSE_URL muss eine https-URL sein.",
+  "Templates are not available here.": "Vorlagen sind hier nicht verfügbar.",
+  "The ZIP contains the same file twice.": "Das ZIP-Archiv enthält dieselbe Datei zweimal.",
+  "The downloaded template did not match its checksum. Try again later.": "Die heruntergeladene Vorlage stimmte nicht mit ihrer Prüfsumme überein. Versuchen Sie es später erneut.",
+  "The template archive could not be read. Choose another template.": "Das Vorlagenarchiv konnte nicht gelesen werden. Wählen Sie eine andere Vorlage aus.",
+  "The template is missing its main file. Choose another template.": "Der Vorlage fehlt die Hauptdatei. Wählen Sie eine andere Vorlage aus.",
+  "This template changed after creation started. Choose another name to start again.": "Diese Vorlage hat sich nach Beginn der Erstellung geändert. Wählen Sie einen anderen Namen, um neu zu beginnen.",
+  "This template version is no longer available. Choose the template again.": "Diese Vorlagenversion ist nicht mehr verfügbar. Wählen Sie die Vorlage erneut aus.",
+  "too large": "zu groß",
+  "unsupported index": "nicht unterstützter Index"
 }

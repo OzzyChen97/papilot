@@ -58,7 +58,7 @@
   "Agent configuration": "Configuración de agentes",
   "Agent settings": "Ajustes del agente",
   "Agents": "Agentes",
-  "All": "Todas",
+  "All": "Todos",
   "All changes": "Todos los cambios",
   "All entries": "Todas las entradas",
   "All skills": "Todas las habilidades",
@@ -1434,5 +1434,13 @@
   "Includes subsections": "Incluye subsecciones",
   "New paper": "Nuevo artículo",
   "New paper…": "Nuevo artículo…",
-  "Open paper…": "Abrir artículo…"
+  "Open paper…": "Abrir artículo…",
+  "Blank paper": "Artículo en blanco",
+  "Conferences": "Conferencias",
+  "Journals": "Revistas",
+  "Other": "Otros",
+  "Search templates": "Buscar plantillas",
+  "Template type": "Tipo de plantilla",
+  "Templates": "Plantillas",
+  "Theses": "Tesis"
 }
