@@ -114,7 +114,7 @@ export abstract class Adapter extends EventEmitter implements AgentRuntime {
 // Tool calls shown in the conversation: commands, file edits, and the rest by name.
 export function toolItem(id: string, name: string, input: Record<string, any>): Item {
   const file = input.file_path || input.notebook_path || input.Path || input.TargetFile || input.AbsolutePath;
-  if (name === 'Bash' || name === 'run_command') return { id, type: 'commandExecution', command: String(input.command || input.CommandLine || ''), status: 'inProgress' };
+  if (name === 'Bash' || name === 'PowerShell' || name === 'run_command') return { id, type: 'commandExecution', command: String(input.command || input.CommandLine || ''), status: 'inProgress' };
   if (['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'write_to_file', 'write_file', 'edit_file', 'create_file', 'replace_file_content', 'multi_replace_file_content', 'sed_file', 'notebook_edit'].includes(name) && file) return { id, type: 'fileChange', changes: [{ path: String(file) }], status: 'inProgress' };
   const target = file || input.pattern || input.Query || input.query || input.url || input.SearchPath || input.DirectoryPath || input.description || '';
   return { id, type: 'toolCall', text: `${name}${target ? ` ${String(target).slice(0, 200)}` : ''}`, status: 'inProgress' };
@@ -188,7 +188,11 @@ type Launch = (command: string, args: string[], options: { cwd: string; env: Nod
 export class ClaudeAgent extends Adapter {
   permissionOptions(): TaskPermissionOption[] {
     return [
-      { value: 'workspace', label: 'Sandboxed edits', detail: this.cli
+      { value: 'workspace', label: this.platform === 'win32' ? 'Accept edits' : 'Sandboxed edits', detail: this.platform === 'win32'
+        ? this.cli
+          ? 'Automatically approve edits without a command sandbox. Other permission requests are denied in print mode.'
+          : 'Automatically approve edits without a command sandbox. Ask before other actions.'
+        : this.cli
         ? 'Automatically approve edits and sandboxed commands. Other permission requests are denied in print mode.'
         : 'Automatically approve edits and sandboxed commands. Ask before other actions.' },
       { value: 'full', label: 'Bypass permissions', detail: 'Disable the command sandbox and bypass tool approvals, subject to managed settings.' },
@@ -199,9 +203,12 @@ export class ClaudeAgent extends Adapter {
   }
   private nativePermissions(thread: Thread) {
     const full = !thread.readOnly && thread.permissions === 'full';
+    // Native Windows has no Claude command sandbox. Keep acceptEdits and its
+    // approval rules; requiring an unavailable sandbox prevents even startup.
+    // WSL runs the Linux backend and retains the strict sandbox configuration.
     return { permissionMode: full ? 'bypassPermissions' as const : 'acceptEdits' as const,
       ...(full ? { allowDangerouslySkipPermissions: true } : {}),
-      sandbox: full ? { enabled: false } : { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false,
+      sandbox: full || this.platform === 'win32' ? { enabled: false } : { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false,
         ...(thread.webSearch ? { network: { allowedDomains: ['*'] } } : {}) } };
   }
   protected name = 'Claude';
@@ -213,7 +220,8 @@ export class ClaudeAgent extends Adapter {
   private login: ClaudeLogin | null = null;
   constructor(private load: () => Promise<typeof import('@anthropic-ai/claude-agent-sdk')['query']> = () => loadClaude(),
     private findCli: () => string | null = () => findExecutable(process.env.PAPILOT_CLAUDE_BIN || 'claude'),
-    private launch: Launch = (command, args, options) => spawnCommand(command, args, { ...options, stdio: ['pipe', 'pipe', 'pipe'] })) { super(); }
+    private launch: Launch = (command, args, options) => spawnCommand(command, args, { ...options, stdio: ['pipe', 'pipe', 'pipe'] }),
+    private platform: NodeJS.Platform = process.platform) { super(); }
   detect() { return Boolean(this.findCli()) || claudeConfigured(); }
   async preload() { if (packageFile('@anthropic-ai/claude-agent-sdk')) await this.load(); }
   // The environment Claude Code runs with; undefined keeps Papilot's own.
@@ -482,7 +490,8 @@ export function glmEndpoint(env: NodeJS.ProcessEnv = process.env) {
 const GLM_KEY = 'GLM needs a GLM Coding Plan or API key: start Papilot with ZHIPU_API_KEY (open.bigmodel.cn) or ZAI_API_KEY (api.z.ai) set.';
 export class GlmAgent extends ClaudeAgent {
   protected name = 'GLM';
-  constructor(load: () => Promise<typeof import('@anthropic-ai/claude-agent-sdk')['query']> = () => loadClaude(true), private env: NodeJS.ProcessEnv = process.env) { super(load, () => null); }
+  constructor(load: () => Promise<typeof import('@anthropic-ai/claude-agent-sdk')['query']> = () => loadClaude(true), private env: NodeJS.ProcessEnv = process.env,
+    platform: NodeJS.Platform = process.platform) { super(load, () => null, undefined, platform); }
   detect() { return Boolean(glmEndpoint(this.env)); }
   protected environment() {
     const endpoint = glmEndpoint(this.env);

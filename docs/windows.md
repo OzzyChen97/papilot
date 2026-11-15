@@ -55,6 +55,12 @@ In the native Windows environment, Codex can also come from the installed Codex/
 
 Dependency links for downloaded app updates use Windows directory junctions and need no Developer Mode. Repositories containing actual symbolic links still require Windows symlink permissions when the engine exports those links (enable Developer Mode or use a repository without symbolic links).
 
+## Claude permissions
+
+Native Windows does not support Claude Code's command sandbox. Claude and GLM therefore offer **Accept edits**, with **No sandbox** shown in the permission details. This accepts file edits using Claude's native permission rules. Commands still follow those rules: with Claude Code (`claude -p`), requests that need approval are declined and reported in the conversation; through the Claude Agent SDK, they ask for approval in Papilot. **Bypass permissions** remains a separate, explicit choice. Existing tasks using the default permissions use **Accept edits** when resumed on native Windows. Read-only reviews still have tools disabled.
+
+For sandboxed commands, select a WSL 2 backend and install Claude there. WSL, Linux and macOS retain **Sandboxed edits**, including refusal to run when their sandbox is unavailable.
+
 ## Codex approvals
 
 Codex defaults to **Workspace access**, using the `workspace-write` sandbox and `on-request` approval policy. Selecting **Full access** in the agent settings explicitly disables the sandbox and uses `never`, subject to managed settings. Independently of that choice, Papilot reads the effective `approvals_reviewer` setting for the task directory before each turn and passes it to new threads, resumed threads and already loaded conversations. User, project and selected-profile reviewer settings remain authoritative; inheriting a reviewer does not change the selected permission mode or automatically accept requests. On Codex versions without the configuration API, the existing reviewer defaults are retained.

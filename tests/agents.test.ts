@@ -278,7 +278,7 @@ test('Claude turns use the local Claude Code login, resume their session, and re
   const options = fake.calls[1].options;
   assert.equal(fake.calls[1].prompt, 'Fix the build.');
   assert.deepEqual([options.cwd, options.model, options.effort, options.sessionId, options.resume, options.permissionMode], ['/work', 'opus', 'high', thread.id, undefined, 'acceptEdits']);
-  assert.deepEqual(options.sandbox, { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false });
+  assert.deepEqual(options.sandbox, process.platform === 'win32' ? { enabled: false } : { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false });
   assert.deepEqual(options.systemPrompt, { type: 'preset', preset: 'claude_code', append: 'Only edit the worktree.' });
   assert.deepEqual(options.settingSources, ['project']);
   assert.deepEqual(requests.map(r => [r.method, r.params.command || r.params.questions?.[0].question]), [['item/commandExecution/requestApproval', 'rm -rf build'], ['item/tool/requestUserInput', 'Which section?']]);
@@ -662,7 +662,7 @@ test('with Claude Code installed, Claude runs claude -p on the host login, strea
     assert.equal(flag('--permission-mode'), 'acceptEdits'); assert.equal(flag('--permission-prompts'), 'none');
     assert.equal(flag('--session-id'), thread.id); assert.equal(flag('--model'), 'opus'); assert.equal(flag('--effort'), 'high');
     assert.equal(run.instructions, 'Only edit the worktree.'); assert.equal(fs.existsSync(flag('--append-system-prompt-file')), false); assert.equal(flag('--disallowedTools'), 'AskUserQuestion');
-    assert.deepEqual(JSON.parse(flag('--settings')).sandbox, { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false });
+    assert.deepEqual(JSON.parse(flag('--settings')).sandbox, process.platform === 'win32' ? { enabled: false } : { enabled: true, failIfUnavailable: true, autoAllowBashIfSandboxed: true, allowUnsandboxedCommands: false });
     const sent = JSON.parse(run.stdin.trim());
     assert.equal(sent.message.content[0].text, 'Fix it.'); assert.equal(sent.message.content[1].source.media_type, 'image/png');
     const items = seen.filter(e => e.method === 'item/completed').map(e => e.params.item);
@@ -704,37 +704,43 @@ test('Claude Code that is not signed in says how to sign in, and pausing stops c
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('read-only Claude reviews disable tools and project settings, including on resume', async () => {
+for (const platform of ['win32', 'darwin', 'linux'] as const) test(`read-only Claude ${platform} reviews disable tools and project settings, including on resume`, async () => {
   const fake = fakeClaude(async function* (options) {
     assert.deepEqual(options.tools, []);
+    assert.equal(options.permissionMode, 'acceptEdits');
+    assert.equal(options.allowDangerouslySkipPermissions, undefined);
+    assert.equal(options.sandbox.enabled, platform !== 'win32');
     assert.deepEqual(options.settingSources, []);
     yield { type: 'result', subtype: 'success', result: '{"summary":"Looks clear.","notes":[]}', session_id: options.sessionId || options.resume };
   });
-  const agent = new ClaudeAgent(fake.load, () => null);
+  const agent = new ClaudeAgent(fake.load, () => null, undefined, platform);
   await agent.start();
   const seen = events(agent);
-  const { thread } = await agent.request('thread/start', { cwd: '/work', sandbox: 'read-only', developerInstructions: 'Review only.' });
+  const { thread } = await agent.request('thread/start', { cwd: '/work', sandbox: 'read-only', taskPermissions: 'full', developerInstructions: 'Review only.' });
   await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Review this text.' }] });
   assert.equal((await completed(seen)).status, 'completed');
-  await agent.request('thread/resume', { threadId: thread.id, cwd: '/work', sandbox: 'read-only', developerInstructions: 'Review only.' });
+  await agent.request('thread/resume', { threadId: thread.id, cwd: '/work', sandbox: 'read-only', taskPermissions: 'full', developerInstructions: 'Review only.' });
   const resumed = events(agent);
   await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Check assumptions too.' }] });
   assert.equal((await completed(resumed)).status, 'completed');
   agent.close();
 });
 
-test('read-only Claude CLI reviews disable tool access and project settings', async () => {
+for (const platform of ['win32', 'darwin', 'linux'] as const) test(`read-only Claude ${platform} CLI reviews disable tool access and project settings`, async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-review-cli-'));
   try {
     const fake = fakeClaudeCli(dir, { loggedIn: true, authMethod: 'claude.ai' }, [[{ type: 'result', subtype: 'success', is_error: false, result: '{"summary":"Clear.","notes":[]}' }]]);
-    const agent = new ClaudeAgent(async () => { throw new Error('No SDK needed'); }, () => fake.bin, fake.launch as any);
+    const agent = new ClaudeAgent(async () => { throw new Error('No SDK needed'); }, () => fake.bin, fake.launch as any, platform);
     await agent.start();
     const seen = events(agent);
-    const { thread } = await agent.request('thread/start', { cwd: '/work', sandbox: 'read-only', developerInstructions: 'Review only.' });
+    const { thread } = await agent.request('thread/start', { cwd: '/work', sandbox: 'read-only', taskPermissions: 'full', developerInstructions: 'Review only.' });
     await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Review the supplied text.' }] });
     assert.equal((await completed(seen)).status, 'completed');
     const args = fake.launches[0].args;
     assert.equal(args[args.indexOf('--tools') + 1], '');
+    assert.equal(args[args.indexOf('--permission-mode') + 1], 'acceptEdits');
+    assert.equal(args.includes('--dangerously-skip-permissions'), false);
+    assert.equal(JSON.parse(args[args.indexOf('--settings') + 1]).sandbox.enabled, platform !== 'win32');
     assert.equal(args[args.indexOf('--setting-sources') + 1], '');
     agent.close();
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
@@ -745,8 +751,8 @@ test('editing network SDK permissions allow web tools natively but preserve expl
     assert.equal(options.tools, undefined, 'editing tools remain available');
     assert.deepEqual(options.allowedTools, ['WebSearch', 'WebFetch']);
     assert.equal(options.permissionMode, 'acceptEdits');
-    assert.equal(options.sandbox.enabled, true);
-    assert.deepEqual(options.sandbox.network.allowedDomains, ['*']);
+    assert.equal(options.sandbox.enabled, process.platform !== 'win32');
+    assert.deepEqual(options.sandbox.network?.allowedDomains, process.platform === 'win32' ? undefined : ['*']);
     const context = { signal: new AbortController().signal };
     // The SDK normally pre-approves these tools via allowedTools. If it still
     // calls canUseTool (for example for an ask rule), the user's decision wins.
@@ -781,8 +787,8 @@ test('editing network CLI permissions allow web access without bypassing sandbox
     assert.equal(args[args.indexOf('--allowedTools') + 1], 'WebSearch,WebFetch');
     assert.equal(args[args.indexOf('--permission-mode') + 1], 'acceptEdits');
     const sandbox = JSON.parse(args[args.indexOf('--settings') + 1]).sandbox;
-    assert.equal(sandbox.enabled, true);
-    assert.deepEqual(sandbox.network.allowedDomains, ['*']);
+    assert.equal(sandbox.enabled, process.platform !== 'win32');
+    assert.deepEqual(sandbox.network?.allowedDomains, process.platform === 'win32' ? undefined : ['*']);
   } finally { agent?.close(); fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
@@ -850,11 +856,39 @@ for (const provider of ['claude', 'antigravity']) test(`${provider} reports sync
 });
 
 for (const provider of ['claude-sdk', 'glm'] as const) {
-  test(`${provider} applies native permissions to each turn, including Full → Workspace`, async () => {
+  test(`${provider} on native Windows keeps command approvals in accept-edits mode`, async () => {
+    const command = 'node -e "console.log(42)"';
+    const fake = fakeClaude(async function* (options) {
+      assert.equal(options.permissionMode, 'acceptEdits');
+      assert.deepEqual(options.sandbox, { enabled: false });
+      assert.equal(options.allowDangerouslySkipPermissions, undefined);
+      for (const decision of ['deny', 'allow']) {
+        const result = await options.canUseTool('PowerShell', { command }, { signal: new AbortController().signal });
+        assert.equal(result.behavior, decision);
+      }
+    });
+    const agent = provider === 'glm' ? new GlmAgent(fake.load, { ZAI_API_KEY: 'fixture' }, 'win32') : new ClaudeAgent(fake.load, () => null, undefined, 'win32');
+    const requests: any[] = [];
+    agent.on('request', request => {
+      requests.push(request);
+      agent.respond(request.id, { decision: requests.length === 1 ? 'decline' : 'accept' });
+    });
+    try {
+      const seen = events(agent);
+      const { thread } = await agent.request('thread/start', { cwd: '/work', taskPermissions: 'workspace' });
+      await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Run a command.' }] });
+      assert.equal((await completed(seen)).status, 'completed');
+      assert.deepEqual(requests.map(request => [request.method, request.params.command]), [
+        ['item/commandExecution/requestApproval', command], ['item/commandExecution/requestApproval', command],
+      ]);
+    } finally { agent.close(); }
+  });
+
+  for (const platform of ['win32', 'darwin', 'linux'] as const) test(`${provider} applies ${platform} permissions to new and continuing turns, including Full → Workspace`, async () => {
     const fake = fakeClaude(async function* () {});
-    const agent = provider === 'glm' ? new GlmAgent(fake.load, { ZAI_API_KEY: 'fixture' }) : new ClaudeAgent(fake.load, () => null);
+    const agent = provider === 'glm' ? new GlmAgent(fake.load, { ZAI_API_KEY: 'fixture' }, platform) : new ClaudeAgent(fake.load, () => null, undefined, platform);
     const { thread } = await agent.request('thread/start', { cwd: '/work' });
-    for (const value of ['full', 'workspace', 'full'] as const) {
+    for (const value of ['workspace', 'full', 'workspace', 'full'] as const) {
       const seen = events(agent);
       const config = await agent.taskPermissionConfig(value);
       await agent.request('turn/start', { threadId: thread.id, ...config.turn, input: [{ type: 'text', text: 'Edit.' }] });
@@ -862,13 +896,15 @@ for (const provider of ['claude-sdk', 'glm'] as const) {
       const options = fake.calls.at(-1)!.options;
       assert.equal(options.permissionMode, value === 'full' ? 'bypassPermissions' : 'acceptEdits');
       assert.equal(options.allowDangerouslySkipPermissions, value === 'full' ? true : undefined);
-      assert.equal(options.sandbox.enabled, value !== 'full');
-      if (value === 'workspace') {
+      assert.equal(options.sandbox.enabled, value !== 'full' && platform !== 'win32');
+      if (value === 'workspace' && platform !== 'win32') {
         assert.equal(options.sandbox.allowUnsandboxedCommands, false);
         assert.equal(options.sandbox.failIfUnavailable, true);
       }
     }
+    assert.equal(agent.permissionOptions()[0].label, platform === 'win32' ? 'Accept edits' : 'Sandboxed edits');
     assert.match(agent.permissionOptions()[0].detail, /Ask before/);
+    if (platform === 'win32') assert.match(agent.permissionOptions()[0].detail, /without a command sandbox/);
     agent.close();
   });
 
@@ -904,26 +940,29 @@ for (const provider of ['claude-sdk', 'glm'] as const) {
   });
 }
 
-test('Claude print path applies native permissions when resuming, including Full → Workspace', async () => {
+for (const platform of ['win32', 'darwin', 'linux'] as const) test(`Claude print path applies ${platform} permissions on new and resumed turns, including Full → Workspace`, async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-cli-permissions-'));
-  const fake = fakeClaudeCli(dir, { loggedIn: true, authMethod: 'console' }, Array.from({ length: 3 }, () => [{ type: 'result', subtype: 'success', is_error: false, result: 'Done' }]));
-  const agent = new ClaudeAgent(async () => { throw new Error('SDK must not be used'); }, () => fake.bin, fake.launch as any);
+  const fake = fakeClaudeCli(dir, { loggedIn: true, authMethod: 'console' }, Array.from({ length: 4 }, () => [{ type: 'result', subtype: 'success', is_error: false, result: 'Done' }]));
+  const agent = new ClaudeAgent(async () => { throw new Error('SDK must not be used'); }, () => fake.bin, fake.launch as any, platform);
   try {
     await agent.start();
+    assert.equal(agent.permissionOptions()[0].label, platform === 'win32' ? 'Accept edits' : 'Sandboxed edits');
     assert.match(agent.permissionOptions()[0].detail, /denied in print mode/);
+    if (platform === 'win32') assert.match(agent.permissionOptions()[0].detail, /without a command sandbox/);
     const { thread } = await agent.request('thread/start', { cwd: '/work' });
-    for (const value of ['full', 'workspace', 'full'] as const) {
+    for (const value of ['workspace', 'full', 'workspace', 'full'] as const) {
       const seen = events(agent);
-      await agent.request('thread/resume', { threadId: thread.id, cwd: '/work', ...(await agent.taskPermissionConfig(value)).thread });
+      if (fake.launches.length) await agent.request('thread/resume', { threadId: thread.id, cwd: '/work', ...(await agent.taskPermissionConfig(value)).thread });
       await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Edit.' }] });
       assert.equal((await completed(seen)).status, 'completed');
       const args = fake.launches.at(-1)!.args, flag = (key: string) => args[args.indexOf(key) + 1];
       assert.equal(args[0], '-p');
-      assert.equal(flag('--resume'), thread.id);
+      assert.equal(flag(fake.launches.length === 1 ? '--session-id' : '--resume'), thread.id);
+      assert.equal(flag('--permission-prompts'), 'none');
       assert.equal(flag('--permission-mode'), value === 'full' ? 'bypassPermissions' : 'acceptEdits');
       assert.equal(args.includes('--dangerously-skip-permissions'), value === 'full');
-      assert.equal(JSON.parse(flag('--settings')).sandbox.enabled, value !== 'full');
-      if (value === 'workspace') {
+      assert.equal(JSON.parse(flag('--settings')).sandbox.enabled, value !== 'full' && platform !== 'win32');
+      if (value === 'workspace' && platform !== 'win32') {
         assert.equal(JSON.parse(flag('--settings')).sandbox.allowUnsandboxedCommands, false);
         assert.equal(JSON.parse(flag('--settings')).sandbox.failIfUnavailable, true);
       }

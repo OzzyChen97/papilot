@@ -45,6 +45,8 @@ function permissionDetail(detail: string) {
     "Disable the sandbox and run tools without approval, subject to managed settings.": t("Bypass sandbox and approvals"),
     "Automatically approve edits and sandboxed commands. Other permission requests are denied in print mode.": t("Sandboxed; other requests denied"),
     "Automatically approve edits and sandboxed commands. Ask before other actions.": t("Sandboxed; exceptions need approval"),
+    "Automatically approve edits without a command sandbox. Other permission requests are denied in print mode.": `${t("No sandbox")}; ${t("Other requests denied")}`,
+    "Automatically approve edits without a command sandbox. Ask before other actions.": `${t("No sandbox")}; ${t("Native approvals")}`,
     "Disable the command sandbox and bypass tool approvals, subject to managed settings.": t("Bypass sandbox and approvals"),
   };
   return messages[detail] || '';
