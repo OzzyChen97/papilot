@@ -8,6 +8,10 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 - **Run Papilot from an installation that pins its version.** Container images, server deployments and system packages can set `PAPILOT_INSTALL_METHOD=managed` to get the behavior the Nix package already has: Papilot never checks for or installs updates, ignores releases that earlier in-app updates installed, and never downloads Codex or agent SDKs at runtime. **Settings → Updates** shows the current version with a note that updates are managed outside Papilot, without the unavailable **Check for updates** button (Nix installations too). A missing SDK names the package to install, and `papilot doctor` suggests installing Codex and SDKs with the installation. Under Nix, `papilot doctor` now finds the agent SDKs the package includes. See [Updates](docs/guide.md#updates). ([#190](https://github.com/PapilotAI/papilot/pull/190))
 
+### Changed
+
+- **New paper and Open paper.** The paper menu and empty screen now say **New paper…** and **Open paper…** (a folder icon on every platform), and the desktop File menu says **Open Paper…**, instead of the easily confused *Create a new paper* and *Add paper…*. The new-paper dialog shows the folder it will create in place of explanatory text, and the open dialog is reduced to **Choose folder**, **Choose ZIP** and the drop zone. ([#182](https://github.com/PapilotAI/papilot/pull/182))
+
 ### Fixed
 
 - **AI review works on long theses.** The review used to put the whole PDF's text in its first message, and Codex refused it once the text passed 1 MiB, failing with `Input exceeds the maximum length of 1048576 characters`. Papilot now saves the text, one PDF line per row, in the review's task copy, and the reviewer reads the parts the request covers. A review focused on one chapter no longer sends the whole thesis to the model. Send a new message to a review that failed this way to continue it. ([#189](https://github.com/PapilotAI/papilot/pull/189))
