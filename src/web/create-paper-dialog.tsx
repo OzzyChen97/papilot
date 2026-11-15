@@ -27,7 +27,8 @@ const groupOf = (template: PaperTemplate): Group => (GROUPS as readonly string[]
 const groupLabel = (group: Group) => ({ all: t('All'), thesis: t('Theses'), conference: t('Conferences'), journal: t('Journals'), other: t('Other') })[group];
 const ENGINE: Record<string, string> = { pdflatex: 'pdfLaTeX', xelatex: 'XeLaTeX', lualatex: 'LuaLaTeX' };
 const templateName = (template: Choice) => locale().startsWith('zh') && template.zh?.name ? template.zh.name : template.name;
-const templateMeta = (template: Choice) => template.venue ? `${template.venue.name} ${template.venue.year}` : template.organization ?? '';
+// Where a template comes from, unless its name already says so (NeurIPS 2026).
+const templateMeta = (template: Choice) => { const from = template.venue ? `${template.venue.name} ${template.venue.year}` : template.organization ?? ''; return template.name.includes(from) ? '' : from; };
 const choiceOf = ({ id, version, name, zh, engine, thumbnail, organization, venue }: PaperTemplate): Choice => ({ id, version, name, ...(zh ? { zh } : {}), engine, ...(thumbnail ? { thumbnail } : {}), ...(organization ? { organization } : {}), ...(venue ? { venue } : {}) });
 // crypto.randomUUID is unavailable on LAN HTTP. Keep a UUID-shaped random ID.
 const uuid = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');

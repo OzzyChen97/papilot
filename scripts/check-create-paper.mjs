@@ -121,7 +121,7 @@ try {
       assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).count(), 0);
       await dialog.getByRole('listitem').filter({ hasText: 'NeurIPS 2026' }).click();
     } else if (link) {
-      await chosen.getByText('NeurIPS 2026 · pdfLaTeX').waitFor();
+      await chosen.getByText('pdfLaTeX', { exact: true }).waitFor(); assert.equal(await chosen.locator('strong').innerText(), 'NeurIPS 2026');
       assert.equal(await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).isVisible(), true, 'A website link opens the details with its template');
     } else {
       await page.getByRole('button', { name: 'New paper', exact: true }).first().click();
@@ -138,7 +138,7 @@ try {
       await page.screenshot({ path: 'test-results/create-paper-templates-mobile.png', animations: 'disabled' });
       await page.setViewportSize({ width: 1280, height: 800 });
       await grid.getByRole('listitem').first().click();
-      await chosen.getByText('Tsinghua University · XeLaTeX').waitFor();
+      await chosen.getByText('XeLaTeX', { exact: true }).waitFor();
       await chosen.getByRole('button', { name: 'Change…', exact: true }).click();
       await dialog.getByRole('button', { name: 'Theses', exact: true }).waitFor();
       await dialog.getByRole('searchbox', { name: 'Search templates' }).fill('');
