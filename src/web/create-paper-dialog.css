@@ -2,7 +2,10 @@
 .create-paper-location{display:flex;align-items:center;gap:8px}
 .create-paper-location input{flex:1;min-width:0}
 .create-paper-location button{flex-shrink:0}
-.create-paper-hint{font-size:12px;line-height:1.6;color:var(--text-2);overflow-wrap:anywhere;margin:10px 0 16px}
+.create-paper-target{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;min-height:18px;margin:8px 0 16px;font-size:12px;line-height:1.5;color:var(--text);white-space:nowrap}
+.create-paper-target svg{flex:none;color:var(--text-3)}
+.create-paper-target-path{display:flex;min-width:0}
+.create-paper-dialog h2+form{margin-top:20px}
 .create-paper-status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-2)}
 .home-paper-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:10px}
 @media(max-width:400px){.create-paper-location{align-items:stretch;flex-direction:column}.create-paper-location button{align-self:flex-start}}

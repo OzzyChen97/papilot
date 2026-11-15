@@ -30,6 +30,9 @@ export function CreatePaperDialog({ api, onDone, onClose }: { api: <T>(url: stri
   }, []);
   useEffect(() => { browserStorage.setItem(draftKey, JSON.stringify(form)); }, [form]);
   function close() { if (!pending.current) onClose(); }
+  // Show the folder creation will make instead of explaining it in prose.
+  const name = form.name.trim(), parent = form.parent.trim();
+  const target = name && parent ? (/[\\/]$/.test(parent) ? parent : parent + (parent.includes('\\') && !parent.includes('/') ? '\\' : '/')) + name : '';
   async function submit() {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError('');
@@ -50,7 +53,6 @@ export function CreatePaperDialog({ api, onDone, onClose }: { api: <T>(url: stri
     <section className="modal create-paper-dialog">
       <button type="button" className="modal-close icon-button" aria-label={t('Close')} disabled={busy} onClick={close}><Icon name="close"/></button>
       <h2 id="create-paper-title">{t('Create a new paper')}</h2>
-      <p className="modal-description">{t('Start with a minimal LaTeX paper and local version history. No Git hosting account is needed.')}</p>
       <form onSubmit={event => { event.preventDefault(); void submit(); }}>
         <label>{t('Paper name')}<input name="name" value={form.name} required maxLength={120} autoComplete="off" disabled={busy} onChange={event => setForm({ ...form, name: event.target.value })}/></label>
         <label htmlFor="create-paper-parent">{t('Save in')}</label>
@@ -58,8 +60,7 @@ export function CreatePaperDialog({ api, onDone, onClose }: { api: <T>(url: stri
           <input id="create-paper-parent" value={form.parent} required maxLength={4000} autoComplete="off" spellCheck={false} disabled={busy} onChange={event => setForm({ ...form, parent: event.target.value })}/>
           {nativeFolders && <button type="button" className="button secondary compact" disabled={busy} onClick={() => void browse()}>{t('Choose folder')}</button>}
         </div>
-        <p className="create-paper-hint">{nativeFolders ? t('A new folder with the paper name will be created here. Existing folders are never replaced.') : t('This location is on the computer running Papilot. A new folder with the paper name will be created here; existing folders are never replaced.')}</p>
-        <p className="create-paper-hint">{t('Next, edit main.tex in the source editor or ask an agent to help write your paper. Compilation starts in the workspace.')}</p>
+        <p className="create-paper-target" title={target || undefined} aria-live="polite">{target && <><Icon name="folder" size={14}/><span className="create-paper-target-path"><span className="paper-location-parent">{target.slice(0, -name.length)}</span><span className="paper-location-name">{name}</span></span></>}</p>
         {busy && <p className="create-paper-status" role="status"><span className="spinner"/>{t('Creating your paper…')}</p>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         <div className="button-row">

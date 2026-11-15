@@ -109,11 +109,6 @@
     "textHash": "df8525011f618f54a41da2ac9e08cbf57c8f4674244d601d41f0fa18d54c19d2",
     "model": "gemini-4-argon-medium"
   },
-  "Add a paper": {
-    "revision": "4f6c656b66e9a1fccd00511f7b16e3f68b456b6db9a6beedde930bf0374b7e8c",
-    "textHash": "47e22e71ffbc2cfb3eaa9584f87dba5ffda74a4711dff101f1bc91478b821bdc",
-    "model": "gemini-4-argon-medium"
-  },
   "Add all to task": {
     "revision": "ead62bc2000e4c8212dc7c9242bb9ad7b8ba70492ccaa233f3d67adfc1f2b1d2",
     "textHash": "1ab96c0dd91781285e12a0f3a5c2c6b3a751bd937a6f97b512741995d64c9c16",
@@ -147,16 +142,6 @@
   "Add overall instructions (optional)": {
     "revision": "49b3fd2a2e21db4f9e73cca3eaf40d35f690f2a726c924cefe3bf3a386236712",
     "textHash": "8167703bc5d72636a4658a74fb384c6c51a8494e3a142339217432276d5927a4",
-    "model": "gemini-4-argon-medium"
-  },
-  "Add paper": {
-    "revision": "4a5fe2ac33a8ca34e22a387115495481136287649b84a8aa4876c5a53fd4e14a",
-    "textHash": "622721682a5a6adb7979a95b6f8395d8d1b51d132d61909b5dc6b8fe8f962c07",
-    "model": "gemini-4-argon-medium"
-  },
-  "Add paper…": {
-    "revision": "54b54568c1e8160b4c98cdbf3f35256a5219a7d4cbe3a37cda2e0e3c705b14c5",
-    "textHash": "72a759ca5f6e47c777fac01d3afd5d00b89a7cce0fddd4602d9c8d4d1e71f4be",
     "model": "gemini-4-argon-medium"
   },
   "Add quick note": {
@@ -648,16 +633,6 @@
     "revision": "52741435119660a369892f07bcc996d13e2260eecb59fff2843ff7502451d299",
     "textHash": "7ce2e7c717647967d9adf827f38f0dd162457c6e85675de712ec0431a40c9fd9",
     "model": "gemini-4-argon-medium"
-  },
-  "Choose a folder or ZIP, or drag it here.": {
-    "revision": "ff6939f0fcbb76f7ca49b9e85abf11b3189df97be0f49b2436bfc68466ec5366",
-    "textHash": "bb3da07dd5ed5a2349f71b34e78f15a86ff03707514cd9361e06834b36a41ab2",
-    "model": "gemini-4-argon-high"
-  },
-  "Choose a folder to upload a copy. To use original files, open it in the desktop app.": {
-    "revision": "e8a1a79db9345541ea78c017e445ee0fef2414f0c521d556e49dadf06cc099b2",
-    "textHash": "33545393e3ee98f12f7b0edcb506d63ed9800820889f04df12812aceb24e3f6c",
-    "model": "gemini-4-argon-high"
   },
   "Choose a shortcut to edit:": {
     "revision": "fcd5dfcd60bcfa9d3467b19eb899b948179438bb982483e726f2ba5fc38a4182",
@@ -1914,16 +1889,6 @@
     "textHash": "f97a2b1ef6c6bbec03546ce6e172b4177d0f2dee25bebeeaf5b56c02572e4757",
     "model": "gemini-4-argon-medium"
   },
-  "Import a ZIP": {
-    "revision": "8f9ebaeae19136a6a10017df7d8c5cf8580445508e023c427046bf50c26e67cc",
-    "textHash": "c20d09862808806625895d61ae566bba79010acc98a4bdd5fa40dc596121bbb7",
-    "model": "gemini-4-argon-high"
-  },
-  "Import a separate copy from Overleaf or a ZIP archive.": {
-    "revision": "85211e99705af3ed2821fc43e54359910083db869e0f431e6836619a9790c5c2",
-    "textHash": "3fecf0685f6665a89f9f8673a0521e75a96e927222f64e9145336eb651ac213a",
-    "model": "gemini-4-argon-high"
-  },
   "Import progress": {
     "revision": "1c5d270956e10f0eb800eace2c0045cc0667811e2a286eef9c6deb29bd8e1098",
     "textHash": "4895b30e9768e99bcda9c7b83c92534d21ae0ecfa308ae56fb87ddd47dc9d41e",
@@ -2394,6 +2359,16 @@
     "textHash": "54a38a6f25dcd4e41d150b302c899a0c48a25aacbf47ecb6bb89f8322a336b5c",
     "model": "gemini-4-argon-medium"
   },
+  "New paper": {
+    "revision": "e523dfe5ea3fa64047fbb085e61b2f7d4420267e4e158dfbb7404080ba98ca3b",
+    "textHash": "503d950753a813c92a194659232bd258e262ebf1c6c92d21eb014123d6e78db1",
+    "model": "gemini-4-argon-medium"
+  },
+  "New paper…": {
+    "revision": "27f85a1411aff7caae51b93d436a9cd70e201807020839bc19b13591424d3468",
+    "textHash": "2b681980a7950c04228980f8b49364ece3773340a702730d4a83fde8d20ad628",
+    "model": "gemini-4-argon-medium"
+  },
   "New skill": {
     "revision": "b2cf31df5625d93d0a75c2fd3dd8e32274b69b8042523a9a7a253f838f3c6efc",
     "textHash": "7401df5a7e305e758fba93a368aba528fe44632357cd08671a4292ccf03c38ff",
@@ -2719,11 +2694,6 @@
     "textHash": "674cbece3f0a59916e2f9483280524af9616c6c58f1eb1291063a61a0f50cdd1",
     "model": "gemini-4-argon-high"
   },
-  "Open a folder": {
-    "revision": "c3b3a2068dc49008f7b6b5beb41ed2f813baeac87930fcd1cb4e1492de49ea3e",
-    "textHash": "86c38b0a00e425d9b1fa788dcaba19db6bbba54e0378d7b823d9a8a5341230a4",
-    "model": "gemini-4-argon-medium"
-  },
   "Open attachment {name}": {
     "revision": "f2658cba538a4dfdc3ad5f7b0303472c1f6565d2343d36c85f19c0396aed73e8",
     "textHash": "d419889b22fa8fc622b34fc3ed350d7532cbdaab358d1955304014cdca9d8536",
@@ -2735,8 +2705,13 @@
     "model": "gemini-4-argon-high"
   },
   "Open paper": {
-    "revision": "7c04108c78e828c0d13182c06f676131943b73bada491623c7c2a0ed5cd3d112",
+    "revision": "9ac4dfdb6997ae0c4bacf833219e62ce22c8ecc1efc0b9c19f6f76ad661a3392",
     "textHash": "2dae53d0904b79e2d9711dd942d74bf5c31346c443b98ec1f28a6782dc3d5aab",
+    "model": "gemini-4-argon-medium"
+  },
+  "Open paper…": {
+    "revision": "e6cc08b2d84c135acd3975926fb6cb8770cdf7e5698b9380b5f9b4a37b02c163",
+    "textHash": "759bfe36c4286155dd575cb60f5518673f4bdd4194e678e6645602bea4a7462f",
     "model": "gemini-4-argon-medium"
   },
   "Open review": {

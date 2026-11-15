@@ -16,7 +16,7 @@ contextBridge.exposeInMainWorld('papilotDesktop', {
     ipcRenderer.on('papilot:open-task', receive);
     return () => { ipcRenderer.off('papilot:open-task', receive); };
   },
-  // File › Open Folder… picks the folder in the main process and sends its path.
+  // File › Open Paper… picks the folder in the main process and sends its path.
   onOpenFolder: (listener: (folder: string) => void) => {
     const receive = (_event: IpcRendererEvent, folder: unknown) => { if (typeof folder === 'string') listener(folder); };
     ipcRenderer.on('papilot:open-folder', receive);

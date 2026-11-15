@@ -40,20 +40,25 @@ try {
     });
     const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
     await page.goto(origin);
-    const create = page.getByRole('button', { name: 'Create a new paper', exact: true });
+    const create = page.getByRole('button', { name: 'New paper', exact: true });
     await create.click();
     let dialog = page.getByRole('dialog', { name: 'Create a new paper', exact: true });
     const name = dialog.getByRole('textbox', { name: 'Paper name', exact: true }), location = dialog.getByRole('textbox', { name: 'Save in', exact: true });
     await name.fill('研究论文');
     await page.waitForFunction(parent => document.querySelector('#create-paper-parent')?.value === parent, parent);
-    if (desktop) { await dialog.getByRole('button', { name: 'Choose folder', exact: true }).click(); assert.equal(await location.inputValue(), picked); }
-    else {
-      await dialog.getByText('This location is on the computer running Papilot.', { exact: false }).waitFor();
+    // The dialog shows the folder it will create instead of explaining it.
+    const target = dialog.locator('.create-paper-target'), separator = mode === 'windows' ? '\\' : '/';
+    await page.waitForFunction(([selector, expected]) => document.querySelector(selector)?.textContent === expected, ['.create-paper-target', parent + separator + '研究论文']);
+    if (desktop) {
+      await dialog.getByRole('button', { name: 'Choose folder', exact: true }).click(); assert.equal(await location.inputValue(), picked);
+      assert.equal(await target.textContent(), picked + separator + '研究论文');
+    } else {
       await page.setViewportSize({ width: 320, height: 640 });
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.screenshot({ path: 'test-results/create-paper-mobile.png', animations: 'disabled' });
       assert.ok((await location.boundingBox()).height >= 36, 'Save location remains a usable input on mobile');
       const bounds = await dialog.locator('.modal').boundingBox(); assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 321, 'Creation dialog fits a narrow phone');
+      assert.ok(await target.evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'The target folder truncates instead of widening the dialog');
     }
     await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
     if (!desktop) {
@@ -74,7 +79,7 @@ try {
     const switcher = page.getByRole('button', { name: 'Paper: 研究论文', exact: true });
     if (!(await switcher.isVisible())) await page.getByRole('button', { name: 'Show task list', exact: true }).click();
     await switcher.click();
-    await page.getByRole('menuitem', { name: 'Create a new paper', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'New paper…', exact: true }).click();
     dialog = page.getByRole('dialog', { name: 'Create a new paper', exact: true });
     await dialog.waitFor();
     assert.equal(await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).inputValue(), '', 'Successful creation clears the saved draft');

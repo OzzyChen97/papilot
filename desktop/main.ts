@@ -104,7 +104,7 @@ else {
       if (!event.senderFrame || new URL(event.senderFrame.url).origin !== origin) return null;
       return chooseDirectory(window);
     });
-    // Like an editor's File › Open Folder…: the chosen folder opens as a paper.
+    // Like an editor's File › Open Paper…: the chosen folder opens as a paper.
     const openFolder = async () => {
       showWindow();
       const target = window;
@@ -156,7 +156,7 @@ else {
     session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
     Menu.setApplicationMenu(Menu.buildFromTemplate([
       { label: 'Papilot', submenu: [{ role: 'about' }, { label: nix ? 'Updates managed by Nix' : 'Download Updates…', enabled: !nix, click: () => external(releases) }, { type: 'separator' }, { role: 'hide' }, { role: 'hideOthers' }, { role: 'unhide' }, { type: 'separator' }, { role: 'quit' }] },
-      { label: 'File', submenu: [{ id: 'open-folder', label: 'Open Folder…', accelerator: 'CmdOrCtrl+O', click: () => void openFolder() }, { type: 'separator' }, process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' }] },
+      { label: 'File', submenu: [{ id: 'open-folder', label: 'Open Paper…', accelerator: 'CmdOrCtrl+O', click: () => void openFolder() }, { type: 'separator' }, process.platform === 'darwin' ? { role: 'close' } : { role: 'quit' }] },
       ...(process.platform === 'win32' ? [{ label: 'Environment', submenu: [{ label: environment.kind === 'wsl' ? `WSL · ${environment.distribution}…` : 'Windows…', click: () => openEnvironment() }] }] : []),
       { role: 'editMenu' }, { role: 'viewMenu' }, { role: 'windowMenu' },
       { role: 'help', submenu: [{ label: 'Papilot Guide', click: () => external('https://github.com/PapilotAI/papilot#readme') }, { label: 'Show Logs', click: () => shell.showItemInFolder(log) }] },
