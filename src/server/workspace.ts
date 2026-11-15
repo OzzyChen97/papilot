@@ -1418,7 +1418,8 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
     const task = this.store.task(taskId), project = this.store.project(task.projectId);
     if (task.mode === 'review') throw new Error('AI review has no manuscript changes to apply.');
     if (!task.deferred) throw new Error('Accepted changes are already in the manuscript.');
-    if (task.status !== 'reviewing' || this.active.has(taskId) || this.publishing.has(taskId) || task.pendingReview || this.store.runs().some(run => run.taskId === taskId && run.status === 'queued'))
+    const pausedMerge = task.status === 'interrupted' && task.reconciliation && (!task.reconciliation.ready || (task.review?.round ?? 0) <= task.reconciliation.round);
+    if (!['reviewing', 'interrupted'].includes(task.status) || pausedMerge || this.active.has(taskId) || this.publishing.has(taskId) || task.pendingReview || this.store.runs().some(run => run.taskId === taskId && run.status === 'queued'))
       throw new Error('Wait for the task and review actions to finish before applying changes.');
     const result = await this.exclusiveCommit(project.id, async () => {
       this.reviewWrites.add(taskId);
@@ -1439,6 +1440,10 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         return { delivery: confirmed.delivery, reconciliation: undefined, commitReview: undefined, git: await gitStatus(project.path) };
       throw error;
     });
+    // Saving the reviewed result completes a paused review without resuming
+    // its interrupted agent turn. Only a confirmed delivery clears the pause.
+    if (result.delivery && !result.delivery.pending && this.store.task(taskId).status === 'interrupted')
+      this.store.updateTask(taskId, { status: 'reviewing', error: null });
     if (result.reconciliation?.ready) await this.queueMergeSuggestion(taskId, result.reconciliation);
     this.schedule();
     return result;

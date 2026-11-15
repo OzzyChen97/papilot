@@ -2223,7 +2223,7 @@ test('an agent resolves a merge in the manuscript checkout, and review writes wa
   } finally { f.close(); fs.rmSync(base, { recursive: true, force: true }); }
 });
 
-for (const mode of ['workspace', 'commit'] as const) test(`tasks save to the manuscript using ${mode} without task branches`, async () => {
+for (const status of ['reviewing', 'interrupted'] as const) for (const mode of ['workspace', 'commit'] as const) test(`${status} tasks save to the manuscript using ${mode} without task branches`, async () => {
   const { Fixture, METHOD, fakeRound } = await import(new URL('../engine/tests/ts/helpers.ts', import.meta.url).href);
   const disk = new Fixture(), app = disk.app();
   const f = fixture(async (method, route, body: any) => {
@@ -2240,9 +2240,13 @@ for (const mode of ['workspace', 'commit'] as const) test(`tasks save to the man
     await f.workspace.refresh(f.task.id);
     assert.equal(f.store.task(f.task.id).deferred, true);
     assert.deepEqual(f.store.task(f.task.id).review?.files, [METHOD]);
-    f.store.updateTask(f.task.id, { status: 'running' });
+    for (const blocked of ['running', 'waiting_input', 'queued', 'building', 'uncertain', 'failed', 'deleting'] as const) {
+      f.store.updateTask(f.task.id, { status: blocked });
+      await assert.rejects(f.workspace.applyTask(f.task.id), /Wait for the task/);
+    }
+    f.store.updateTask(f.task.id, { status, pendingReview: { route: '/decide', body: {}, previousStatus: status } });
     await assert.rejects(f.workspace.applyTask(f.task.id), /Wait for the task/);
-    f.store.updateTask(f.task.id, { status: 'reviewing' });
+    f.store.updateTask(f.task.id, { pendingReview: null });
     const gate = deferred<void>();
     const writing = f.workspace.reviewWrite(f.task.id, true, () => gate.promise);
     await assert.rejects(f.workspace.applyTask(f.task.id), /current review action/);
@@ -2250,6 +2254,7 @@ for (const mode of ['workspace', 'commit'] as const) test(`tasks save to the man
     const result = await f.workspace.applyTask(f.task.id, false, mode === 'commit' ? { message: 'Reviewed task' } : undefined);
     assert.equal(result.delivery?.mode, mode);
     assert.equal(f.store.task(f.task.id).delivery?.mode, mode);
+    assert.equal(f.store.task(f.task.id).status, 'reviewing', 'saving finishes the review even if the agent was paused');
     assert.deepEqual(f.store.task(f.task.id).review?.files, []);
     assert.match(disk.read(METHOD), /Accepted isolated text/);
     assert.equal(result.git.files.length, mode === 'commit' ? 0 : 1);
@@ -2296,6 +2301,9 @@ test('application conflicts automatically queue one AI suggestion and require re
     assert.ok(run.prompt.includes(METHOD));
     assert.doesNotMatch(f.store.items(f.task.id)[0].text, /git show|refs\//, 'internal version identifiers stay out of the displayed request');
     await assert.rejects(f.workspace.applyTask(f.task.id), /Wait for the task/);
+    await f.workspace.interrupt(f.task.id);
+    await assert.rejects(f.workspace.applyTask(f.task.id), /Wait for the task/);
+    await assert.rejects(f.workspace.applyTask(f.task.id, true), /Wait for the task/, 'pausing an unfinished merge does not enable saving');
     f.store.saveRun({ ...run, status: 'completed' });
     f.store.updateTask(f.task.id, { status: 'reviewing' });
     await f.workspace.applyTask(f.task.id);
@@ -2304,6 +2312,8 @@ test('application conflicts automatically queue one AI suggestion and require re
     const next = fakeRound(app, target.name);
     await assert.rejects(f.workspace.applyTask(f.task.id), /Finish reviewing/);
     await app.review.decide(target.name, { id: 'accept-combination', action: 'accept', round: next.number, changes: next.units.map((unit: any) => unit.id) });
+    await f.workspace.refresh(f.task.id);
+    await f.workspace.interrupt(f.task.id);
     const applied = await f.workspace.applyTask(f.task.id);
     assert.equal(applied.delivery?.mode, 'workspace');
     assert.equal(f.store.task(f.task.id).reconciliation, null);

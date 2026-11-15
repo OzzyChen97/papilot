@@ -90,7 +90,7 @@ const appRoutes = async route => {
     }
     if (combinedOnCommit && body.mode === 'commit' && body.confirmation !== 'combined-version') return route.fulfill({ json: { commitReview: { token: 'combined-version', files: ['main.tex'], diff: '-Original title\n+Final reviewed title' } } });
     combinedOnCommit = false;
-    task.review.files = []; task.reconciliation = null;
+    task.review.files = []; task.reconciliation = null; task.status = 'reviewing';
     task.delivery = { mode: body.mode || 'workspace', accepted: 'accepted', ...(body.mode === 'commit' ? { branch: 'main', commit: 'abc1234' } : {}) };
     if (body.mode === 'commit') commitRequests.push(body);
     return route.fulfill({ json: { delivery: task.delivery } });
@@ -520,6 +520,15 @@ try {
   await expect(applyButton()).toBeVisible();
   await expect(commitButton()).toBeEnabled();
   await expect(card.getByRole('button', { name: 'Archive task', exact: true })).toHaveCount(0);
+  // Pausing the agent leaves the completed review and both save choices usable.
+  // Reloading a paused task must not strand the author at the completion hint.
+  task.status = 'interrupted'; await sync();
+  await expect(applyButton()).toBeEnabled();
+  await expect(commitButton()).toBeEnabled();
+  await page.reload();
+  await expect(applyButton()).toBeEnabled();
+  await expect(commitButton()).toBeEnabled();
+  await expect(taskStatus).toHaveText('Paused');
   await card.getByRole('textbox', { name: 'Commit message' }).fill('My reviewed task');
   await expect(card.getByText('Choose how to save the accepted changes to your manuscript.', { exact: true })).toBeHidden();
   await page.getByRole('button', { name: 'Chat', exact: true }).click();
