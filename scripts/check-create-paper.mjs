@@ -91,13 +91,15 @@ try {
     { id: 'thuthesis', version: '7.6.0', name: 'Tsinghua University Thesis', zh: { name: '清华大学学位论文' }, category: 'thesis', tags: ['tsinghua'], organization: 'Tsinghua University', engine: 'xelatex', thumbnail: origin + '/favicon.png' },
     { id: 'neurips', version: '2026', name: 'NeurIPS 2026', category: 'conference', tags: ['machine learning'], venue: { name: 'NeurIPS', year: 2026 }, engine: 'pdflatex', thumbnail: origin + '/favicon.png' },
   ];
-  for (const link of [null, { id: 'neurips', version: '2026' }]) {
+  for (const link of [null, { id: 'neurips', version: '2026' }, { id: 'neurips', version: '2025' }]) {
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
     const requests = [], state = { version: '0.10.4', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: false, account: null, error: null, models: [] } };
+    // A saved blank-paper draft must not be created while a linked template is still loading.
+    if (link) await context.addInitScript(() => localStorage.setItem('papilot:create-paper', JSON.stringify({ name: 'Old draft', parent: '/home/author', template: null })));
     if (link) await context.addInitScript(link => { let pending = link; window.papilotDesktop = { platform: 'darwin', minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => null, takeNewPaper: async () => { const value = pending; pending = null; return value; }, onNewPaper: () => () => {} }; }, link);
-    await context.route('**/api/**', route => {
+    await context.route('**/api/**', async route => {
       const url = new URL(route.request().url());
-      if (url.pathname === '/api/universe') return route.fulfill({ json: { templates } });
+      if (url.pathname === '/api/universe') { if (link) await new Promise(resolve => setTimeout(resolve, 1500)); return route.fulfill({ json: { templates } }); }
       if (url.pathname === '/api/projects/create-defaults') return route.fulfill({ json: { parent: '/home/author' } });
       if (url.pathname === '/api/projects/create') { const body = route.request().postDataJSON(); requests.push(body); return route.fulfill({ status: 400, json: { error: 'Stop here.' } }); }
       if (url.pathname === '/api/runtime/requirements') return route.fulfill({ json: readyRequirements });
@@ -110,6 +112,15 @@ try {
     const dialog = page.getByRole('dialog', { name: 'Create a new paper', exact: true });
     const chosen = dialog.locator('.template-chosen');
     if (link) {
+      await dialog.locator('.template-card.placeholder').first().waitFor();
+      assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).count(), 0, 'Create waits for the linked template');
+    }
+    if (link?.version === '2025') {
+      // A version the index no longer has asks for a new choice instead of substituting one.
+      await dialog.getByRole('list', { name: 'Templates' }).getByRole('listitem').nth(2).waitFor();
+      assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).count(), 0);
+      await dialog.getByRole('listitem').filter({ hasText: 'NeurIPS 2026' }).click();
+    } else if (link) {
       await chosen.getByText('NeurIPS 2026 · pdfLaTeX').waitFor();
       assert.equal(await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).isVisible(), true, 'A website link opens the details with its template');
     } else {
@@ -137,7 +148,7 @@ try {
     await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).fill('Thesis');
     await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
     await dialog.getByRole('alert').filter({ hasText: 'Stop here.' }).waitFor();
-    assert.deepEqual(requests.at(-1).template, link ?? { id: 'thuthesis', version: '7.6.0' });
+    assert.deepEqual(requests.at(-1).template, link ? { id: 'neurips', version: '2026' } : { id: 'thuthesis', version: '7.6.0' });
     await context.close();
   }
   assert.deepEqual(errors, []);

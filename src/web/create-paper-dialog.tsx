@@ -34,8 +34,9 @@ const uuid = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(ne
 export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(url: string, body?: unknown) => Promise<T>; onDone: (paper: Project) => Promise<void>; onClose: () => void; preset?: { id: string; version: string } }) {
   const dialog = useRef<HTMLDialogElement>(null), pending = useRef(false);
   const [form, setForm] = useState(initialForm), [busy, setBusy] = useState(false), [error, setError] = useState('');
-  // A saved draft or a link from the Universe website starts at the details.
-  const [step, setStep] = useState<'template' | 'details'>(() => preset || initialForm().template || initialForm().name ? 'details' : 'template');
+  // A saved draft starts at the details. A link from the Universe website waits on
+  // the template step until its exact version is found, so Create cannot use another.
+  const [step, setStep] = useState<'template' | 'details'>(() => !preset && (initialForm().template || initialForm().name) ? 'details' : 'template');
   const [templates, setTemplates] = useState<PaperTemplate[] | null>(null), [unavailable, setUnavailable] = useState('');
   const [group, setGroup] = useState<Group>('all'), [query, setQuery] = useState('');
   useEffect(() => {
@@ -47,10 +48,9 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
     const loaded = (list: PaperTemplate[], problem = '') => {
       if (!live) return;
       setTemplates(list); setUnavailable(list.length ? '' : problem);
-      const found = preset && list.find(item => item.id === preset.id);
-      if (found) setForm(current => ({ ...current, template: choiceOf(found) }));
-      else if (preset) setStep('template');
-      else if (!list.length) setStep(current => current === 'template' ? 'details' : current);
+      const found = preset && list.find(item => item.id === preset.id && item.version === preset.version);
+      if (found) { setForm(current => ({ ...current, template: choiceOf(found) })); setStep('details'); }
+      else if (!preset && !list.length) setStep(current => current === 'template' ? 'details' : current);
     };
     void api<{ templates?: PaperTemplate[]; error?: string }>('/universe').then(value => loaded(Array.isArray(value?.templates) ? value.templates : [], value?.error), failure => loaded([], failure instanceof Error ? failure.message : String(failure)));
     return () => { live = false; element.close(); if (opener?.isConnected) opener.focus(); };
