@@ -1448,5 +1448,22 @@
   "Compiled document": "コンパイル済みドキュメント",
   "Files": "ファイル",
   "Loading files…": "ファイルを読み込み中…",
-  "Repository files": "リポジトリのファイル"
+  "Repository files": "リポジトリのファイル",
+  "Archive all": "すべてアーカイブ",
+  "Archive all tasks?": "すべてのタスクをアーカイブしますか？",
+  "Archive all tasks…": "すべてのタスクをアーカイブ…",
+  "Archiving…": "アーカイブ中…",
+  "Delete all": "すべて削除",
+  "Delete all archived tasks?": "アーカイブ済みタスクをすべて削除しますか？",
+  "Delete all archived tasks…": "アーカイブ済みタスクをすべて削除…",
+  "Delete all current tasks?": "未アーカイブのタスクをすべて削除しますか？",
+  "Delete all current tasks…": "未アーカイブのタスクをすべて削除…",
+  "Task list actions": "タスクリストの操作",
+  "Task progress": "タスクの進行状況",
+  "{done} of {total}": "{done} / {total}",
+  "{n} task": "{n} 件のタスク",
+  "{n} tasks": "{n} 件のタスク",
+  "Cannot be undone. Manuscript changes are kept.": "取り消せません。原稿の変更は保持されます。",
+  "{n} task failed.": "{n} 件のタスクの処理に失敗しました。",
+  "{n} tasks failed.": "{n} 件のタスクの処理に失敗しました。"
 }

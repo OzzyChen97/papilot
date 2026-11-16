@@ -1448,5 +1448,22 @@
   "Compiled document": "已編譯的文件",
   "Files": "檔案",
   "Loading files…": "正在載入檔案…",
-  "Repository files": "儲存庫檔案"
+  "Repository files": "儲存庫檔案",
+  "Archive all": "全部封存",
+  "Archive all tasks?": "封存所有任務？",
+  "Archive all tasks…": "封存所有任務…",
+  "Archiving…": "正在封存…",
+  "Delete all": "全部刪除",
+  "Delete all archived tasks?": "刪除所有已封存任務？",
+  "Delete all archived tasks…": "刪除所有已封存任務…",
+  "Delete all current tasks?": "刪除所有未封存任務？",
+  "Delete all current tasks…": "刪除所有未封存任務…",
+  "Task list actions": "任務列表操作",
+  "Task progress": "任務進度",
+  "{done} of {total}": "{done} / {total}",
+  "{n} task": "{n} 個任務",
+  "{n} tasks": "{n} 個任務",
+  "Cannot be undone. Manuscript changes are kept.": "無法復原，原稿中的修改會保留。",
+  "{n} task failed.": "{n} 個任務處理失敗。",
+  "{n} tasks failed.": "{n} 個任務處理失敗。"
 }

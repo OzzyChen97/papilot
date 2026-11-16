@@ -224,5 +224,22 @@
   "{n} places in the paper": "论文中 {n} 处",
   "Add to chat": "添加到聊天",
   "Add to task": "加入任务",
-  "Includes subsections": "包含子章节"
+  "Includes subsections": "包含子章节",
+  "Archive all": "全部归档",
+  "Archive all tasks?": "归档全部任务？",
+  "Archive all tasks…": "归档全部任务…",
+  "Archiving…": "正在归档…",
+  "Delete all": "全部删除",
+  "Delete all archived tasks?": "删除全部归档任务？",
+  "Delete all archived tasks…": "删除全部归档任务…",
+  "Delete all current tasks?": "删除全部未归档任务？",
+  "Delete all current tasks…": "删除全部未归档任务…",
+  "Task list actions": "任务列表操作",
+  "Task progress": "任务进度",
+  "{done} of {total}": "{done} / {total}",
+  "{n} task": "{n} 个任务",
+  "{n} tasks": "{n} 个任务",
+  "Cannot be undone. Manuscript changes are kept.": "无法撤销，原稿中的修改会保留。",
+  "{n} task failed.": "{n} 个任务处理失败。",
+  "{n} tasks failed.": "{n} 个任务处理失败。"
 }

@@ -1448,5 +1448,22 @@
   "Compiled document": "Kompilerat dokument",
   "Files": "Filer",
   "Loading files…": "Läser in filer…",
-  "Repository files": "Arkivfiler"
+  "Repository files": "Arkivfiler",
+  "Archive all": "Arkivera alla",
+  "Archive all tasks?": "Arkivera alla uppgifter?",
+  "Archive all tasks…": "Arkivera alla uppgifter…",
+  "Archiving…": "Arkiverar…",
+  "Delete all": "Radera alla",
+  "Delete all archived tasks?": "Radera alla arkiverade uppgifter?",
+  "Delete all archived tasks…": "Radera alla arkiverade uppgifter…",
+  "Delete all current tasks?": "Radera alla aktuella uppgifter?",
+  "Delete all current tasks…": "Radera alla aktuella uppgifter…",
+  "Task list actions": "Åtgärder för uppgiftslistan",
+  "Task progress": "Uppgiftsförlopp",
+  "{done} of {total}": "{done} av {total}",
+  "{n} task": "{n} uppgift",
+  "{n} tasks": "{n} uppgifter",
+  "Cannot be undone. Manuscript changes are kept.": "Kan inte ångras. Ändringar i manuskriptet behålls.",
+  "{n} task failed.": "{n} uppgift misslyckades.",
+  "{n} tasks failed.": "{n} uppgifter misslyckades."
 }

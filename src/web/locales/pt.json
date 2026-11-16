@@ -1448,5 +1448,22 @@
   "Compiled document": "Documento compilado",
   "Files": "Arquivos",
   "Loading files…": "Carregando arquivos…",
-  "Repository files": "Arquivos do repositório"
+  "Repository files": "Arquivos do repositório",
+  "Archive all": "Arquivar todas",
+  "Archive all tasks?": "Arquivar todas as tarefas?",
+  "Archive all tasks…": "Arquivar todas as tarefas…",
+  "Archiving…": "Arquivando…",
+  "Delete all": "Excluir todas",
+  "Delete all archived tasks?": "Excluir todas as tarefas arquivadas?",
+  "Delete all archived tasks…": "Excluir todas as tarefas arquivadas…",
+  "Delete all current tasks?": "Excluir todas as tarefas atuais?",
+  "Delete all current tasks…": "Excluir todas as tarefas atuais…",
+  "Task list actions": "Ações da lista de tarefas",
+  "Task progress": "Progresso das tarefas",
+  "{done} of {total}": "{done} de {total}",
+  "{n} task": "{n} tarefa",
+  "{n} tasks": "{n} tarefas",
+  "Cannot be undone. Manuscript changes are kept.": "Não pode ser desfeito. As alterações no manuscrito são mantidas.",
+  "{n} task failed.": "{n} tarefa falhou.",
+  "{n} tasks failed.": "{n} tarefas falharam."
 }

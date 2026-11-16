@@ -1448,5 +1448,22 @@
   "Compiled document": "Kompiliertes Dokument",
   "Files": "Dateien",
   "Loading files…": "Dateien werden geladen…",
-  "Repository files": "Repository-Dateien"
+  "Repository files": "Repository-Dateien",
+  "Archive all": "Alle archivieren",
+  "Archive all tasks?": "Alle Aufgaben archivieren?",
+  "Archive all tasks…": "Alle Aufgaben archivieren…",
+  "Archiving…": "Wird archiviert…",
+  "Delete all": "Alle löschen",
+  "Delete all archived tasks?": "Alle archivierten Aufgaben löschen?",
+  "Delete all archived tasks…": "Alle archivierten Aufgaben löschen…",
+  "Delete all current tasks?": "Alle aktuellen Aufgaben löschen?",
+  "Delete all current tasks…": "Alle aktuellen Aufgaben löschen…",
+  "Task list actions": "Aktionen für die Aufgabenliste",
+  "Task progress": "Aufgabenfortschritt",
+  "{done} of {total}": "{done} von {total}",
+  "{n} task": "{n} Aufgabe",
+  "{n} tasks": "{n} Aufgaben",
+  "Cannot be undone. Manuscript changes are kept.": "Nicht rückgängig zu machen. Änderungen im Manuskript bleiben erhalten.",
+  "{n} task failed.": "{n} Aufgabe fehlgeschlagen.",
+  "{n} tasks failed.": "{n} Aufgaben fehlgeschlagen."
 }
