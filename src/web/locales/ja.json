@@ -1449,14 +1449,13 @@
   "Files": "ファイル",
   "Loading files…": "ファイルを読み込み中…",
   "Repository files": "リポジトリのファイル",
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "すべてのページに適用し、この端末に保存します。書き出す PDF の余白は変わりません。",
   "Bottom margin": "下余白",
   "Crop margins": "余白を切り抜く",
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "端をドラッグするか、余白をパーセントで入力します。端にフォーカスを合わせると、矢印キーで調整できます。",
   "Left margin": "左余白",
   "Page {page} of {pages}": "{page} / {pages} ページ",
   "Reset": "リセット",
   "Right margin": "右余白",
   "The page preview could not be loaded.": "ページのプレビューを読み込めませんでした。",
-  "Top margin": "上余白"
+  "Top margin": "上余白",
+  "Drag the edges to crop.": "端をドラッグしてトリミング。"
 }

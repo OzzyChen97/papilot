@@ -1449,14 +1449,13 @@
   "Files": "Dateien",
   "Loading files…": "Dateien werden geladen…",
   "Repository files": "Repository-Dateien",
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "Gilt für alle Seiten und wird auf diesem Gerät gespeichert. Exportierte PDFs behalten ihre vollständigen Ränder.",
   "Bottom margin": "Unterer Rand",
   "Crop margins": "Seitenränder beschneiden",
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "Ziehen Sie die Ränder oder geben Sie Prozentwerte ein. Einen fokussierten Rand können Sie mit den Pfeiltasten verschieben.",
   "Left margin": "Linker Rand",
   "Page {page} of {pages}": "Seite {page} von {pages}",
   "Reset": "Zurücksetzen",
   "Right margin": "Rechter Rand",
   "The page preview could not be loaded.": "Die Seitenvorschau konnte nicht geladen werden.",
-  "Top margin": "Oberer Rand"
+  "Top margin": "Oberer Rand",
+  "Drag the edges to crop.": "Zum Zuschneiden die Ränder ziehen."
 }

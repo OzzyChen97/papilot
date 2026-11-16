@@ -225,14 +225,13 @@
   "Add to chat": "添加到聊天",
   "Add to task": "加入任务",
   "Includes subsections": "包含子章节",
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "应用于所有页面，保存在此设备上；导出的 PDF 保留完整页边距。",
   "Bottom margin": "下边距",
   "Crop margins": "裁剪页边距",
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "拖动边缘或输入页边距百分比。选中边缘后，可用方向键调整。",
   "Left margin": "左边距",
   "Page {page} of {pages}": "第 {page} 页，共 {pages} 页",
   "Reset": "重置",
   "Right margin": "右边距",
   "The page preview could not be loaded.": "无法加载页面预览。",
-  "Top margin": "上边距"
+  "Top margin": "上边距",
+  "Drag the edges to crop.": "拖动边缘裁剪。"
 }

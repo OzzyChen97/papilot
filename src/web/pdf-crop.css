@@ -15,18 +15,13 @@
 .pdf-crop-handle:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:6px}
 .pdf-crop-status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
 .pdf-crop-page{display:flex;align-items:center;justify-content:center;gap:16px;font-size:12px;color:var(--text-2)}
-.pdf-crop-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
-.pdf-crop-fields label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;min-width:0}
-.pdf-crop-fields label>span{display:flex;align-items:center;gap:4px;color:var(--text-3)}
-.pdf-crop-fields input{width:58px;min-height:36px;padding:6px;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--bg);color:var(--text);font:inherit}
 .pdf-crop-dialog footer{margin-top:14px;flex-wrap:wrap}
 .pdf-crop-dialog .icon-button{min-width:36px;min-height:36px}
 .pdf-crop-dialog .button{min-height:36px}
-.pdf-crop-dialog .pdf-crop-help{font-size:12px}
 /* Make room for the extra tool before a medium desktop toolbar wraps. */
 @container (min-width:761px) and (max-width:1000px){.pdf-toolbar .pdf-contents-trigger{width:30px;padding:0;justify-content:center}.pdf-toolbar .pdf-contents-trigger>span,.pdf-toolbar .pdf-contents-trigger>svg:last-child{display:none}}
-@media(pointer:coarse){.pdf-crop-dialog .button,.pdf-crop-dialog .icon-button,.pdf-crop-fields input{min-height:44px}.pdf-crop-dialog .icon-button{min-width:44px}}
-@media(max-width:400px){.pdf-crop-dialog{padding:12px}.pdf-crop-fields{gap:8px}.pdf-crop-fields label{flex-direction:column;align-items:flex-start}.pdf-crop-fields label>span{width:100%}.pdf-crop-fields input{flex:1;min-width:0}}
+@media(pointer:coarse){.pdf-crop-dialog .button,.pdf-crop-dialog .icon-button{min-height:44px}.pdf-crop-dialog .icon-button{min-width:44px}}
+@media(max-width:400px){.pdf-crop-dialog{padding:12px}}
 .pdf-cropped .pdf-container .pdfViewer .page{overflow:clip}
 /* PDF.js fits to the scroll container's width, which excludes no viewer padding. */
 .pdf-cropped .pdf-container .pdfViewer{padding-inline:0}

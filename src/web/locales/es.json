@@ -1449,14 +1449,13 @@
   "Files": "Archivos",
   "Loading files…": "Cargando archivos…",
   "Repository files": "Archivos del repositorio",
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "Se aplica a todas las páginas y se guarda en este dispositivo. Los PDF exportados conservan sus márgenes completos.",
   "Bottom margin": "Margen inferior",
   "Crop margins": "Recortar márgenes",
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "Arrastra los bordes o introduce los márgenes en porcentajes. Usa las flechas para mover el borde seleccionado.",
   "Left margin": "Margen izquierdo",
   "Page {page} of {pages}": "Página {page} de {pages}",
   "Reset": "Restablecer",
   "Right margin": "Margen derecho",
   "The page preview could not be loaded.": "No se pudo cargar la vista previa de la página.",
-  "Top margin": "Margen superior"
+  "Top margin": "Margen superior",
+  "Drag the edges to crop.": "Arrastra los bordes para recortar."
 }

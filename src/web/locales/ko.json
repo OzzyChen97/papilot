@@ -1449,14 +1449,13 @@
   "Files": "파일",
   "Loading files…": "파일 불러오는 중…",
   "Repository files": "저장소 파일",
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "모든 페이지에 적용하고 이 기기에 저장합니다. 내보낸 PDF의 여백은 그대로 유지됩니다.",
   "Bottom margin": "아래쪽 여백",
   "Crop margins": "여백 자르기",
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "가장자리를 드래그하거나 여백을 백분율로 입력하세요. 가장자리에 초점을 맞추면 방향키로 조정할 수 있습니다.",
   "Left margin": "왼쪽 여백",
   "Page {page} of {pages}": "{page} / {pages}페이지",
   "Reset": "초기화",
   "Right margin": "오른쪽 여백",
   "The page preview could not be loaded.": "페이지 미리보기를 불러올 수 없습니다.",
-  "Top margin": "위쪽 여백"
+  "Top margin": "위쪽 여백",
+  "Drag the edges to crop.": "가장자리를 드래그해 자르세요."
 }

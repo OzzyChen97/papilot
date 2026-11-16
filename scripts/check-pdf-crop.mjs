@@ -76,11 +76,34 @@ Second page fixture with a different passage for search and links.
     await expect(text).toBeVisible();
     const cropButton = page.locator('.pdf-crop-toggle');
     const dialog = page.locator('.pdf-crop-dialog');
-    const openCrop = async () => { await cropButton.click(); await expect(dialog.locator('.pdf-crop-preview')).toBeVisible(); };
+    const openCrop = async () => { await cropButton.click(); await expect(dialog.locator('.pdf-crop-preview')).toBeVisible(); await expect(dialog.locator('input')).toHaveCount(0); };
+    const dragMargin = async (edge, margin) => {
+      const preview = await dialog.locator('.pdf-crop-preview').boundingBox();
+      const handle = await dialog.locator('.pdf-crop-handle').nth(edge).boundingBox();
+      const start = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
+      const axis = edge % 2 ? 'y' : 'x', size = edge % 2 ? 'height' : 'width';
+      const end = { ...start, [axis]: preview[axis] + preview[size] * (edge < 2 ? margin : 1 - margin) };
+      // Chromium drives actual touch events on phones; WebKit exercises
+      // pointer capture with a mouse in the same mobile context.
+      if (mobile && !useWebkit) {
+        const session = await page.context().newCDPSession(page);
+        await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [start] });
+        await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [end] });
+        await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await session.detach();
+      } else {
+        await page.mouse.move(start.x, start.y); await page.mouse.down();
+        await page.mouse.move(end.x, end.y, { steps: 8 }); await page.mouse.up();
+      }
+      await expect.poll(async () => {
+        const box = await dialog.locator('.pdf-crop-handle').nth(edge).boundingBox();
+        return Math.abs(box[axis] + box[size] / 2 - end[axis]);
+      }).toBeLessThan(1);
+    };
     const apply = async () => { await dialog.getByRole('button', { name: 'Apply', exact: true }).click(); await expect(dialog).toHaveCount(0); await expect(page.locator('.pdf-cropped')).toBeVisible(); await expect(text).toBeVisible(); };
     const saved = () => page.evaluate(() => localStorage.getItem('papilot:pdf-crop:pdf:paper:main.tex'));
     const sync = () => page.evaluate(() => window.dispatchEvent(new Event('focus')));
-    return { context, page, manuscript, text, cropButton, dialog, openCrop, apply, saved, sync, mutations, sourceRequests };
+    return { context, page, manuscript, text, cropButton, dialog, openCrop, dragMargin, apply, saved, sync, mutations, sourceRequests };
   }
   const f = await open();
   try {
@@ -95,26 +118,9 @@ Second page fixture with a different passage for search and links.
     await page.getByRole('textbox', { name: 'Search the PDF', exact: true }).fill('Crop fixture');
     await expect(page.locator('.pdf-container .highlight')).toHaveCount(1);
     await f.openCrop();
-    const preview = await dialog.locator('.pdf-crop-preview').boundingBox();
-    const leftHandle = dialog.getByRole('button', { name: 'Left margin', exact: true });
-    const handle = await leftHandle.boundingBox();
-    // Real touch drag on Chromium. WebKit exercises the same pointer-capture
-    // path with the mouse, in a context with touch and a mobile viewport.
-    if (!useWebkit) {
-      const session = await page.context().newCDPSession(page);
-      const point = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
-      await session.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [point] });
-      await session.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ ...point, x: point.x + preview.width * 0.1 }] });
-      await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-      await session.detach();
-    } else {
-      await page.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2); await page.mouse.down();
-      await page.mouse.move(handle.x + handle.width / 2 + preview.width * 0.1, handle.y + handle.height / 2, { steps: 8 }); await page.mouse.up();
-    }
-    await expect(dialog.getByRole('spinbutton', { name: 'Left margin' })).toHaveValue('10');
-    await dialog.getByRole('spinbutton', { name: 'Right margin' }).fill('10');
-    await dialog.getByRole('spinbutton', { name: 'Top margin' }).fill('8');
-    await dialog.getByRole('spinbutton', { name: 'Bottom margin' }).fill('8');
+    await f.dragMargin(0, 0.1); await f.dragMargin(2, 0.1);
+    await f.dragMargin(1, 0.08); await f.dragMargin(3, 0.08);
+    for (const [edge, label] of ['Left margin (10%)', 'Top margin (8%)', 'Right margin (10%)', 'Bottom margin (8%)'].entries()) await expect(dialog.locator('.pdf-crop-handle').nth(edge)).toHaveAccessibleName(label);
     await page.screenshot({ path: 'test-results/pdf-crop-mobile-editor.png' });
     await f.apply();
     await expect(page.locator('.pdf-container .highlight')).toHaveCount(1);
@@ -123,12 +129,12 @@ Second page fixture with a different passage for search and links.
     await expect.poll(async () => (await text.boundingBox()).height / before.height).toBeGreaterThan(1.2);
     await expect.poll(() => page.locator('.pdf-container').evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(2);
     const preference = JSON.parse(await f.saved());
-    assert.ok(Math.abs(preference[0] - 0.1) < 0.01);
+    for (const [edge, expected] of [0.1, 0.08, 0.9, 0.92].entries()) assert.ok(Math.abs(preference[edge] - expected) < 0.005, 'all four dragged edges are saved');
     assert.deepEqual(f.mutations, [], 'cropping sends no server mutation');
     await page.screenshot({ path: 'test-results/pdf-crop-mobile-reading.png' });
 
     await f.openCrop();
-    await dialog.getByRole('spinbutton', { name: 'Left margin' }).fill('20');
+    await f.dragMargin(0, 0.2);
     await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
     assert.deepEqual(JSON.parse(await f.saved()), preference, 'cancel does not save the draft');
     await expect(f.cropButton).toBeFocused();
@@ -180,9 +186,7 @@ Second page fixture with a different passage for search and links.
       return [(word.left - page.left) / page.width, (word.top - page.top) / page.height];
     });
     await desktop.openCrop();
-    await dialog.getByRole('spinbutton', { name: 'Left margin' }).fill('10');
-    await dialog.getByRole('spinbutton', { name: 'Right margin' }).fill('10');
-    await dialog.getByRole('spinbutton', { name: 'Top margin' }).fill('8');
+    await desktop.dragMargin(0, 0.1); await desktop.dragMargin(2, 0.1); await desktop.dragMargin(1, 0.08);
     await desktop.apply();
     await dragPdfText(page, text);
     await page.locator('.add-source').click();
@@ -193,12 +197,16 @@ Second page fixture with a different passage for search and links.
     assert.ok(Math.abs(selected.rect[1] - original[1]) < 0.01, 'source lookup receives original vertical coordinates');
     await page.screenshot({ path: 'test-results/pdf-crop-desktop.png' });
     await desktop.openCrop();
-    const edge = dialog.getByRole('button', { name: 'Left margin', exact: true });
+    const edge = dialog.getByRole('button', { name: 'Left margin (10%)', exact: true });
+    const beforeKey = await edge.boundingBox(), preview = await dialog.locator('.pdf-crop-preview').boundingBox();
+    const storedCrop = await desktop.saved();
     await edge.focus(); await page.keyboard.press('ArrowRight');
-    await expect(dialog.getByRole('spinbutton', { name: 'Left margin' })).toHaveValue('11');
+    const movedEdge = dialog.getByRole('button', { name: 'Left margin (11%)', exact: true });
+    await expect(movedEdge).toBeFocused();
+    await expect.poll(async () => Math.abs((await movedEdge.boundingBox()).x - beforeKey.x - preview.width * 0.01)).toBeLessThan(0.1);
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
-    assert.equal(JSON.parse(await desktop.saved())[0], 0.1, 'Escape discards keyboard adjustments');
+    assert.equal(await desktop.saved(), storedCrop, 'Escape discards keyboard adjustments');
     await page.locator('.pdf-container').focus(); await page.keyboard.press('m');
     const region = await text.boundingBox();
     await page.mouse.move(region.x, region.y); await page.mouse.down();
@@ -226,7 +234,7 @@ Second page fixture with a different passage for search and links.
       return Math.floor((1 - (word.bottom - page.top) / page.height) * 100);
     });
     await tight.openCrop();
-    await dialog.getByRole('spinbutton', { name: 'Bottom margin' }).fill(String(bottom));
+    await tight.dragMargin(3, bottom / 100);
     await tight.apply();
     await dragPdfText(page, text);
     const action = page.locator('.add-note');

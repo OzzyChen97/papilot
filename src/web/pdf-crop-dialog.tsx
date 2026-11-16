@@ -9,7 +9,7 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
   document: PDFDocumentProxy; page: number; crop: PdfCrop; onApply: (crop: PdfCrop) => void; onClose: () => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null), stage = useRef<HTMLDivElement>(null), preview = useRef<HTMLDivElement>(null), canvas = useRef<HTMLCanvasElement>(null);
-  const title = useId(), hint = useId(), fields = useId();
+  const title = useId(), hint = useId();
   const [draft, setDraft] = useState<PdfCrop>(crop), [number, setNumber] = useState(page), [retry, setRetry] = useState(0);
   const [ready, setReady] = useState(false), [error, setError] = useState(false);
   const drag = useRef<{ id: number; edge: number; start: number; value: number; size: number } | null>(null);
@@ -47,16 +47,15 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
     observer.observe(stage.current!);
     return () => { disposed = true; generation++; observer.disconnect(); cancelAnimationFrame(frame); render?.cancel(); };
   }, [document, number, retry]);
-  const margin = (edge: number) => Math.round((edge < 2 ? draft[edge] : 1 - draft[edge]) * 100);
   return <dialog ref={dialog} className="pdf-crop-dialog" aria-labelledby={title} onClose={onClose}>
     <header><h2 id={title}>{t('Crop margins')}</h2><button type="button" className="icon-button" aria-label={t('Close')} onClick={() => dialog.current!.close()}><Icon name="close"/></button></header>
-    <p id={hint}>{t('Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.')}</p>
+    <p id={hint}>{t('Drag the edges to crop.')}</p>
     <div className="pdf-crop-stage" ref={stage}>
       <div className="pdf-crop-preview" ref={preview} style={{ visibility: ready ? 'visible' : 'hidden' }}>
         <canvas ref={canvas} aria-label={t('Page {page}', { page: number })}/>
         <div className="pdf-crop-shade" style={{ clipPath: `polygon(0 0,100% 0,100% 100%,0 100%,0 0,${draft[0] * 100}% ${draft[1] * 100}%,${draft[0] * 100}% ${draft[3] * 100}%,${draft[2] * 100}% ${draft[3] * 100}%,${draft[2] * 100}% ${draft[1] * 100}%,${draft[0] * 100}% ${draft[1] * 100}%)` }}/>
         <div className="pdf-crop-outline" style={{ left: `${draft[0] * 100}%`, top: `${draft[1] * 100}%`, width: `${(draft[2] - draft[0]) * 100}%`, height: `${(draft[3] - draft[1]) * 100}%` }}/>
-        {labels.map((label, edge) => <button key={edge} type="button" className={'pdf-crop-handle ' + (edge % 2 ? 'horizontal' : 'vertical')} aria-label={label} aria-describedby={hint}
+        {labels.map((label, edge) => <button key={edge} type="button" className={'pdf-crop-handle ' + (edge % 2 ? 'horizontal' : 'vertical')} aria-label={`${label} (${Math.round((edge < 2 ? draft[edge] : 1 - draft[edge]) * 100)}%)`} aria-describedby={hint}
           style={{ left: `${(edge % 2 ? (draft[0] + draft[2]) / 2 : draft[edge]) * 100}%`, top: `${(edge % 2 ? draft[edge] : (draft[1] + draft[3]) / 2) * 100}%` }}
           onPointerDown={event => {
             if (event.button !== 0 || !event.isPrimary) return;
@@ -79,11 +78,6 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
       {!ready && <div className="pdf-crop-status">{error ? <><p role="alert">{t('The page preview could not be loaded.')}</p><button type="button" className="button secondary" onClick={() => setRetry(value => value + 1)}>{t('Retry')}</button></> : <span className="spinner" aria-label={t('Loading…')}/>}</div>}
     </div>
     <div className="pdf-crop-page"><button type="button" className="icon-button" aria-label={t('Previous page')} disabled={number <= 1} onClick={() => setNumber(value => value - 1)}><Icon name="chevronLeft"/></button><span>{t('Page {page} of {pages}', { page: number, pages: document.numPages })}</span><button type="button" className="icon-button" aria-label={t('Next page')} disabled={number >= document.numPages} onClick={() => setNumber(value => value + 1)}><Icon name="chevronRight"/></button></div>
-    <div className="pdf-crop-fields">{labels.map((label, edge) => <label key={edge} htmlFor={`${fields}-${edge}`}>{label}<span><input id={`${fields}-${edge}`} type="number" min="0" max={Math.round((edge < 2 ? draft[edge + 2] - CROP_STEP : 1 - draft[edge - 2] - CROP_STEP) * 100)} step="1" inputMode="numeric" value={margin(edge)} onChange={event => {
-      const value = event.currentTarget.valueAsNumber;
-      if (Number.isFinite(value)) setDraft(current => moveCropEdge(current, edge, edge < 2 ? value / 100 : 1 - value / 100));
-    }}/>%</span></label>)}</div>
-    <p className="pdf-crop-help">{t('Applies to every page. Saved on this device; exported PDFs keep their full margins.')}</p>
     <footer><button type="button" className="button secondary" onClick={() => { onApply(FULL_PAGE); dialog.current!.close(); }}>{t('Reset')}</button><div><button type="button" className="button secondary" autoFocus onClick={() => dialog.current!.close()}>{t('Cancel')}</button><button type="button" className="button primary" disabled={!ready} onClick={() => { onApply(draft); dialog.current!.close(); }}>{t('Apply')}</button></div></footer>
   </dialog>;
 }

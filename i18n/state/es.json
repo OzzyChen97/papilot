@@ -5794,11 +5794,6 @@
     "textHash": "53e3cf3287d99ba940c58debc0ca73bff0c74d89001d6916e1b03ca33b6b4e84",
     "model": "gemini-4-argon-medium"
   },
-  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": {
-    "revision": "7c7688e4d9530a8db019454044c9eb9d0ec54533f8bb97606b54773e9a900c39",
-    "textHash": "4fae91f524c5773d39dab837dbac6aeec47a68f56b16077a2712019ee231b4fb",
-    "model": "codex"
-  },
   "Bottom margin": {
     "revision": "077238ff3f96c4cfa6b9619b7d503636e63ed3998fb0be64f2cb4c3d638e3444",
     "textHash": "3ef0c60764d9d6e1ca079bb3c6a4d7de496fb4d2f565eb9daf961c3825928bbb",
@@ -5807,11 +5802,6 @@
   "Crop margins": {
     "revision": "e60c4405dd3145fdd274768d9692957beaa1d6e15f45c3f43bb6f2e81b951441",
     "textHash": "585a64bdb0b6209aa0711a8c233ece80e3109e8e0a44da1c7deab2d213bb35f7",
-    "model": "codex"
-  },
-  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": {
-    "revision": "efca79808daa4e7f3a69b39be78b92d1597ac2cb741690c4b8363c132da9312d",
-    "textHash": "eaaebc8baf5686d65e465cc893e9df33b7dc2a724d00727e2b94303a753ed3ae",
     "model": "codex"
   },
   "Left margin": {
@@ -5842,6 +5832,11 @@
   "Top margin": {
     "revision": "a3906616e59f163a4a8b78c2c847804941a53f370fdcf4c89d1d0cdab7d8f1cb",
     "textHash": "1f017e8ff7ea263c62fc16041712b9a3ddc7c2cb7cfb89377771edc1a6088984",
+    "model": "codex"
+  },
+  "Drag the edges to crop.": {
+    "revision": "012dc60c89b51134be2bb7038175ad4bed4fe0ea91af9af3557db151a48e877d",
+    "textHash": "6ae81e56147901d46a85da624f194c29def2d0d79c4f8064d8637ef77e204b3c",
     "model": "codex"
   }
 }
