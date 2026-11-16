@@ -90,6 +90,10 @@ try {
   const templates = [
     { id: 'thuthesis', version: '7.6.0', name: 'Tsinghua University Thesis', zh: { name: '清华大学学位论文' }, category: 'thesis', tags: ['tsinghua'], organization: 'Tsinghua University', engine: 'xelatex', thumbnail: origin + '/favicon.png' },
     { id: 'neurips', version: '2026', name: 'NeurIPS 2026', category: 'conference', tags: ['machine learning'], venue: { name: 'NeurIPS', year: 2026 }, engine: 'pdflatex', thumbnail: origin + '/favicon.png' },
+    { id: 'acm-pacmpl', version: '2.21', name: 'PACMPL (POPL, PLDI, ICFP, OOPSLA)', category: 'conference', tags: ['acm'], organization: 'ACM', engine: 'pdflatex', thumbnail: origin + '/favicon.png' },
+    // A conference that reuses a shared template is a row, not another first page.
+    { id: 'pldi', version: '2.21', name: 'PLDI 2027', description: 'Programming Language Design and Implementation', category: 'conference', tags: ['PLDI'], venue: { name: 'PLDI', year: 2027, ccf: 'A', full: 'Programming Language Design and Implementation' }, template: 'acm-pacmpl', engine: 'pdflatex', thumbnail: origin + '/favicon.png' },
+    { id: 'popl', version: '2.21', name: 'POPL 2027', description: 'Principles of Programming Languages', category: 'conference', tags: ['POPL'], venue: { name: 'POPL', year: 2027, ccf: 'A', full: 'Principles of Programming Languages' }, template: 'acm-pacmpl', engine: 'pdflatex', thumbnail: origin + '/favicon.png' },
   ];
   for (const link of [null, { id: 'neurips', version: '2026' }, { id: 'neurips', version: '2025' }]) {
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
@@ -127,10 +131,19 @@ try {
       await page.getByRole('button', { name: 'New paper', exact: true }).first().click();
       const grid = dialog.getByRole('list', { name: 'Templates' });
       await grid.getByRole('listitem').nth(2).waitFor();
-      assert.deepEqual(await grid.getByRole('listitem').allInnerTexts().then(items => items.map(item => item.split('\n')[0])), ['Blank paper', 'Tsinghua University Thesis', 'NeurIPS 2026']);
+      assert.deepEqual(await grid.getByRole('listitem').allInnerTexts().then(items => items.map(item => item.split('\n')[0])), ['Blank paper', 'Tsinghua University Thesis', 'NeurIPS 2026', 'PACMPL (POPL, PLDI, ICFP, OOPSLA)']);
+      const venues = dialog.getByRole('group', { name: 'Conferences' }).locator('.template-venue-name');
+      assert.equal(await venues.count(), 0, 'Conferences are listed only in their group or when a search matches them');
       await dialog.getByRole('button', { name: 'Conferences', exact: true }).click();
-      assert.deepEqual(await grid.getByRole('listitem').allInnerTexts().then(items => items.map(item => item.split('\n')[0])), ['NeurIPS 2026']);
+      assert.equal(await grid.getByRole('listitem').count(), 0);
+      assert.deepEqual(await venues.allInnerTexts(), ['PLDI 2027', 'POPL 2027', 'NeurIPS 2026'], 'CCF A first, then venues without a rank');
       await dialog.getByRole('button', { name: 'All', exact: true }).click();
+      // A search matches a conference by its own name, not by the shared template's name.
+      await dialog.getByRole('searchbox', { name: 'Search templates' }).fill('pldi');
+      assert.deepEqual(await venues.allInnerTexts(), ['PLDI 2027']);
+      await venues.first().click();
+      await chosen.getByText('PACMPL (POPL, PLDI, ICFP, OOPSLA) · pdfLaTeX', { exact: true }).waitFor();
+      await chosen.getByRole('button', { name: 'Change…', exact: true }).click();
       await dialog.getByRole('searchbox', { name: 'Search templates' }).fill('tsinghua');
       assert.deepEqual(await grid.getByRole('listitem').allInnerTexts().then(items => items.map(item => item.split('\n')[0])), ['Tsinghua University Thesis']);
       await page.setViewportSize({ width: 360, height: 740 });

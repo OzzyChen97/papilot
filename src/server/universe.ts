@@ -13,7 +13,9 @@ export type UniverseTemplate = {
   id: string; version: string; name: string; description: string;
   zh?: { name?: string; description?: string };
   category: string; tags: string[]; languages: string[];
-  organization?: string; venue?: { name: string; year: number };
+  organization?: string; venue?: { name: string; year?: number; ccf?: 'A' | 'B' | 'C'; area?: string; full?: string };
+  // A conference that reuses another template's files names that template.
+  template?: string;
   license: string; main: string; engine: string;
   thumbnail?: string; page: string;
   archive: { url: string; sha256: string; size: number };
@@ -56,7 +58,14 @@ function template(raw: Record<string, any>, base: string): UniverseTemplate | un
     tags: Array.isArray(raw.tags) ? raw.tags.map(tag => text(tag, 40)).filter((tag): tag is string => !!tag).slice(0, 12) : [],
     languages: Array.isArray(raw.languages) ? raw.languages.filter((language: unknown) => typeof language === 'string' && /^[a-z]{2}(?:-[A-Z][a-z]{3})?$/.test(language)) : [],
     ...(text(raw.organization, 80) ? { organization: text(raw.organization, 80) } : {}),
-    ...(venue && text(venue.name, 40) && Number.isInteger(venue.year) ? { venue: { name: text(venue.name, 40)!, year: venue.year } } : {}),
+    ...(venue && text(venue.name, 40) ? { venue: {
+      name: text(venue.name, 40)!,
+      ...(Number.isInteger(venue.year) ? { year: venue.year } : {}),
+      ...(['A', 'B', 'C'].includes(venue.ccf) ? { ccf: venue.ccf } : {}),
+      ...(typeof venue.area === 'string' && ID.test(venue.area) && venue.area.length <= 20 ? { area: venue.area } : {}),
+      ...(text(venue.full, 200) ? { full: text(venue.full, 200) } : {}),
+    } } : {}),
+    ...(typeof raw.template === 'string' && ID.test(raw.template) && raw.template.length <= 80 ? { template: raw.template } : {}),
     license: text(raw.license, 120) ?? 'unknown', main, engine: raw.engine,
     ...(inside(base, raw.thumbnail) ? { thumbnail: inside(base, raw.thumbnail) } : {}),
     page,

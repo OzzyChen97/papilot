@@ -61,10 +61,17 @@ test('index keeps valid templates under the Universe base and caches the list', 
     entry('Bad_ID', archive),
     entry('thesis', archive, { name: 'Duplicate' }),
     { id: 'broken' },
+    entry('pldi', archive, { name: 'PLDI', category: 'conference', template: 'thesis', venue: { name: 'PLDI', ccf: 'A', area: 'se', full: 'Programming Language Design and Implementation', basis: 'high' } }),
+    entry('popl', archive, { name: 'POPL', category: 'conference', template: '../x', venue: { name: 'POPL', year: 'soon', ccf: 'S' } }),
   ] };
   const f = universe(t, {}, index);
   const templates = await f.client.templates();
-  assert.deepEqual(templates.map(item => item.id), ['thesis']);
+  assert.deepEqual(templates.map(item => item.id), ['thesis', 'pldi', 'popl']);
+  // A conference keeps its CCF data and the template it reuses; a year is optional and bad values are dropped.
+  assert.deepEqual(templates[1].venue, { name: 'PLDI', ccf: 'A', area: 'se', full: 'Programming Language Design and Implementation' });
+  assert.equal(templates[1].template, 'thesis');
+  assert.deepEqual(templates[2].venue, { name: 'POPL' });
+  assert.equal(templates[2].template, undefined);
   assert.equal(templates[0].zh?.name, '学位论文');
   assert.equal(templates[0].thumbnail, BASE + 'v1/templates/thesis/1.0.0/thumbnail.png');
   assert.equal(templates[0].archive.url, BASE + 'v1/templates/thesis/1.0.0.zip');

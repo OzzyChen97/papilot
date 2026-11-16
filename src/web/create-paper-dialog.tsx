@@ -10,8 +10,9 @@ import './create-paper-dialog.css';
 
 const draftKey = 'papilot:create-paper', identityKey = draftKey + ':request';
 // A Universe template as /api/universe lists it; null below means the blank paper.
-export type PaperTemplate = { id: string; version: string; name: string; zh?: { name?: string }; category: string; tags: string[]; organization?: string; venue?: { name: string; year: number }; engine: string; thumbnail?: string };
-type Choice = Pick<PaperTemplate, 'id' | 'version' | 'name' | 'zh' | 'engine' | 'thumbnail' | 'organization' | 'venue'>;
+export type PaperTemplate = { id: string; version: string; name: string; description?: string; zh?: { name?: string }; category: string; tags: string[]; organization?: string; venue?: { name: string; year?: number; ccf?: 'A' | 'B' | 'C'; full?: string }; template?: string; engine: string; thumbnail?: string };
+// family: the name of the shared template a conference uses (PLDI 2027 → PACMPL).
+type Choice = Pick<PaperTemplate, 'id' | 'version' | 'name' | 'zh' | 'engine' | 'thumbnail' | 'organization' | 'venue'> & { family?: string };
 type Form = { name: string; parent: string; template: Choice | null };
 function initialForm(): Form {
   try {
@@ -28,8 +29,11 @@ const groupLabel = (group: Group) => ({ all: t('All'), thesis: t('Theses'), conf
 const ENGINE: Record<string, string> = { pdflatex: 'pdfLaTeX', xelatex: 'XeLaTeX', lualatex: 'LuaLaTeX' };
 const templateName = (template: Choice) => locale().startsWith('zh') && template.zh?.name ? template.zh.name : template.name;
 // Where a template comes from, unless its name already says so (NeurIPS 2026).
-const templateMeta = (template: Choice) => { const from = template.venue ? `${template.venue.name} ${template.venue.year}` : template.organization ?? ''; return template.name.includes(from) ? '' : from; };
-const choiceOf = ({ id, version, name, zh, engine, thumbnail, organization, venue }: PaperTemplate): Choice => ({ id, version, name, ...(zh ? { zh } : {}), engine, ...(thumbnail ? { thumbnail } : {}), ...(organization ? { organization } : {}), ...(venue ? { venue } : {}) });
+const templateMeta = (template: Choice) => { if (template.family) return template.family; const from = template.venue ? [template.venue.name, template.venue.year].filter(Boolean).join(' ') : template.organization ?? ''; return template.name.includes(from) ? '' : from; };
+const choiceOf = ({ id, version, name, zh, engine, thumbnail, organization, venue }: PaperTemplate, family?: string): Choice => ({ id, version, name, ...(zh ? { zh } : {}), engine, ...(thumbnail ? { thumbnail } : {}), ...(organization ? { organization } : {}), ...(venue ? { venue } : {}), ...(family ? { family } : {}) });
+// Conferences are listed by CCF rank (A, B, C, then venues outside the list).
+const isVenue = (template: PaperTemplate) => Boolean(template.template || template.venue);
+const rankOf = (template: PaperTemplate) => template.venue?.ccf ? 'ABC'.indexOf(template.venue.ccf) : 3;
 // crypto.randomUUID is unavailable on LAN HTTP. Keep a UUID-shaped random ID.
 const uuid = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
 export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(url: string, body?: unknown) => Promise<T>; onDone: (paper: Project) => Promise<void>; onClose: () => void; preset?: { id: string; version: string } }) {
@@ -50,7 +54,7 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
       if (!live) return;
       setTemplates(list); setUnavailable(list.length ? '' : problem);
       const found = preset && list.find(item => item.id === preset.id && item.version === preset.version);
-      if (found) { setForm(current => ({ ...current, template: choiceOf(found) })); setStep('details'); }
+      if (found) { setForm(current => ({ ...current, template: choiceOf(found, list.find(item => item.id === found.template)?.name) })); setStep('details'); }
       else if (!preset && !list.length) setStep(current => current === 'template' ? 'details' : current);
     };
     void api<{ templates?: PaperTemplate[]; error?: string }>('/universe').then(value => loaded(Array.isArray(value?.templates) ? value.templates : [], value?.error), failure => loaded([], failure instanceof Error ? failure.message : String(failure)));
@@ -58,7 +62,7 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
   }, []);
   useEffect(() => {
     if (step === 'details') dialog.current?.querySelector<HTMLInputElement>('[name="name"]')?.focus();
-    else dialog.current?.querySelector<HTMLElement>('.template-card[aria-pressed="true"], .template-card')?.focus();
+    else dialog.current?.querySelector<HTMLElement>('.template-card[aria-pressed="true"], .template-venue[aria-pressed="true"], .template-card')?.focus();
   }, [step]);
   useEffect(() => { browserStorage.setItem(draftKey, JSON.stringify(form)); }, [form]);
   function close() { if (!pending.current) onClose(); }
@@ -83,8 +87,15 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
   }
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const groups = GROUPS.filter(key => templates?.some(item => groupOf(item) === key));
-  const shown = (templates || []).filter(item => (group === 'all' || groupOf(item) === group) && words.every(word => [item.id, item.name, item.zh?.name, item.organization, item.venue?.name, ...item.tags].some(value => value?.toLowerCase().includes(word))));
-  const pick = (template: PaperTemplate | null) => { setForm(current => ({ ...current, template: template && choiceOf(template) })); setError(''); setStep('details'); };
+  const familyName = (item: PaperTemplate) => item.template ? templates?.find(other => other.id === item.template)?.name : undefined;
+  // A conference matches its shared template by id (lipics), not by that template's name,
+  // which lists other venues (PACMPL (POPL, PLDI, …)).
+  const matches = (item: PaperTemplate) => words.every(word => [item.id, item.name, item.zh?.name, item.organization, item.venue?.name, item.venue?.full, item.template, ...item.tags].some(value => value?.toLowerCase().includes(word)));
+  // Shared templates show as first pages; conferences that reuse them as a list, in
+  // the Conferences group or when a search matches them.
+  const shown = group === 'conference' ? [] : (templates || []).filter(item => !item.template && (group === 'all' || groupOf(item) === group) && matches(item));
+  const venues = group === 'conference' || (group === 'all' && words.length) ? (templates || []).filter(item => isVenue(item) && matches(item)).sort((a, b) => rankOf(a) - rankOf(b) || a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })) : [];
+  const pick = (template: PaperTemplate | null) => { setForm(current => ({ ...current, template: template && choiceOf(template, familyName(template)) })); setError(''); setStep('details'); };
   const offered = Boolean(templates?.length) || Boolean(form.template);
   return <dialog ref={dialog} className="modal-backdrop" aria-labelledby="create-paper-title" onKeyDown={keepDialogFocus} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section className={'modal create-paper-dialog' + (step === 'template' ? ' choosing' : '')}>
@@ -106,6 +117,14 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
             <span className="template-meta">{templateMeta(item)}</span>
           </button>)}
           {templates === null && [0, 1, 2].map(key => <span key={key} className="template-card placeholder" aria-hidden="true"><span className="template-thumb"/></span>)}
+          {venues.length > 0 && <div className="template-venues" role="group" aria-label={t('Conferences')}>
+            {venues.map(item => <button key={item.id} type="button" className="template-venue" aria-pressed={form.template?.id === item.id} title={item.venue?.full ?? item.description} onClick={() => pick(item)}>
+              <span className={'template-rank' + (item.venue?.ccf ? ' rank-' + item.venue.ccf.toLowerCase() : '')} title={item.venue?.ccf ? 'CCF ' + item.venue.ccf : undefined}>{item.venue?.ccf ?? '·'}</span>
+              <span className="template-venue-name">{templateName(item)}</span>
+              <span className="template-venue-full">{item.venue?.full ?? item.description}</span>
+              <span className="template-venue-family">{familyName(item) ?? ''}</span>
+            </button>)}
+          </div>}
         </div>
         {unavailable && <p className="template-status" role="status">{unavailable}</p>}
       </> : <>
