@@ -91,7 +91,7 @@ try {
   await words().first().waitFor();
   await expect(rail().getByRole('button')).toHaveCount(13);
   await expect(tool('Undo')).toBeDisabled(); await expect(tool('Redo')).toBeDisabled();
-  assert.deepEqual(await rail().getByRole('button').evaluateAll(buttons => buttons.slice(-2).map(button => button.getAttribute('aria-label'))), ['Undo', 'Redo']);
+  assert.deepEqual(await rail().getByRole('button').evaluateAll(buttons => buttons.slice(-3).map(button => button.getAttribute('aria-label'))), ['Crop margins', 'Undo', 'Redo']);
   const railBox = await rail().boundingBox(), redoBox = await tool('Redo').boundingBox();
   const bottomGap = railBox.y + railBox.height - redoBox.y - redoBox.height;
   assert.ok(bottomGap >= 0 && bottomGap < 12, 'History belongs inside the bottom of the rail');
@@ -166,7 +166,7 @@ try {
   // changing its popover stack. The hint must wait and never re-enter it.
   for (let repeat = 0; repeat < 3; repeat++) {
     await tool('Collapse marking tools').focus();
-    for (const name of ['Crop margins', 'Find in PDF', 'Magic pen']) {
+    for (const name of ['Find in PDF', 'Magic pen']) {
       await page.keyboard.press('Tab'); await expect(tool(name)).toBeFocused();
     }
     await expect(tool('Magic pen').locator('.rail-tip')).toBeVisible();

@@ -33,11 +33,12 @@ function showRailTip(button: Element | null) {
 }
 
 // Shared by the manuscript and the embedded review; gestures stay with each viewer.
-export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended, editing, stamps, locked, onLock, history, sourceTool, readingTools }: {
+export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended, editing, stamps, locked, onLock, history, sourceTool, readingTools, endTools }: {
   tool: PdfTool; onTool: (tool: PdfTool) => void;
   /** Offer the tool that opens a passage's LaTeX for editing by hand. */
   sourceTool?: boolean;
   readingTools?: ReactNode;
+  endTools?: ReactNode;
   group: NoteGroup | null; onGroup?: (group: NoteGroup | null) => void;
   disabled?: boolean; suspended?: boolean; editing?: boolean;
   stamps: Stamp[]; locked: number | null; onLock: (slot: number | null) => void;
@@ -144,6 +145,7 @@ export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended,
             : <button type="button" className="rail-tool" aria-label={item.label} aria-pressed={tool === item.id} aria-keyshortcuts={item.key} disabled={item.id !== 'select' && item.id !== 'hand' && item.id !== 'source' && disabled} onClick={() => onTool(item.id)}>{content}</button>}
         </Fragment>;
       })}
+      {!collapsed && endTools}
       </div>
       {!collapsed && history && <div className="rail-history">
         <span className="rail-separator" aria-hidden="true"/>

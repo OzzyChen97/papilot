@@ -184,7 +184,7 @@ Turn on **Settings → Notifications** to receive browser notifications while Pa
 
 ### Crop PDF margins
 
-Choose **Crop margins** beside **Find** at the start of the PDF tool rail (the floating bottom toolbar on phones, or the left toolbar on desktop). Narrow desktop panels and read-only PDFs keep these controls in the top bar. The crop preview follows the page proportions and fits the available screen space. Drag its four edges, or focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose the checkmark (**Apply**) in the title bar to apply it to the whole document and fit the remaining width.
+Choose **Crop margins** near the end of the PDF tool rail, before Undo and Redo (the floating bottom toolbar on phones, or the left toolbar on desktop). **Find** stays at the start. Narrow desktop panels and read-only PDFs keep these controls in the top bar. The crop preview follows the page proportions and fits the available screen space. Drag its four edges, or focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose the checkmark (**Apply**) in the title bar to apply it to the whole document and fit the remaining width.
 
 <img src="assets/pdf-crop-editor.png" alt="Adjusting the four PDF margins on a phone" width="280"> <img src="assets/pdf-crop-reading.png" alt="Reading the cropped PDF at Fit width" width="280">
 
