@@ -165,11 +165,13 @@ try {
   // Closing a menu restores keyboard focus while the browser is still
   // changing its popover stack. The hint must wait and never re-enter it.
   for (let repeat = 0; repeat < 3; repeat++) {
-    await tool('Collapse marking tools').focus(); await page.keyboard.press('Tab');
-    await expect(tool('Magic pen')).toBeFocused();
+    await tool('Collapse marking tools').focus();
+    for (const name of ['Crop margins', 'Find in PDF', 'Magic pen']) {
+      await page.keyboard.press('Tab'); await expect(tool(name)).toBeFocused();
+    }
     await expect(tool('Magic pen').locator('.rail-tip')).toBeVisible();
     await page.keyboard.press('Shift+Tab');
-    await expect(tool('Collapse marking tools')).toBeFocused();
+    await expect(tool('Find in PDF')).toBeFocused();
     await expect(page.locator('.rail-tip:popover-open')).toHaveCount(0);
     await page.keyboard.press('Tab');
     for (let index = 0; index < 7; index++) await page.keyboard.press('Tab');
