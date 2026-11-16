@@ -1725,7 +1725,11 @@ function App() {
   async function compileDocument(file: string) {
     if (!project) return;
     try {
+      const request = ++switchRequest.current, context = switchContext.current;
+      if (manuscriptNavigationGuard.current && !await manuscriptNavigationGuard.current.save()) return;
+      if (request !== switchRequest.current || context !== switchContext.current) return;
       await api(`/projects/${project.id}/document`, { main: file });
+      if (request !== switchRequest.current || context !== switchContext.current) return;
       setSelected(''); setPage('manuscript'); setSidebar(false);
       window.dispatchEvent(new Event('papilot:manuscript'));
     } catch (error) { reportError(error); }

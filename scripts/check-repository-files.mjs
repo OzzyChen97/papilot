@@ -233,6 +233,54 @@ try {
   await menu.click();
   await expect(files.getByRole('button', { name: 'letter' })).toHaveAttribute('aria-expanded', 'true');
   await expect(files.getByRole('button', { name: 'figures' })).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Escape');
+
+  // Keyboard navigation does not trigger a note card's outside-pointer
+  // save. Switching documents must wait for its pending edit itself.
+  await page.getByRole('button', { name: /^My notes(?: · .+)?$/ }).click();
+  const notes = page.getByRole('region', { name: 'My notes', exact: true });
+  const edit = notes.getByRole('textbox', { name: 'Edit note 1', exact: true });
+  const note = store.annotations('paper').find(note => note.comment === 'Thesis note');
+  const noteRoute = `**/api/projects/paper/annotations/${note.id}`;
+  const compileFromKeyboard = async name => {
+    await menu.focus(); await menu.press('Enter');
+    const button = files.getByRole('button', { name: `Compile ${name}`, exact: true });
+    await button.focus(); await button.press('Enter');
+  };
+  await notes.getByRole('button', { name: 'Edit note 1: Thesis note', exact: true }).click();
+  await edit.fill('Saved before switching documents');
+  let saveStarted = false, releaseSave;
+  const saving = new Promise(resolve => { releaseSave = resolve; });
+  await page.route(noteRoute, async route => { saveStarted = true; await saving; await route.continue(); });
+  try {
+    await compileFromKeyboard('response.tex');
+    await expect.poll(() => saveStarted).toBe(true);
+    assert.equal((await api('/projects/paper/manuscript')).build.document, 'thesis/main.tex');
+    await expect(edit).toHaveValue('Saved before switching documents');
+  } finally { releaseSave(); }
+  await expect(word('reviewers')).toBeVisible({ timeout: 60000 });
+  await expect.poll(() => store.annotations('paper').find(item => item.id === note.id)?.comment).toBe('Saved before switching documents');
+  await page.unroute(noteRoute);
+  await compileFromKeyboard('main.tex');
+  await expect(word('Pelicans')).toBeVisible({ timeout: 60000 });
+
+  // Failed saves keep the original document and the draft so the author
+  // can retry the same switch without losing text.
+  await notes.getByRole('button', { name: 'Edit note 1: Saved before switching documents', exact: true }).click();
+  await edit.fill('Retained after a failed save');
+  await page.route(noteRoute, route => route.fulfill({ status: 400, json: { error: 'The note could not be saved.' } }));
+  await compileFromKeyboard('response.tex');
+  await expect(notes.getByRole('alert')).toHaveText('The note could not be saved.');
+  await expect(menu).toHaveText('main.tex');
+  await expect(edit).toHaveValue('Retained after a failed save');
+  assert.equal((await api('/projects/paper/manuscript')).build.document, 'thesis/main.tex');
+  await shot('document-switch-save-failed');
+  await page.unroute(noteRoute);
+  await compileFromKeyboard('response.tex');
+  await expect(word('reviewers')).toBeVisible({ timeout: 60000 });
+  await compileFromKeyboard('main.tex');
+  await expect(word('Pelicans')).toBeVisible({ timeout: 60000 });
+  await expect(notes.getByRole('button', { name: 'Edit note 1: Retained after a failed save', exact: true })).toBeVisible();
   assert.deepEqual(errors, []);
   console.log('Repository file menu check passed.');
 } catch (error) {
