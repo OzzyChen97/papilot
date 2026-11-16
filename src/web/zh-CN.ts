@@ -3,12 +3,9 @@
 export const zhCN: Record<string, string> = {
   'Restart with another agent…': '用其他智能体重新开始…',
   'Restart with another agent': '用其他智能体重新开始',
-  'Rerun the original request on the current manuscript in a linked new task. The original conversation and proposed changes stay available.': '在关联的新任务中，基于当前稿件重新执行最初的请求。原来的对话和修改建议会保留。',
-  'Original notes, source context, attachments and skill instructions are copied. Later messages and review decisions stay in the original task.': '会复制最初的批注、源码上下文、附件和技能指令。后续消息和审阅决定保留在原任务中。',
-  'Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.': '未发送的文字、技能和附件会复制为草稿，不会自动发送。未发送的审阅评论会连同原位置复制为文字，但不转移审阅高亮。',
-  'The new agent starts a fresh conversation with its default permissions. To continue from proposed changes, keep using the original task.': '新智能体使用默认权限开始新对话。若要继续处理已有的修改建议，请留在原任务中。',
+  'Rerun the original request in a new task. This task stays as it is.': '在新任务中重新执行最初的请求，此任务保持不变。',
   'Connect an agent with an available model before restarting.': '请先连接一个有可用模型的智能体，再重新开始。',
-  'Stop the original task and its queued messages, then start the replacement.': '停止原任务及其排队中的消息，再启动新任务。',
+  'Stop this task first': '先停止此任务',
   'Resolve the pending task action before restarting.': '请先处理任务中尚未确认的操作，再重新开始。',
   'Stopping and restarting…': '正在停止并重新开始…',
   'Restart task': '重新开始任务',
@@ -555,9 +552,8 @@ export const zhCN: Record<string, string> = {
   // Delete task
   'Pause this task before deleting it.': '删除前请先暂停此任务。', 'Wait for the PDF build to finish before deleting this task.': '请等 PDF 编译完成后再删除此任务。',
   'Check task status before deleting this task.': '删除前请先检查任务状态。', 'Delete task?': '删除任务？',
-  'This permanently removes the task from Papilot, including its conversation, worktree, and PDF review files. Unaccepted edits and saved comments will be discarded, and review decisions can no longer be undone.': '这会从 Papilot 中永久删除此任务，包括它的对话、工作树和 PDF 审阅文件。未接受的修改和已保存的评论将被丢弃，审阅决定也无法再撤销。',
-  'Accepted changes in your manuscript stay in place. Other tasks are not affected.': '稿件中已接受的修改会保留，其他任务不受影响。',
-  'Deletion has already started. Retry to confirm the cleanup and remove the task.': '删除已经开始。重试以确认清理并移除任务。',
+  'Unaccepted edits and comments will be lost. Accepted changes stay in your manuscript.': '未接受的修改和评论将丢失，已接受的修改会保留在稿件中。',
+  'The last deletion did not finish.': '上次删除没有完成。',
   'Deleting…': '正在删除…', 'Delete task': '删除任务',
 
   // Usage

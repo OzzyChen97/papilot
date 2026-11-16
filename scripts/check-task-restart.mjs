@@ -72,14 +72,13 @@ try {
   await page.getByRole('button', { name: 'Restart with another agent…', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Restart with another agent', exact: true });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('current manuscript');
+  await expect(dialog).toContainText('Rerun the original request in a new task. This task stays as it is.');
   await page.screenshot({ path: 'test-results/task-restart-desktop.png', animations: 'disabled' });
-  await expect(dialog).toContainText('Later messages and review decisions stay in the original task.');
   await expect(dialog.getByRole('button', { name: 'Restart task', exact: true })).toBeDisabled();
   await dialog.getByRole('button', { name: 'Agent settings', exact: true }).click();
   await dialog.getByRole('option', { name: 'Opus · Claude', exact: true }).last().click();
   await dialog.getByRole('combobox').press('Escape');
-  await dialog.getByRole('checkbox', { name: 'Stop the original task and its queued messages, then start the replacement.' }).check();
+  await dialog.getByRole('checkbox', { name: 'Stop this task first' }).check();
   await dialog.getByRole('button', { name: 'Restart task', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('still stopping');
   assert.equal(restarts.length, 1);

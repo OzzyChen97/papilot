@@ -40,16 +40,13 @@ export function RestartTaskDialog({ task, runtimes, onClose, submit, onDone, rec
     <section className="modal delete-dialog">
       <h2 id="restart-task-title">{t('Restart with another agent')}</h2>
       <p className="delete-task-name">{task.title}</p>
-      <p>{t('Rerun the original request on the current manuscript in a linked new task. The original conversation and proposed changes stay available.')}</p>
-      <p>{t('Original notes, source context, attachments and skill instructions are copied. Later messages and review decisions stay in the original task.')}</p>
-      <p>{t('Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.')}</p>
-      <p>{t('The new agent starts a fresh conversation with its default permissions. To continue from proposed changes, keep using the original task.')}</p>
+      <p>{t('Rerun the original request in a new task. This task stays as it is.')}</p>
       {agents.length ? <AgentPicker agents={agents} agent={agent} model={selected?.id || ''} effort={effort} fast={fast} disabled={busy}
         reconnecting={reconnecting} onReconnect={onReconnect} allowUnknownDefault={false}
         onSelect={(value, id) => { setAgent(value); setModel(id); setEffort(''); setFast(false); }}
         onChange={patch => { if (patch.effort !== undefined) setEffort(patch.effort); if (patch.fast !== undefined) setFast(patch.fast); }}/>
         : <p role="status">{t('Connect an agent with an available model before restarting.')}</p>}
-      {working && <label className="restart-stop"><input type="checkbox" checked={stop} disabled={busy} onChange={event => setStop(event.target.checked)}/>{t('Stop the original task and its queued messages, then start the replacement.')}</label>}
+      {working && <label className="restart-stop"><input type="checkbox" checked={stop} disabled={busy} onChange={event => setStop(event.target.checked)}/>{t('Stop this task first')}</label>}
       {blocked && <p role="status">{t('Resolve the pending task action before restarting.')}</p>}
       {error && <p className="inline-error" role="alert">{error}</p>}
       <div className="button-row"><button type="button" className="button secondary" disabled={busy} onClick={onClose}>{t('Cancel')}</button>

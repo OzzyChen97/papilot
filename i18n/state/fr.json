@@ -99,11 +99,6 @@
     "textHash": "b9f9aea7fdac31c581502c6c9a5e45e87e3eaca94da05bffb255b7b94b423386",
     "model": "gemini-4-argon-medium"
   },
-  "Accepted changes in your manuscript stay in place. Other tasks are not affected.": {
-    "revision": "7705a084678a95971020a9e6f81876c1d23a55d25aee370472c6936b6ae555cf",
-    "textHash": "611fb6220d709c6fef5e3b24c28e05d14acccb345063228fbeb6de6e6f4ab351",
-    "model": "gemini-4-argon-medium"
-  },
   "Account": {
     "revision": "d07d4fe17db0450f76a5c08dc5de61624d4d65723119204e5d5f620bf88efe25",
     "textHash": "dacd47619a726cd9000bce980932d6cd6b013524a504ea93f00f819d3f1a9ceb",
@@ -1367,11 +1362,6 @@
   "Deleting…": {
     "revision": "0c5213adc9fad8d3ba385f0d475119390c20ea4e525fd7a24d7059ac1a3f0182",
     "textHash": "2f5f32765f028f2a5e22ebd8f4986c51e49408a4a2a6128b77b49fc50fa9b07c",
-    "model": "gemini-4-argon-medium"
-  },
-  "Deletion has already started. Retry to confirm the cleanup and remove the task.": {
-    "revision": "cd820ee31621b8456a6b5801823db308bf31e410815bf75be1ebf7465c57dc25",
-    "textHash": "9e56da8e5130d23345bdf29bb327f793f9b97e828ac28129401c33a2f97e9fa8",
     "model": "gemini-4-argon-medium"
   },
   "Deletion is in progress": {
@@ -3489,6 +3479,11 @@
     "textHash": "f8236763d1736f9dc312a5067536d62d411a0958684d9dbb6050fb25846b44b3",
     "model": "gemini-4-argon-medium"
   },
+  "Rerun the original request in a new task. This task stays as it is.": {
+    "revision": "60b9a39ff810b0c79f15381dd6bfa64eade8f246717e7aa58db9b293f17c0e05",
+    "textHash": "df5bd818d097ee926cb9e299fc0e2ba95fc0183e4e9eeb026297cc59355c4364",
+    "model": "gemini-3.8-flash-high"
+  },
   "Reset appearance": {
     "revision": "b1ae98cb72e7150ea6b01cd06c0261be1f9beb8a4e38ed3991e5d34ebf8a72da",
     "textHash": "10f66359e12a2c1552f9353c280acadfe88dd32882222977d84df0aab3695c85",
@@ -4199,6 +4194,11 @@
     "textHash": "fd9c6c387debc9fe80435f5cb089aad87967b38bcffdad1e566a36271cf3cfec",
     "model": "gemini-4-argon-medium"
   },
+  "Stop this task first": {
+    "revision": "a90736483fa03545cc510ef9b471f81b93ee1ed507c869856ff5e95fe8a68aa2",
+    "textHash": "b5930c79d48b179854dc48003bb5a3a08f60e1ee569bcc07266cd2871ec32c4c",
+    "model": "gemini-3.8-flash-high"
+  },
   "Strike out text to ask for it to be removed. Open the mark to give a replacement.": {
     "revision": "4d9eb610cf48e57b97f23d9cbf99cce0d7c3d5a24effd3cbc66c19e1310460b3",
     "textHash": "00888bb61e6f88e270680beb4eedc67d16392e02c3b5c1c8a2ae66e664c6fddf",
@@ -4364,6 +4364,11 @@
     "textHash": "bd2eac484e391db928626c85bc97d72964fa90a6e31ae617fbbf5273cc4f1d2d",
     "model": "gemini-4-argon-medium"
   },
+  "The last deletion did not finish.": {
+    "revision": "248fe8ec981cbac081162475fd1bdbbfd568a575a19635a5d90fd3a9f09f0011",
+    "textHash": "9a8a56a55575afab4df152debd883aeca35db65a84e8317e6c6067451fb0da35",
+    "model": "gemini-4-argon-medium"
+  },
   "The last line of this paragraph holds only a word or two. Reword slightly to pull it back.": {
     "revision": "3fb3d86d0140fbf315bd44084871bfd6a17cd73257a3bafc8aaa307057aa60b2",
     "textHash": "fb0bc292517fa5a97dfd1c601c3336875075b827b9c6acd611b9200f782d0557",
@@ -4524,11 +4529,6 @@
     "textHash": "ec1938f31b64eea4768860c3cd3f2c1307719b915f22dbdac296299e77a916ed",
     "model": "gemini-4-argon-high"
   },
-  "This permanently removes the task from Papilot, including its conversation, worktree, and PDF review files. Unaccepted edits and saved comments will be discarded, and review decisions can no longer be undone.": {
-    "revision": "157f50ceb24ddf55855cbaf45061ba60d480eb0332526fc8a1181543deb97498",
-    "textHash": "fdb80aa7a3183a3ae0a289c3e5b0243098f462444a7b032e1b6e7a7759c2f586",
-    "model": "gemini-4-argon-medium"
-  },
   "This skill changed on disk. Reload it before deleting.": {
     "revision": "5566f12069afb98793bdc4fc993a7a42b09ca0007270509136d9a80f1e1a3ff3",
     "textHash": "7c9e5c5d041847da73e7ea7d7f928e3373b6e5c04e336205b7bc0b6e35752dde",
@@ -4617,6 +4617,11 @@
   "Typesetting with LaTeX, pass {n}…": {
     "revision": "bf17c72bc94d50a2a62b4d28abf653e9c36b52db8a99266ffcc4d18aa577d0e5",
     "textHash": "e5dce96a7676af510887b6e2c46af817c9bb0e64e2adedbabc64f5d8b841994b",
+    "model": "gemini-4-argon-medium"
+  },
+  "Unaccepted edits and comments will be lost. Accepted changes stay in your manuscript.": {
+    "revision": "ed10de9fb2f9646eed1ce3ae6d5c1b4b46c353725fdc4e16aca980301b1a4449",
+    "textHash": "a5a9fe7e5c23798ef3691a4e8e144652ff7135492b5fc0b37bd58f35e21dafc6",
     "model": "gemini-4-argon-medium"
   },
   "Unavailable": {
