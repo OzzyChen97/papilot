@@ -15,6 +15,7 @@ import type { WriterAuth } from '../shared.ts';
 function connectionInfo(id: AgentId) {
   const descriptions = {
     papilot: t('Built into Papilot and based on Pi. Signs in with ChatGPT or GitHub Copilot, or uses an API key.'),
+    pi: t('Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.'),
     codex: t('Uses the local Codex CLI and its saved login.'),
     claude: t('Uses Claude Code when installed, or the Claude Agent SDK with API credentials.'),
     cursor: t('Uses the Cursor SDK with CURSOR_API_KEY. Papilot installs the SDK on first use.'),
@@ -27,7 +28,7 @@ function connectionInfo(id: AgentId) {
     qwen: t('Uses Qwen Code and its saved login through ACP.'),
     opencode: t('Uses OpenCode with the providers and models you have connected.'),
   };
-  const commands = { papilot: '', codex: window.papilotDesktop ? 'codex login' : 'papilot codex login', claude: 'claude auth login', cursor: 'CURSOR_API_KEY', copilot: 'copilot login', grok: 'grok login', antigravity: 'agy', kimi: 'kimi login', glm: 'ZHIPU_API_KEY / ZAI_API_KEY', deepseek: 'dsh web', qwen: 'qwen', opencode: 'opencode auth login' };
+  const commands = { papilot: '', pi: 'pi → /login', codex: window.papilotDesktop ? 'codex login' : 'papilot codex login', claude: 'claude auth login', cursor: 'CURSOR_API_KEY', copilot: 'copilot login', grok: 'grok login', antigravity: 'agy', kimi: 'kimi login', glm: 'ZHIPU_API_KEY / ZAI_API_KEY', deepseek: 'dsh web', qwen: 'qwen', opencode: 'opencode auth login' };
   return { description: descriptions[id], command: commands[id], key: id === 'cursor' || id === 'glm' };
 }
 

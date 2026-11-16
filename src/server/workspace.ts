@@ -15,6 +15,7 @@ import { AGENT_NAMES, AntigravityAgent, ClaudeAgent, GlmAgent, type AgentRuntime
 import { ACP_PROFILES, AcpAgent } from './acp.ts';
 import { CursorAgent } from './cursor.ts';
 import { GrokAgent } from './grok.ts';
+import { PiAgent } from './pi.ts';
 import { WriterAgent } from './writer/agent.ts';
 import type { CompiledPaper } from './writer/build-map.ts';
 import { fileEdit } from './writer/edits.ts';
@@ -184,7 +185,7 @@ export class Workspace extends EventEmitter {
   constructor(public store: Store, public codex: AgentRuntime = new Codex(), private connectReview = reviewClient, others: Partial<Record<AgentId, AgentRuntime>> = {}) {
     super();
     this.attachments = new Attachments(store);
-    this.agents = { papilot: others.papilot || new WriterAgent(), codex, claude: others.claude || new ClaudeAgent(), cursor: others.cursor || new CursorAgent(), copilot: others.copilot || new AcpAgent(ACP_PROFILES.copilot), grok: others.grok || new GrokAgent(), antigravity: others.antigravity || new AntigravityAgent(),
+    this.agents = { papilot: others.papilot || new WriterAgent(), pi: others.pi || new PiAgent(), codex, claude: others.claude || new ClaudeAgent(), cursor: others.cursor || new CursorAgent(), copilot: others.copilot || new AcpAgent(ACP_PROFILES.copilot), grok: others.grok || new GrokAgent(), antigravity: others.antigravity || new AntigravityAgent(),
       kimi: others.kimi || new AcpAgent(ACP_PROFILES.kimi), glm: others.glm || new GlmAgent(), deepseek: others.deepseek || new AcpAgent(ACP_PROFILES.deepseek),
       qwen: others.qwen || new AcpAgent(ACP_PROFILES.qwen), opencode: others.opencode || new AcpAgent(ACP_PROFILES.opencode) };
     store.on('change', () => this.emit('change'));

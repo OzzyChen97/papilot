@@ -56,6 +56,20 @@ const item = (report: Report, id: string) => {
   assert.ok(value, `Missing check ${id}`); return value;
 };
 
+test('doctor detects native Pi versions without prompting or claiming authentication', async () => {
+  const f = fixture();
+  try {
+    f.baseTools();
+    const pi = f.tool('pi', 'console.log("1.5.2");');
+    const result = await f.run(['--json'], { PAPILOT_PI_BIN: pi });
+    assert.equal(item(result.report, 'agent.pi').ok, true);
+    assert.match(item(result.report, 'agent.pi').detail, /login and generation were not tested/);
+    assert.ok(fs.readFileSync(f.log, 'utf8').split('\n').filter(Boolean).map(line => JSON.parse(line)).filter(call => call[0] === 'pi').every(call => call[1] === '--version'));
+    f.tool('pi', 'console.log("0.73.1");');
+    assert.equal(item((await f.run(['--json'], { PAPILOT_PI_BIN: pi })).report, 'agent.pi').ok, false);
+  } finally { f.cleanup(); }
+});
+
 test('doctor help and invalid options never run tools or create data', async () => {
   const f = fixture();
   try {
@@ -252,7 +266,7 @@ test('desktop doctor distinguishes failed probes from candidates not checked bef
       const candidates = ${JSON.stringify(candidates)}, now = Date.now;
       let elapsed = 0;
       Date.now = () => now() + elapsed;
-      export function findExecutables() { return candidates; }
+      export function findExecutables(command, ...args) { return command === 'codex' ? candidates : real.findExecutables(command, ...args); }
       export function spawnCommand(file, args, options) {
         const child = real.spawnCommand(file, args, options);
         if (candidates.includes(file) && args[0] === '--version') child.once('close', () => { elapsed += 10000; });

@@ -1449,6 +1449,7 @@
   "Files": "Filer",
   "Loading files…": "Läser in filer…",
   "Repository files": "Arkivfiler",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "Använder din Pi CLI, dina leverantörer, färdigheter och tillägg. Verktyg körs på värddatorn med Pis behörigheter.",
   "Bottom margin": "Nedre marginal",
   "Crop margins": "Beskär marginaler",
   "Left margin": "Vänster marginal",

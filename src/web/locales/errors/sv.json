@@ -335,5 +335,12 @@
   "too large": "för stor",
   "unsupported index": "indexet stöds inte",
   "Choose a TeX file with \\documentclass and \\begin{document}.": "Välj en TeX-fil med \\documentclass och \\begin{document}.",
-  "Could not list the files of this repository.": "Det gick inte att lista filerna i detta arkiv."
+  "Could not list the files of this repository.": "Det gick inte att lista filerna i detta arkiv.",
+  "Pi uses its own tool permissions.": "Pi använder sina egna verktygsbehörigheter.",
+  "Pi was not found. Install the Pi CLI or set PAPILOT_PI_BIN, then reconnect.": "Pi hittades inte. Installera Pi CLI eller ange PAPILOT_PI_BIN och anslut sedan igen.",
+  "Invalid Pi thread ID.": "Ogiltigt Pi-tråd-ID.",
+  "The Pi session file is missing. Restart this task to begin a new conversation.": "Pi-sessionsfilen saknas. Starta om uppgiften för att börja en ny konversation.",
+  "This Pi thread is still running.": "Den här Pi-tråden körs fortfarande.",
+  "Choose a Pi provider and model.": "Välj en leverantör och modell för Pi.",
+  "Pi could not read the attached image.": "Pi kunde inte läsa den bifogade bilden."
 }

@@ -1449,6 +1449,7 @@
   "Files": "檔案",
   "Loading files…": "正在載入檔案…",
   "Repository files": "儲存庫檔案",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "使用你的 Pi CLI、模型供應商、技能和擴充功能。工具依照 Pi 的權限設定在主機上執行。",
   "Bottom margin": "下邊距",
   "Crop margins": "裁剪頁邊距",
   "Left margin": "左邊距",

@@ -1449,6 +1449,7 @@
   "Files": "Dateien",
   "Loading files…": "Dateien werden geladen…",
   "Repository files": "Repository-Dateien",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "Verwendet deine Pi CLI, Anbieter, Skills und Erweiterungen. Werkzeuge laufen auf dem Host mit den Berechtigungen von Pi.",
   "Bottom margin": "Unterer Rand",
   "Crop margins": "Seitenränder beschneiden",
   "Left margin": "Linker Rand",

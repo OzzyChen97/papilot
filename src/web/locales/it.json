@@ -1449,6 +1449,7 @@
   "Files": "File",
   "Loading files…": "Caricamento dei file…",
   "Repository files": "File del repository",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "Usa la tua CLI Pi, i provider, le competenze e le estensioni. Gli strumenti vengono eseguiti sull’host con le autorizzazioni di Pi.",
   "Bottom margin": "Margine inferiore",
   "Crop margins": "Ritaglia margini",
   "Left margin": "Margine sinistro",

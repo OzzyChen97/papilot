@@ -5794,6 +5794,11 @@
     "textHash": "b4bf262419c353e414a0e8d7426596a3f2cdf33eca0c5f0ebb4f10c26aef5702",
     "model": "gemini-4-argon-medium"
   },
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": {
+    "revision": "f3b275547372786fb649054795a7c014ebd254780216efa2340e3ebcdfd42cee",
+    "textHash": "f0ba7bd32ec9d1396d81bb2ee88f41deee249c3a6987248063a36f2b74ddac58",
+    "model": "manual"
+  },
   "Bottom margin": {
     "revision": "595d582d7c34d34b1d33800fa0b0e71a1c05043def77f67f1465085775ee6294",
     "textHash": "17a87ed7d9cb885377f5c7bc2064abc3691ce06dec20323a47e06731b65cac1c",

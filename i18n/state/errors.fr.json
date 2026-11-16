@@ -1253,5 +1253,40 @@
     "revision": "7933748a44e7270ce4748f11f23f86771f97f18e7f6bea64915b440ff47bc571",
     "textHash": "bf9f5c2b0e9a60a452d614bbf0ba1d2efd0eaa44711d03c6b35b8284cc04ffd4",
     "model": "gemini-4-argon-medium"
+  },
+  "Pi uses its own tool permissions.": {
+    "revision": "4d82c759341bc23c152366ff65c703ac422b928bc2507c3478afaed1c771f913",
+    "textHash": "81c9be97752291f462b18165a62f4d9bde3ad948d4d862ff7da44a1b9d92d175",
+    "model": "manual"
+  },
+  "Pi was not found. Install the Pi CLI or set PAPILOT_PI_BIN, then reconnect.": {
+    "revision": "9f2635d8ce5a64c6fb809925e00e60501e7bb0e7c2bcd21390f47651c7fe4aa1",
+    "textHash": "2daaa6daf29cb777f3a212df5dbab5da05620cabd97bcc0fee4cca6d9f3705c6",
+    "model": "manual"
+  },
+  "Invalid Pi thread ID.": {
+    "revision": "62d83fc12f7000474dbe11864275ab413b18ab572e3da26525743a74bf8ddd46",
+    "textHash": "9db45c23e87b9892591e4f460c6a03f1fbdd7808fffba038629efc507d7d8509",
+    "model": "manual"
+  },
+  "The Pi session file is missing. Restart this task to begin a new conversation.": {
+    "revision": "72a19721dbc3cabc2e830693112bb1903e6bf6ca493b373d4dd74f64948a76c6",
+    "textHash": "dcd031a7ab9cb9080d0ce00ff86e8e5bde3787236cd1a4a21a50400a0e433852",
+    "model": "manual"
+  },
+  "This Pi thread is still running.": {
+    "revision": "b9eecc3a5ba18b3ad2c721c47c8ec49f0285bc97b998764d3e9af55d8b7e9c05",
+    "textHash": "b1b6c456c74d6a86f4214153222514158480cb4cbccef89e108e56a06114f71a",
+    "model": "manual"
+  },
+  "Choose a Pi provider and model.": {
+    "revision": "3a04ebbb9a4b2732bf4a7b5b457f77dca093682c54612ec6533e6903e5e1b24e",
+    "textHash": "ae655cacd3f282eb018ce8161ec5e29a6e23aff7ee3ba3a0d2355a915dfa42af",
+    "model": "manual"
+  },
+  "Pi could not read the attached image.": {
+    "revision": "f9c08b36faddbfb2358537dd088a5b043e3b40c3b3b7086847588669083aaaa7",
+    "textHash": "d568c2c0edf0adb6ce09f246bb1625bdc4ed69e4cf24b58561e801e1364b1f06",
+    "model": "manual"
   }
 }
