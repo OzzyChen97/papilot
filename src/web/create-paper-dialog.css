@@ -50,21 +50,15 @@
 /* Conferences reuse a few templates, so they are rows rather than first pages. */
 .template-venues{grid-column:1/-1;display:flex;flex-direction:column;border-top:1px solid var(--line)}
 .template-grid>.template-venues:first-child{border-top:0}
-.template-venue{display:grid;grid-template-columns:22px minmax(84px,auto) minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--line);border-radius:0;text-align:left;color:var(--text)}
+.template-venue{display:grid;grid-template-columns:minmax(96px,auto) minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid var(--line);border-radius:0;text-align:left;color:var(--text)}
 .template-venue:hover{background:var(--bg-hover)}
 .template-venue[aria-pressed=true]{background:var(--bg-active)}
 .template-venue[aria-pressed=true] .template-venue-name{color:var(--accent)}
 .template-venue:focus-visible{outline:none;box-shadow:var(--ring)}
-.template-rank{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:6px;font-size:11.5px;font-weight:600;color:var(--text-3)}
-.template-rank.rank-a{background:color-mix(in srgb,#dc2626 13%,transparent);color:#c2410c}
-.template-rank.rank-b{background:color-mix(in srgb,var(--accent) 13%,transparent);color:var(--accent)}
-.template-rank.rank-c{background:var(--bg-active);color:var(--text-2)}
 .template-venue-name{font-size:13px;font-weight:600;white-space:nowrap}
 .template-venue-full{font-size:12.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .template-venue-family{font-size:11.5px;color:var(--text-3);white-space:nowrap;max-width:180px;overflow:hidden;text-overflow:ellipsis}
 @media(max-width:560px){
-  .template-venue{grid-template-columns:20px minmax(0,1fr);row-gap:1px}
-  .template-venue .template-rank{grid-row:span 2}
-  .template-venue-full{grid-column:2}
+  .template-venue{grid-template-columns:minmax(0,1fr);row-gap:1px}
   .template-venue-family{display:none}
 }

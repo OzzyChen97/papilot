@@ -10,7 +10,7 @@ import './create-paper-dialog.css';
 
 const draftKey = 'papilot:create-paper', identityKey = draftKey + ':request';
 // A Universe template as /api/universe lists it; null below means the blank paper.
-export type PaperTemplate = { id: string; version: string; name: string; description?: string; zh?: { name?: string }; category: string; tags: string[]; organization?: string; venue?: { name: string; year?: number; ccf?: 'A' | 'B' | 'C'; full?: string }; template?: string; engine: string; thumbnail?: string };
+export type PaperTemplate = { id: string; version: string; name: string; description?: string; zh?: { name?: string }; category: string; tags: string[]; organization?: string; venue?: { name: string; year?: number; full?: string }; template?: string; engine: string; thumbnail?: string };
 // family: the name of the shared template a conference uses (PLDI 2027 → PACMPL).
 type Choice = Pick<PaperTemplate, 'id' | 'version' | 'name' | 'zh' | 'engine' | 'thumbnail' | 'organization' | 'venue'> & { family?: string };
 type Form = { name: string; parent: string; template: Choice | null };
@@ -22,18 +22,17 @@ function initialForm(): Form {
   } catch { /* Ignore an unreadable draft. */ }
   return { name: '', parent: '', template: null };
 }
-const GROUPS = ['thesis', 'conference', 'journal', 'other'] as const;
+const GROUPS = ['thesis', 'conference', 'journal', 'slides', 'poster', 'cv', 'book', 'other'] as const;
 type Group = typeof GROUPS[number] | 'all';
 const groupOf = (template: PaperTemplate): Group => (GROUPS as readonly string[]).includes(template.category) ? template.category as Group : 'other';
-const groupLabel = (group: Group) => ({ all: t('All'), thesis: t('Theses'), conference: t('Conferences'), journal: t('Journals'), other: t('Other') })[group];
+const groupLabel = (group: Group) => ({ all: t('All'), thesis: t('Theses'), conference: t('Conferences'), journal: t('Journals'), slides: t('Slides'), poster: t('Posters'), cv: t('CVs'), book: t('Books'), other: t('Other') })[group];
 const ENGINE: Record<string, string> = { pdflatex: 'pdfLaTeX', xelatex: 'XeLaTeX', lualatex: 'LuaLaTeX' };
 const templateName = (template: Choice) => locale().startsWith('zh') && template.zh?.name ? template.zh.name : template.name;
 // Where a template comes from, unless its name already says so (NeurIPS 2026).
 const templateMeta = (template: Choice) => { if (template.family) return template.family; const from = template.venue ? [template.venue.name, template.venue.year].filter(Boolean).join(' ') : template.organization ?? ''; return template.name.includes(from) ? '' : from; };
 const choiceOf = ({ id, version, name, zh, engine, thumbnail, organization, venue }: PaperTemplate, family?: string): Choice => ({ id, version, name, ...(zh ? { zh } : {}), engine, ...(thumbnail ? { thumbnail } : {}), ...(organization ? { organization } : {}), ...(venue ? { venue } : {}), ...(family ? { family } : {}) });
-// Conferences are listed by CCF rank (A, B, C, then venues outside the list).
+// Conferences are listed alphabetically: Universe serves every field, not one ranking.
 const isVenue = (template: PaperTemplate) => Boolean(template.template || template.venue);
-const rankOf = (template: PaperTemplate) => template.venue?.ccf ? 'ABC'.indexOf(template.venue.ccf) : 3;
 // crypto.randomUUID is unavailable on LAN HTTP. Keep a UUID-shaped random ID.
 const uuid = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, '0')).join('').replace(/^(.{8})(.{4})(.{4})(.{4})(.{12})$/, '$1-$2-$3-$4-$5');
 export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(url: string, body?: unknown) => Promise<T>; onDone: (paper: Project) => Promise<void>; onClose: () => void; preset?: { id: string; version: string } }) {
@@ -94,7 +93,7 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
   // Shared templates show as first pages; conferences that reuse them as a list, in
   // the Conferences group or when a search matches them.
   const shown = group === 'conference' ? [] : (templates || []).filter(item => !item.template && (group === 'all' || groupOf(item) === group) && matches(item));
-  const venues = group === 'conference' || (group === 'all' && words.length) ? (templates || []).filter(item => isVenue(item) && matches(item)).sort((a, b) => rankOf(a) - rankOf(b) || a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })) : [];
+  const venues = group === 'conference' || (group === 'all' && words.length) ? (templates || []).filter(item => isVenue(item) && matches(item)).sort((a, b) => a.name.localeCompare(b.name, 'en', { sensitivity: 'base' })) : [];
   const pick = (template: PaperTemplate | null) => { setForm(current => ({ ...current, template: template && choiceOf(template, familyName(template)) })); setError(''); setStep('details'); };
   const offered = Boolean(templates?.length) || Boolean(form.template);
   return <dialog ref={dialog} className="modal-backdrop" aria-labelledby="create-paper-title" onKeyDown={keepDialogFocus} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
@@ -119,7 +118,6 @@ export function CreatePaperDialog({ api, onDone, onClose, preset }: { api: <T>(u
           {templates === null && [0, 1, 2].map(key => <span key={key} className="template-card placeholder" aria-hidden="true"><span className="template-thumb"/></span>)}
           {venues.length > 0 && <div className="template-venues" role="group" aria-label={t('Conferences')}>
             {venues.map(item => <button key={item.id} type="button" className="template-venue" aria-pressed={form.template?.id === item.id} title={item.venue?.full ?? item.description} onClick={() => pick(item)}>
-              <span className={'template-rank' + (item.venue?.ccf ? ' rank-' + item.venue.ccf.toLowerCase() : '')} title={item.venue?.ccf ? 'CCF ' + item.venue.ccf : undefined}>{item.venue?.ccf ?? '·'}</span>
               <span className="template-venue-name">{templateName(item)}</span>
               <span className="template-venue-full">{item.venue?.full ?? item.description}</span>
               <span className="template-venue-family">{familyName(item) ?? ''}</span>

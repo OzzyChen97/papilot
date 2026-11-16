@@ -5,7 +5,7 @@ import { readZip } from './imports.ts';
 // them, and each version is an immutable ZIP with a SHA-256 in the index.
 const DEFAULT_BASE = 'https://papilot.ai/universe/';
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/, VERSION = /^\d+(?:\.\d+){0,2}(?:-[0-9A-Za-z.]+)?$/;
-const CATEGORIES = new Set(['thesis', 'conference', 'journal', 'article', 'report', 'cv', 'slides', 'letter']);
+const CATEGORIES = new Set(['thesis', 'conference', 'journal', 'article', 'report', 'cv', 'slides', 'poster', 'book', 'letter']);
 const ENGINES = new Set(['pdflatex', 'xelatex', 'lualatex']);
 const MAX_INDEX = 4 * 1024 * 1024, MAX_ARCHIVE = 64 * 1024 * 1024, FRESH = 5 * 60_000;
 

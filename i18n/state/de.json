@@ -444,6 +444,11 @@
     "textHash": "5f36321c429928f458b772bbf5d63c4e51236c98f80144303c2541e4a3e1a55c",
     "model": "gemini-4-argon-medium"
   },
+  "Books": {
+    "revision": "1423886eabadb93927a8b1628332de1ae64e3e9aaf569803a402a86fc6a60d3b",
+    "textHash": "a74462dfa46630c61e668daa16e10424544370b39403a3e61a670559a1fa4b61",
+    "model": "gemini-4-argon-medium"
+  },
   "Branch": {
     "revision": "a2b0ee6bb3858e3dc2eba48b71728633b4c28ab8d783a367922dd99f3c57e350",
     "textHash": "52656e8104eef3fddd3d4546903fa0de93c0625abf47b3dd8130f7705d6a513e",
@@ -467,6 +472,11 @@
   "Built-in": {
     "revision": "5272c9b7e0a6535a00aa1620601effb0d2d00f4a52481b61453337bba925a85f",
     "textHash": "ce026ee43c69538af3838a8a576c054e46d27b285a0bdaddf650eac016801bef",
+    "model": "gemini-4-argon-medium"
+  },
+  "CVs": {
+    "revision": "5f02d10039dd8be22f3a0291532cdafc99eab2edff8e1e869827297a54c8da86",
+    "textHash": "d3afc5e857f98fcafb4d43312d0725b2877ff5553998e66afd348c2287a734b2",
     "model": "gemini-4-argon-medium"
   },
   "Cancel": {
@@ -3019,6 +3029,11 @@
     "textHash": "c95fbad52318a57177f419c94a17cd4bfacd8b40dc6001850e8f0063972ddf2b",
     "model": "gemini-4-argon-medium"
   },
+  "Posters": {
+    "revision": "f30847ae7bf218acf85e2b22c2ad04623145f2e403fd6c25decf251f456d32f8",
+    "textHash": "1ba76ea7e3d93cee9e70650745106b06607f22cab22e63dc433eba5ee8b8119a",
+    "model": "gemini-4-argon-medium"
+  },
   "Prepare and compile": {
     "revision": "3994a5952740f87c69c843b5f8e20690d115334ea92e9cfcfea62c9db65f8319",
     "textHash": "2cd30a235b55a88675ea67c93767295f58239e6b63b7ac3a527b67d8db50a96a",
@@ -4092,6 +4107,11 @@
   "Slate blue": {
     "revision": "8c9bf75e4564641e557dcd11d30e1bc0175c1be09b85657347de8a9faeb3b1ae",
     "textHash": "89fb56eeb1c266a5c4911774e6d7982cf63a61a35b768906ad1a8fcbaafd6a5b",
+    "model": "gemini-4-argon-medium"
+  },
+  "Slides": {
+    "revision": "dab7cc4c03a250ae1e071c55dc69e8a3ebaf7f357ead1f9c3d11667314741528",
+    "textHash": "d405fa749b2c5d4ea38a4f67362187126c3fc5281e816e068913e3c79b577d1f",
     "model": "gemini-4-argon-medium"
   },
   "Some note positions need confirmation. Their original text and comments are kept.": {

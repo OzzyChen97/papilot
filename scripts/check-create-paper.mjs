@@ -136,7 +136,7 @@ try {
       assert.equal(await venues.count(), 0, 'Conferences are listed only in their group or when a search matches them');
       await dialog.getByRole('button', { name: 'Conferences', exact: true }).click();
       assert.equal(await grid.getByRole('listitem').count(), 0);
-      assert.deepEqual(await venues.allInnerTexts(), ['PLDI 2027', 'POPL 2027', 'NeurIPS 2026'], 'CCF A first, then venues without a rank');
+      assert.deepEqual(await venues.allInnerTexts(), ['NeurIPS 2026', 'PLDI 2027', 'POPL 2027'], 'Conferences are alphabetical, not ordered by a ranking');
       await dialog.getByRole('button', { name: 'All', exact: true }).click();
       // A search matches a conference by its own name, not by the shared template's name.
       await dialog.getByRole('searchbox', { name: 'Search templates' }).fill('pldi');
