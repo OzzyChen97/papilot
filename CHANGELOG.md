@@ -6,7 +6,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Added
 
-- **Browse the repository and compile any of its documents.** **Manuscript** in the sidebar names the document it compiles; select the name to list the paper's repository, where any text file opens in the source editor beside the PDF. When a repository holds several root documents, such as a thesis, its slides and a response letter, the play button on a document's row compiles it instead of the current one. Each document keeps its own build settings and notes, and a task keeps compiling the document it was started on.
+- **Browse the repository and compile any of its documents.** **Manuscript** in the sidebar names the document it compiles; select the name to list the paper's repository, where any text file opens in the source editor beside the PDF. When a repository holds several root documents, such as a thesis, its slides and a response letter, the play button on a document's row compiles it instead of the current one. Each document keeps its own build settings and notes, and a task keeps compiling the document it was started on. ([#188](https://github.com/PapilotAI/papilot/pull/188))
 
 ### Fixed
 
