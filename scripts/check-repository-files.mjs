@@ -191,12 +191,18 @@ try {
   await settle();
 
   // A list that cannot be read says so, and Retry reads it again.
-  await page.route('**/api/projects/paper/files', route => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Could not list the files of this repository.' }) }));
+  let listings = 0;
+  await page.route('**/api/projects/paper/files', route => { listings++; return route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Could not list the files of this repository.' }) }); });
   await page.reload();
   await menu.click();
   await expect(files.getByRole('alert')).toHaveText('Could not list the files of this repository.');
-  await page.unroute('**/api/projects/paper/files');
+  const asked = listings;
   await files.getByRole('button', { name: 'Retry' }).click();
+  await expect.poll(() => listings).toBeGreaterThan(asked);
+  await expect(files.getByRole('alert')).toBeVisible();
+  // Once the files can be read, the next reading lists them.
+  await page.unroute('**/api/projects/paper/files');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
   await expect(files.getByRole('button', { name: 'thesis' })).toBeVisible();
   await page.keyboard.press('Escape');
 
