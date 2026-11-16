@@ -827,6 +827,9 @@ function useNoteCards(notes: Annotation[] | undefined, actions: NoteActions, onE
   });
   async function saveAll(ids?: string[]) {
     const included = (note: Annotation) => inProject(note) && (!ids || ids.includes(note.id));
+    // Another editor can still report busy just after its save resolves.
+    // An empty panel has no work to block that navigation on.
+    if (![...pending.current.values()].some(entry => included(entry.note)) && !Object.values(draftValues.current).some(entry => included(entry.note))) return true;
     if (actions.sending || (await Promise.all([...pending.current.values()].filter(entry => included(entry.note)).map(entry => entry.promise))).some(saved => !saved)) return false;
     for (const [id, entry] of Object.entries(draftValues.current)) {
       if (!included(entry.note)) continue;
@@ -1014,6 +1017,7 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
   const notesPanel = useRef<NotesHandle>(null);
   const taskNotes = useRef<NotesHandle>(null);
   useImperativeHandle(navigationGuard, () => ({ save: async () => {
+    if (pdf.current && !await pdf.current.save()) return false;
     if (taskNotes.current && !await taskNotes.current.save()) return false;
     if (notesPanel.current && !await notesPanel.current.save()) return false;
     return true;
@@ -1100,7 +1104,7 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
         // The previous PDF stays readable; the details wait in the problem list.
         ? <div className="manuscript-note error brief" role="alert"><span>{t('The latest changes did not compile. This is the last PDF that did.')}</span><button type="button" className="note-link" onClick={() => problems.current?.open()}>{t('Show problems')}</button></div>
         : <div className="manuscript-note error" role="alert"><strong>{t('The manuscript did not compile.')}</strong><pre>{build.error}</pre></div>)}
-      {build?.key ? <Suspense fallback={<div className="review-loading"><p role="status">{t('Opening the PDF…')}</p></div>}><PdfView ref={pdf} place={place} pdfKey={build.key} url={pdfAsset(`/api/projects/${project.id}/manuscript.pdf?key=${build.key}`)} words={wordAsset(`/api/projects/${project.id}/manuscript/words?key=${build.key}`)} notes={numbered.filter(item => item.note.key === build.key)} active={active} region={region} setRegion={setRegion} group={actions.group} onGroupChange={actions.setGroup} markingDisabled={actions.sending}
+      {build?.key ? <Suspense fallback={<div className="review-loading"><p role="status">{t('Opening the PDF…')}</p></div>}><PdfView key={place} ref={pdf} place={place} pdfKey={build.key} url={pdfAsset(`/api/projects/${project.id}/manuscript.pdf?key=${build.key}`)} words={wordAsset(`/api/projects/${project.id}/manuscript/words?key=${build.key}`)} notes={numbered.filter(item => item.note.key === build.key)} active={active} region={region} setRegion={setRegion} group={actions.group} onGroupChange={actions.setGroup} markingDisabled={actions.sending}
           history={actions.history} noteActions={{ has: actions.selection.has, toggle: note => actions.selection.set([note.id], !actions.selection.has(note.id)), remove: actions.remove, restore: actions.restore, edit: actions.edit, onEditing: actions.onEditing, onBusy: actions.onReviewBusy, disabled: actions.sending }} onDeselect={() => setActive('')}
           onCreate={actions.add} onSelect={async note => { if (await closeReadingNotes()) setActive(note.id); }} outline={outline} section={section} onOutline={setOutline} onSection={setSection} lead={switcher} tools={pdfTools}
           onSource={async (target, key) => { if (!await closeReadingNotes()) return; setActive(''); setView('source'); setCollapsed(false); void source.open(target, key); }} passage={source.passage}/></Suspense>

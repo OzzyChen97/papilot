@@ -281,6 +281,49 @@ try {
   await compileFromKeyboard('main.tex');
   await expect(word('Pelicans')).toBeVisible({ timeout: 60000 });
   await expect(notes.getByRole('button', { name: 'Edit note 1: Retained after a failed save', exact: true })).toBeVisible();
+
+  // A floating PDF card has its own editor. Wait for an outside-pointer
+  // save already in flight before replacing the document's viewer.
+  await page.getByRole('button', { name: /^My notes(?: · .+)?$/ }).click();
+  await page.getByRole('button', { name: 'Note 1: Retained after a failed save', exact: true }).click();
+  const card = page.getByRole('dialog', { name: 'PDF note 1', exact: true });
+  await card.getByRole('button', { name: 'Edit note 1', exact: true }).click();
+  await card.getByRole('textbox').fill('Floating edit saved before switching');
+  saveStarted = false;
+  const floatingSave = new Promise(resolve => { releaseSave = resolve; });
+  await page.route(noteRoute, async route => { saveStarted = true; await floatingSave; await route.continue(); });
+  try {
+    await menu.click();
+    await expect.poll(() => saveStarted).toBe(true);
+    await files.getByRole('button', { name: 'Compile response.tex', exact: true }).press('Enter');
+    assert.equal((await api('/projects/paper/manuscript')).build.document, 'thesis/main.tex');
+    await expect(card.getByRole('textbox')).toHaveValue('Floating edit saved before switching');
+  } finally { releaseSave(); }
+  await expect(word('reviewers')).toBeVisible({ timeout: 60000 });
+  assert.equal(store.annotations('paper').find(item => item.id === note.id)?.comment, 'Floating edit saved before switching');
+  await page.unroute(noteRoute);
+  await compileFromKeyboard('main.tex');
+  await expect(word('Pelicans')).toBeVisible({ timeout: 60000 });
+
+  // A new floating note also survives a failed keyboard switch and saves
+  // on the original document when the same switch is retried.
+  await page.locator('.pdf-container').focus();
+  await page.keyboard.press('p');
+  const sheet = await page.locator('.pdf-view .page').first().boundingBox();
+  await page.mouse.click(sheet.x + sheet.width * 0.5, sheet.y + sheet.height * 0.3);
+  const compose = page.locator('.pdf-note-compose');
+  await compose.getByRole('textbox').fill('New floating note retained on failure');
+  const createRoute = '**/api/projects/paper/annotations';
+  await page.route(createRoute, route => route.fulfill({ status: 400, json: { error: 'The note could not be saved.' } }));
+  await compileFromKeyboard('response.tex');
+  await expect(compose.getByRole('alert')).toHaveText('The note could not be saved.');
+  await expect(compose.getByRole('textbox')).toHaveValue('New floating note retained on failure');
+  await expect(menu).toHaveText('main.tex');
+  await shot('floating-note-save-failed');
+  await page.unroute(createRoute);
+  await compileFromKeyboard('response.tex');
+  await expect(word('reviewers')).toBeVisible({ timeout: 60000 });
+  assert.equal(store.annotations('paper').find(item => item.comment === 'New floating note retained on failure')?.document, 'thesis/main.tex');
   assert.deepEqual(errors, []);
   console.log('Repository file menu check passed.');
 } catch (error) {
