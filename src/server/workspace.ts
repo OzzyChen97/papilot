@@ -573,7 +573,7 @@ export class Workspace extends EventEmitter {
     // restart reuses a copy it has already made. An engine that kept running
     // across a restart may still be making the copy asked for before: wait
     // for it rather than failing the task.
-    let info: { worktree: string; deferred?: boolean };
+    let info: { worktree: string; deferred?: boolean; document?: string | null };
     for (;;) {
       try { info = await client.post('/api/tasks', { name: task.name, title: task.title, deferred: true }); break; }
       catch (error) {
@@ -583,7 +583,8 @@ export class Workspace extends EventEmitter {
     }
     let snapshot: ReviewSnapshot | undefined;
     if (task.mode === 'review') try {
-      const current = task, capture = this.reviewCopies.get(taskId) ?? ((worktree: string) => this.prepareReview(current, worktree));
+      // A copy resumed after a restart compiles the document the engine recorded for it.
+      const current = typeof info.document === 'string' ? { ...task, document: info.document } : task, capture = this.reviewCopies.get(taskId) ?? ((worktree: string) => this.prepareReview(current, worktree));
       snapshot = await capture(info.worktree);
     } catch (error) {
       // Discard the copy, so a retry copies the manuscript again with the author's fixes.
@@ -597,7 +598,7 @@ export class Workspace extends EventEmitter {
         // The review reads the PDF of this exact copy.
         if (run?.status === 'queued') this.store.saveRun({ ...run, prompt: reviewPrompt(run.prompt, snapshot) });
       }
-      this.store.updateTask(taskId, { worktree: info.worktree, deferred: info.deferred === true, ...(snapshot ? { aiReview: { key: snapshot.key } } : {}), status: run?.status === 'queued' ? 'queued' : 'idle', preparation: null, error: null });
+      this.store.updateTask(taskId, { worktree: info.worktree, deferred: info.deferred === true, ...(typeof info.document === 'string' ? { document: info.document } : {}), ...(snapshot ? { aiReview: { key: snapshot.key } } : {}), status: run?.status === 'queued' ? 'queued' : 'idle', preparation: null, error: null });
     });
     this.reviewCopies.delete(taskId);
     this.schedule();

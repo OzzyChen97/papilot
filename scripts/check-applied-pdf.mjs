@@ -72,6 +72,7 @@ try {
     if (url.pathname.endsWith('/note-alternatives')) return json({ noteAlternatives: true, noteAlternativeRange: 'few' });
     if (url.pathname.endsWith('/quick-notes')) return json({ quickNotes: null });
     if (url.pathname.endsWith('/predict')) return json({ ok: true });
+    if (url.pathname.endsWith('/files')) return json({ document: null, files: [] });
     if (url.pathname.endsWith('/skills')) return json({ skills: [] });
     if (url.pathname.endsWith('/items')) return json({ items: [] });
     if (url.pathname.endsWith('/note-results')) return json({ notes: [] });

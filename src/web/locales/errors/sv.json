@@ -319,5 +319,6 @@
   "This task is already being restarted.": "Den här uppgiften håller redan på att startas om.",
   "Wait for this task to restart before deleting it.": "Vänta tills den här uppgiften har startats om innan du tar bort den.",
   "Wait for this task to restart before sending more instructions.": "Vänta tills den här uppgiften har startats om innan du skickar fler instruktioner.",
-  "Choose valid destination model settings.": "Välj giltiga inställningar för målmodellen."
+  "Choose valid destination model settings.": "Välj giltiga inställningar för målmodellen.",
+  "Choose a TeX file with \\documentclass and \\begin{document}.": "Välj en TeX-fil med \\documentclass och \\begin{document}."
 }

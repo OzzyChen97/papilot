@@ -319,5 +319,6 @@
   "This task is already being restarted.": "このタスクはすでにやり直し処理中です。",
   "Wait for this task to restart before deleting it.": "このタスクのやり直し処理が完了してから削除してください。",
   "Wait for this task to restart before sending more instructions.": "このタスクのやり直し処理が完了してから、追加の指示を送信してください。",
-  "Choose valid destination model settings.": "切り替え先のモデルの設定を正しく選んでください。"
+  "Choose valid destination model settings.": "切り替え先のモデルの設定を正しく選んでください。",
+  "Choose a TeX file with \\documentclass and \\begin{document}.": "\\documentclass と \\begin{document} を含む TeX ファイルを選択してください。"
 }

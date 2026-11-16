@@ -1442,5 +1442,11 @@
   "Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.": "未送出的文字、技能和附件會複製為草稿，不會自動送出。未送出的審閱評論會連同原始位置複製為文字；審閱反白標記不會轉移。",
   "{selected} of {total} selected": "已選取 {selected} / {total}",
   "Add to task": "加入任務",
-  "Includes subsections": "包含子章節"
+  "Includes subsections": "包含子章節",
+  "Compile this document": "編譯此文件",
+  "Compile {name}": "編譯 {name}",
+  "Compiled document": "已編譯的文件",
+  "Files": "檔案",
+  "Loading files…": "正在載入檔案…",
+  "Repository files": "儲存庫檔案"
 }

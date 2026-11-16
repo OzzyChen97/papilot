@@ -33,6 +33,7 @@ import { Diagnostics } from './diagnostics.ts';
 import { attachmentIds } from './attachments.ts';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '../shared.ts';
 import { PaperImports, openFolder } from './imports.ts';
+import { checkDocument, chooseDocument, repositoryFiles, rootDocument } from './repository-files.ts';
 import { PaperCreations } from './create-paper.ts';
 import { DATA, pageViewDir } from './paths.ts';
 import { registerAiReviewRoutes } from './ai-review-routes.ts';
@@ -143,9 +144,9 @@ export async function buildApp(options: AppOptions) {
   const indirectChanges = () => store.preference<boolean>('indirect-changes') === true;
   workspace.indirectChanges = changes.indirectChanges = indirectChanges;
   // An AI review resumed after a restart compiles its copy here too.
-  workspace.prepareReview = (task, worktree) => manuscripts.captureReview(store.project(task.projectId).path, worktree, task.id);
-  workspace.sourcePages = (task, file, lines) => manuscripts.sourcePages(task.projectId, file, lines);
-  workspace.paperBuild = task => manuscripts.paperBuild(task.projectId);
+  workspace.prepareReview = (task, worktree) => manuscripts.captureReview(store.project(task.projectId).path, worktree, task.id, task.document);
+  workspace.sourcePages = (task, file, lines) => manuscripts.sourcePages(task.projectId, file, lines, task.document);
+  workspace.paperBuild = task => manuscripts.paperBuild(task.projectId, task.document);
   const app = Fastify({ logger: false, bodyLimit: Number.MAX_SAFE_INTEGER });
   const buildSettingsChanged = (projectId: string) => changes.buildSettingsChanged(projectId);
   manuscripts.on('build-settings', buildSettingsChanged);
@@ -209,10 +210,19 @@ export async function buildApp(options: AppOptions) {
     workspace.attachments.discard(request.params.id, request.params.attachment);
     return { ok: true };
   });
+  // The manuscript's own notes: on the PDF of the root document it compiles,
+  // not sent to a task, and not an AI review's suggestions.
+  // A note on another root document that is still one waits for it; one on a
+  // main file since renamed or removed moves to the current document.
+  async function paperNotes(id: string) {
+    const root = store.project(id).path, document = await manuscripts.document(id, root), elsewhere = new Map<string, boolean>();
+    const away = (file: string) => elsewhere.get(file) ?? elsewhere.set(file, rootDocument(root, file)).get(file)!;
+    return store.annotations(id).filter(note => !note.taskId && !isTaskReviewNote(note) && (!note.document || note.document === document || !away(note.document)));
+  }
   async function manuscript(id: string, rebuild = false) {
     await options.prepareDemo?.();
     const root = store.project(id).path, state = await manuscripts.state(id, root, rebuild);
-    const notes = store.annotations(id).filter(note => !note.taskId && !isTaskReviewNote(note));
+    const notes = await paperNotes(id);
     const placed = await manuscripts.reanchor(id, root, notes).catch(() => notes);
     for (let index = 0; index < notes.length; index++) {
       const next = placed[index], previous = notes[index];
@@ -221,9 +231,10 @@ export async function buildApp(options: AppOptions) {
       // A comment edit, deletion, or task submission may have happened while
       // PDF positions were being checked. Never restore or overwrite that work.
       if (current.deletedAt !== undefined || current.taskId || workspace.annotationSending(current.id) || current.key !== previous.key) continue;
-      store.saveAnnotation({ ...current, key: next.key, page: next.page, rect: next.rect, rects: next.rects, source: next.source });
+      const document = manuscripts.documentOf(id, next.key);
+      store.saveAnnotation({ ...current, ...(document ? { document } : {}), key: next.key, page: next.page, rect: next.rect, rects: next.rects, source: next.source });
     }
-    const annotations = store.annotations(id).filter(note => !note.taskId && !isTaskReviewNote(note));
+    const annotations = await paperNotes(id);
     const scope = state.build.key ? await manuscripts.noteSections(id, state.build.key, annotations).catch(() => null) : null;
     return { ...state, annotations, ...(scope ? { noteSections: scope.sections, unplacedSectionNotes: scope.unplaced } : {}) };
   }
@@ -526,7 +537,7 @@ export async function buildApp(options: AppOptions) {
     const page = Number(b?.page);
     if (!isRect(b?.rect) || !Number.isSafeInteger(page) || page < 0 || !current.worktree) throw new Error('Mark text on a page first.');
     const rects = Array.isArray(b.rects) ? b.rects.filter(isRect).slice(0, 200) : [];
-    const located = await manuscripts.locateBuild(project.path, string(b.key, 'PDF key', 32), page, b.rect, rects, typeof b.quote === 'string' ? b.quote.slice(0, 20000) : '', current.worktree);
+    const located = await manuscripts.locateBuild(project.path, string(b.key, 'PDF key', 32), page, b.rect, rects, typeof b.quote === 'string' ? b.quote.slice(0, 20000) : '', current.worktree, current.document);
     return { source: located?.source ? { file: located.source.file, lines: located.source.lines } : null };
   });
   app.get<{ Params: { id: string }; Querystring: { round?: string; version?: string; download?: string; retained?: string } }>('/api/tasks/:id/pdf', task, async (request, reply) => {
@@ -706,6 +717,29 @@ export async function buildApp(options: AppOptions) {
     return action === 'fetch' ? work() : serialGit(project.id, work);
   });
   app.post<{ Params: { id: string } }>('/api/projects/:id/manuscript', project(), request => manuscript(request.params.id, true));
+  // The file browser: the repository's files, and the root document the
+  // paper compiles, which can be any of its root documents.
+  app.get<{ Params: { id: string } }>('/api/projects/:id/files', project(), async request => {
+    const project = store.project(request.params.id);
+    const document = await manuscripts.document(project.id, project.path);
+    return { document: document ?? null, files: await repositoryFiles(project.path, document) };
+  });
+  app.post<{ Params: { id: string } }>('/api/projects/:id/document', project(), async request => {
+    const project = store.project(request.params.id), previous = await manuscripts.document(project.id, project.path);
+    const main = await checkDocument(project.path, (request.body as { main?: unknown } | null)?.main);
+    if (main === previous) return { document: main };
+    if (previous) {
+      // Notes and tasks from before a paper could compile several documents
+      // are on the one it compiled until now; the review engine marks its
+      // tasks as it starts.
+      store.transaction(() => { for (const note of store.annotations(project.id, true)) if (!note.document) store.saveAnnotation({ ...note, document: previous }); });
+      if (store.tasks().some(task => task.projectId === project.id)) await connectReview(project.path);
+    }
+    await chooseDocument(project.path, main);
+    // Settings may already name it, edited by hand, with its PDF not compiled.
+    await manuscripts.documentChanged(project.id, project.path, main);
+    return { document: main };
+  });
   const isRect = (value: unknown): value is [number, number, number, number] => Array.isArray(value) && value.length === 4 && value.every(v => typeof v === 'number' && v >= 0 && v <= 1) && value[2] > value[0] && value[3] > value[1];
   // Manual LaTeX edits from the PDF, without an agent: the passage under a
   // click as it is on disk now, any lines of a file, a save of those lines
@@ -749,7 +783,8 @@ export async function buildApp(options: AppOptions) {
     // takes time is not waited for.
     const settled = await Promise.race([located.then(value => ({ value }), (error: unknown) => ({ error })), new Promise<null>(resolve => setImmediate(() => resolve(null)))]);
     if (settled && 'error' in settled) throw settled.error;
-    const note = store.saveAnnotation({ id: randomUUID(), projectId: project.id, key, page, rect: b.rect, ...(b.group ? { group: b.group } : {}), ...(b.kind ? { kind: b.kind } : {}), ...(stamp ? { stamp } : {}), ...(rects.length ? { rects } : {}), comment, quote: settled?.value.quote || selected, source: settled?.value.source ?? null, createdAt: Date.now() });
+    const document = manuscripts.documentOf(project.id, key);
+    const note = store.saveAnnotation({ id: randomUUID(), projectId: project.id, ...(document ? { document } : {}), key, page, rect: b.rect, ...(b.group ? { group: b.group } : {}), ...(b.kind ? { kind: b.kind } : {}), ...(stamp ? { stamp } : {}), ...(rects.length ? { rects } : {}), comment, quote: settled?.value.quote || selected, source: settled?.value.source ?? null, createdAt: Date.now() });
     if (!settled) {
       const lookup = located.then(({ quote, source }) => {
         // Keep what the author changed meanwhile; a note moved to a newer PDF
@@ -776,7 +811,7 @@ export async function buildApp(options: AppOptions) {
     if (workspace.annotationSending(note.id)) throw new Error('This note is being sent. Wait for the task to finish creating.');
     store.deleteAnnotation(request.params.id, request.params.note); return { ok: true };
   });
-  app.post<{ Params: { id: string; note: string } }>('/api/projects/:id/annotations/:note/restore', project(), request => {
+  app.post<{ Params: { id: string; note: string } }>('/api/projects/:id/annotations/:note/restore', project(), async request => {
     const note = store.annotation(request.params.id, request.params.note);
     if (isTaskReviewNote(note)) throw new Error('Manage this suggestion in its AI review task, or copy it to the manuscript first.');
     if (workspace.annotationSending(note.id)) throw new Error('This note is being sent. Wait for the task to finish creating.');
@@ -784,7 +819,7 @@ export async function buildApp(options: AppOptions) {
     const { deletedAt: _, ...restored } = note;
     store.saveAnnotation(restored);
     // Return the original order, including any notes added since the deletion.
-    return { annotations: store.annotations(request.params.id).filter(note => !note.taskId && !isTaskReviewNote(note)) };
+    return { annotations: await paperNotes(request.params.id) };
   });
   // What the last build reported, placed on its PDF, and the TeX log itself.
   app.get<{ Params: { id: string } }>('/api/projects/:id/manuscript/problems', project(), request => manuscripts.problems(store.project(request.params.id).id));

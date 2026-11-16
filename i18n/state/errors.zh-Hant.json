@@ -1173,5 +1173,10 @@
     "revision": "57d416a10cff2c506d6e42a08e8464f17c75523924f9a372b3c01b74d5eb4bbd",
     "textHash": "ef3523670258da0595239f292d54a7a8e990de7c1b0b9343ed2280797634d613",
     "model": "gemini-4-argon-medium"
+  },
+  "Choose a TeX file with \\documentclass and \\begin{document}.": {
+    "revision": "7f088e39e9ba8cb8d757deb324a2798f19420cfe09fb52f6a14af2b87dc20a13",
+    "textHash": "8d43f96c166b8f80a68e151b3a67034bbc3323c4437a36ddafcfe85fb1f5c19c",
+    "model": "gemini-4-argon-medium"
   }
 }

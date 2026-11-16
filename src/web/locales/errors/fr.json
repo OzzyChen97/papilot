@@ -319,5 +319,6 @@
   "This task is already being restarted.": "Cette tâche est déjà en cours de relance.",
   "Wait for this task to restart before deleting it.": "Attendez que cette tâche soit relancée avant de la supprimer.",
   "Wait for this task to restart before sending more instructions.": "Attendez que cette tâche soit relancée avant d’envoyer d’autres instructions.",
-  "Choose valid destination model settings.": "Choisissez des paramètres valides pour le modèle de destination."
+  "Choose valid destination model settings.": "Choisissez des paramètres valides pour le modèle de destination.",
+  "Choose a TeX file with \\documentclass and \\begin{document}.": "Choisissez un fichier TeX contenant \\documentclass et \\begin{document}."
 }

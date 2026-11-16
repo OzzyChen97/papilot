@@ -351,6 +351,8 @@ export const zhCN: Record<string, string> = {
 
   'PDF preview': 'PDF 预览', 'The manuscript did not compile.': '稿件编译失败。', 'Opening the PDF…': '正在打开 PDF…',
   'Compiling the PDF…': '正在编译 PDF…',
+  'Files': '文件', 'Repository files': '仓库文件', 'Loading files…': '正在加载文件…',
+  'Compiled document': '当前编译的文档', 'Compile this document': '编译此文档', 'Compile {name}': '编译 {name}',
   'Manuscript panels': '稿件面板', 'Contents': '目录',
   'This PDF has no bookmarks.': '此 PDF 没有书签。', 'Contents will appear when the PDF is ready.': 'PDF 就绪后会显示目录。',
   'You are offline. Your draft is kept in this browser.': '你已离线。草稿保存在此浏览器中。',

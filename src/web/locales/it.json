@@ -240,7 +240,7 @@
   "Compilation log": "Log di compilazione",
   "Compilation problems": "Problemi di compilazione",
   "Compilation status unavailable.": "Stato della compilazione non disponibile.",
-  "Compiling the PDF…": "Compilazione del PDF in corso…",
+  "Compiling the PDF…": "Compilazione del PDF…",
   "Complete PDF comparison": "Confronto PDF completo",
   "Completed": "Completato",
   "Component source": "Sorgente del componente",
@@ -1442,5 +1442,11 @@
   "Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.": "Il testo, l’abilità e gli allegati non inviati vengono copiati come bozza, senza inviarli. I commenti di revisione non inviati vengono copiati come testo con le posizioni originali; le evidenziazioni di revisione non vengono trasferite.",
   "{selected} of {total} selected": "{selected} di {total} selezionati",
   "Add to task": "Aggiungi all’attività",
-  "Includes subsections": "Include le sottosezioni"
+  "Includes subsections": "Include le sottosezioni",
+  "Compile this document": "Compila questo documento",
+  "Compile {name}": "Compila {name}",
+  "Compiled document": "Documento compilato",
+  "Files": "File",
+  "Loading files…": "Caricamento dei file…",
+  "Repository files": "File del repository"
 }

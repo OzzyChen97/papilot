@@ -124,6 +124,7 @@ await page.route('**/api/**', async route => {
   if (url.pathname.endsWith('/git/overview')) return overviewFailure ? route.fulfill({ status: 503, json: { error: 'Repository unavailable.' } }) : json(overview());
   if (url.pathname.endsWith('/git/history')) return json({ versions: [], next: null });
   // Skills and the feedback bar have their own check (check-skills.mjs).
+  if (url.pathname.endsWith('/files')) return json({ document: null, files: [] });
   if (url.pathname.endsWith('/skills')) return json({ skills: [] });
   if (url.pathname.endsWith('/git/diff')) return json({ path: url.searchParams.get('path'), diff: 'diff --git a/main.tex b/main.tex\n--- a/main.tex\n+++ b/main.tex\n@@ -1,2 +1,2 @@\n-Old line.\n+New line.\n Context.\n', truncated: false });
   if (url.pathname.endsWith('/git/commit')) {

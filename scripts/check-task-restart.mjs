@@ -40,6 +40,7 @@ await page.route('**/api/**', async route => {
   if (url.pathname === '/api/indirect-changes') return json({ indirectChanges: false });
   if (url.pathname === '/api/events') return route.fulfill({ contentType: 'text/event-stream', body: ': fixture\n\n' });
   if (url.pathname === '/api/updates') return json({ currentVersion: 'test', latestVersion: 'test', phase: 'idle', canUpdate: false });
+  if (url.pathname.endsWith('/files')) return json({ document: null, files: [] });
   if (url.pathname.endsWith('/skills')) return json({ skills: [{ id: 'polish', name: 'Polish', description: 'Polish writing', hint: '', source: 'builtin' }] });
   if (url.pathname.endsWith('/items')) return json({ items: [{ id: 'first-message', taskId: url.pathname.includes('fixture-task') ? task.id : snapshot.tasks.at(-1).id, type: 'user', text: 'Original request.', createdAt: 1 }] });
   if (url.pathname.endsWith('/note-results')) return json({ notes: [] });

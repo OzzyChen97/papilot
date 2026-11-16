@@ -186,6 +186,12 @@ In a task review, expand **LaTeX** under a change and select the pencil (**Edit*
 
 Wait for active agent work and PDF builds before saving. Earlier rounds are read-only, and a rejected change must be undone before editing. If another operation changes the source after you opened it, saving refuses to overwrite it and keeps your draft. If compilation fails, reopen **Edit** to repair the saved source; the previous PDF remains available. Manual compilation failures are not sent to an agent automatically.
 
+### Browse files and switch documents
+
+**Manuscript** in the sidebar names the document it compiles, such as `main.tex`. Select that name to open **Files**, a menu beside the sidebar that lists the paper's repository as Git sees it: tracked files and new files that are not ignored. Select any text file to open it in the manuscript's source tab, beside the PDF; images and other binary files are listed but do not open. A save compiles the manuscript as usual. The menu remembers which folders you opened, and **Escape** closes it.
+
+A repository can hold several root documents, such as a thesis, its slides and a response letter. Each TeX file that declares `\documentclass` and begins the document has a green play button (**Compile this document**) on its row; the document the manuscript compiles has a checkmark. Switching compiles the chosen document and shows its PDF. Each document keeps its own build settings (engine, source folder and the rest) in `.git/papilot/documents.json` while another one is compiled, so switching back restores them and reuses its cached builds. Notes stay with the PDF they were written on. A task keeps compiling the document it was started on, even after the manuscript switches to another.
+
 ### Fix a LaTeX build
 
 In the manuscript's **Compilation Problems** panel, select **Fix with an agent…** to have the selected agent diagnose the failed build. Papilot gives it the compiler diagnostics and relevant source excerpts in a read-only turn. If the agent proposes changes to the engine, source directory, or use of the current `latexmkrc`, Papilot tests them and saves a successful configuration in its data directory for this paper and compiler host. Later builds use those settings after a restart. A subsequent change to the paper's explicit build settings takes precedence. If the agent thinks a different main document should be used, it asks you to check the selection.

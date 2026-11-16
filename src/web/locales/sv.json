@@ -240,7 +240,7 @@
   "Compilation log": "Kompileringslogg",
   "Compilation problems": "Kompileringsproblem",
   "Compilation status unavailable.": "Kompileringsstatus är inte tillgänglig.",
-  "Compiling the PDF…": "Kompilerar PDF-filen…",
+  "Compiling the PDF…": "Kompilerar PDF…",
   "Complete PDF comparison": "Fullständig PDF-jämförelse",
   "Completed": "Slutförd",
   "Component source": "Komponentkälla",
@@ -1442,5 +1442,11 @@
   "Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.": "Din oskickade text, färdighet och dina bilagor kopieras som ett utkast utan att skickas. Oskickade granskningskommentarer kopieras som text med sina ursprungliga positioner; granskningsmarkeringar överförs inte.",
   "{selected} of {total} selected": "{selected} av {total} valda",
   "Add to task": "Lägg till i uppgift",
-  "Includes subsections": "Inkluderar underavsnitt"
+  "Includes subsections": "Inkluderar underavsnitt",
+  "Compile this document": "Kompilera detta dokument",
+  "Compile {name}": "Kompilera {name}",
+  "Compiled document": "Kompilerat dokument",
+  "Files": "Filer",
+  "Loading files…": "Läser in filer…",
+  "Repository files": "Arkivfiler"
 }

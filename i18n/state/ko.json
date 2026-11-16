@@ -975,7 +975,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Compiling the PDF…": {
-    "revision": "bcb49dfae4757bf4584a789aa436343dea6f5f675a708c0909c7c00e061f22d5",
+    "revision": "cfd4503ee40c0719699d861bc396b05faf2b08a4268c0dedfff30238cfaca815",
     "textHash": "a9c74d4ad02e633f63be376fd2e226a0cd9b26462521506059ab11c1bd3239aa",
     "model": "gemini-4-argon-medium"
   },
@@ -5717,6 +5717,36 @@
   "{used}% used": {
     "revision": "4aea5815630ef0edefdec055854ab78280b8b3fa7dfba78b071883d3b0004f28",
     "textHash": "ecadf2c2e97eedd22969bd7c077931a2a4bfe7f4bea9e63dcf6a02b129bc8bfd",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compile this document": {
+    "revision": "530a96c8bf96dbb5963388b47c8826fc3a1215e45fa2c231f3e30366b76366c1",
+    "textHash": "6f5ebe1300b064c5b5b12c59e5895b4c698d8caf4387e97086fa20b9a38a4631",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compile {name}": {
+    "revision": "74976201afbe03cc167b6112991f9d3014e2ce9faa4b248602d3745de5305379",
+    "textHash": "8a0782f4f4561f28b449212dc5e43f13038202f976941d13f49bb5f915b704ce",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compiled document": {
+    "revision": "068fbf84b9c3aac206b2ba1ed5eb1106087131a6b9ec53d14612f2b313369802",
+    "textHash": "cc25e6067c1fa2f2a9b7341ea38b14c6c963c2c92e9a3f71358e4f4dd5f35f74",
+    "model": "gemini-4-argon-medium"
+  },
+  "Files": {
+    "revision": "eacc5c5d339ec1ee5b79b182fbc61c0d757850ad07768a60eeb2d80190e2c911",
+    "textHash": "0c8354d0e51a08b2736d7f2f10f61d6badc76252de2609d2c7df9b8d85670187",
+    "model": "gemini-4-argon-medium"
+  },
+  "Loading files…": {
+    "revision": "d4f9e20423f2b25a9c31229e4a7af42fff21cdc354b834a0cf4166f8de58c700",
+    "textHash": "40d8804dfc1901c1d2a8caf0d2ccfa47f4d7d0fa61f868303be9478c5a05e012",
+    "model": "gemini-4-argon-medium"
+  },
+  "Repository files": {
+    "revision": "5c65200c1d54ea5ea9044be97f802bf9e35216885fc86a67884d13ff52dd8b4a",
+    "textHash": "5f9ab2cc5ef6a157c23494f326d9b2b125cd82d54b4559e7a640e039ef9c87fa",
     "model": "gemini-4-argon-medium"
   }
 }

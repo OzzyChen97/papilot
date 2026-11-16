@@ -1442,5 +1442,11 @@
   "Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.": "보내지 않은 텍스트, 스킬과 첨부 파일은 전송되지 않고 초안으로 복사됩니다. 보내지 않은 검토 댓글은 원래 위치를 포함한 텍스트로 복사되며, 검토 강조 표시는 이전되지 않습니다.",
   "{selected} of {total} selected": "{total}개 중 {selected}개 선택됨",
   "Add to task": "작업에 추가",
-  "Includes subsections": "하위 절 포함"
+  "Includes subsections": "하위 절 포함",
+  "Compile this document": "이 문서 컴파일",
+  "Compile {name}": "{name} 컴파일",
+  "Compiled document": "컴파일된 문서",
+  "Files": "파일",
+  "Loading files…": "파일 불러오는 중…",
+  "Repository files": "저장소 파일"
 }

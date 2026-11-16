@@ -51,7 +51,7 @@ export function texFiles(root: string) {
   }
   return files.sort();
 }
-function existingTex(root: string, file: unknown): file is string {
+export function existingTex(root: string, file: unknown): file is string {
   if (typeof file !== 'string' || !/\.tex$/i.test(file)) return false;
   try {
     safeName(file);
@@ -70,6 +70,13 @@ function sourceHead(file: string) {
     return buffer.subarray(0, fs.readSync(fd, buffer, 0, buffer.length, 0)).toString('utf8');
   } finally { fs.closeSync(fd); }
 }
+/** Whether a TeX file of the folder is a root document: one that declares its
+ *  class and begins the document, outside comments. */
+export function isRootDocument(root: string, file: unknown): file is string {
+  if (!existingTex(root, file)) return false;
+  const text = sourceHead(path.join(root, file)).replace(/(?<!\\)%[^\n]*/g, '');
+  return /\\documentclass\b/.test(text) && /\\begin\s*\{document\}/.test(text);
+}
 export async function inspectPaper(root: string) {
   let settings: Record<string, unknown> = {}, error: string | undefined;
   try { settings = await config(root); } catch (failure) { error = (failure as Error).message; }
@@ -84,10 +91,7 @@ export async function inspectPaper(root: string) {
   }
   let candidates = main ? [main] : [];
   if (!main) {
-    const files = texFiles(root), roots = files.filter(file => {
-      const text = sourceHead(path.join(root, file)).replace(/(?<!\\)%[^\n]*/g, '');
-      return /\\documentclass\b/.test(text) && /\\begin\s*\{document\}/.test(text);
-    });
+    const files = texFiles(root), roots = files.filter(file => isRootDocument(root, file));
     main = roots.length === 1 ? roots[0] : '';
     const found = new Set(roots);
     candidates = [...roots, ...files.filter(file => !found.has(file))];

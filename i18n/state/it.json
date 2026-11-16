@@ -975,8 +975,8 @@
     "model": "gemini-4-argon-medium"
   },
   "Compiling the PDF…": {
-    "revision": "d467ae9b84fc03fff90caeea66b63c66ad560a1a610687c00c895e25df092fa6",
-    "textHash": "38063fa7ce22f9378f0a0a700f97f1db246f485f87a59eeae317dd50488634d7",
+    "revision": "e577db6d02baca8928ad6cec149a3b45ee0d194066d47a359e09ff97509aa27f",
+    "textHash": "d82896d8ff9b565ff877a23867b0c48bbcc88575e867b2b4b914bee97b466d1b",
     "model": "gemini-4-argon-medium"
   },
   "Completed": {
@@ -5717,6 +5717,36 @@
   "{used}% used": {
     "revision": "49616450efb7e31dfb25df7430ef35f072da62f6d545c1b3cf07efe87f6bb446",
     "textHash": "de02f7e120612f5a90ca33462d214a54508d8afcbb31c81280a39102430283b7",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compile this document": {
+    "revision": "1af30edac0a00059a22b257b626e2e3270496a4f779326387a340228da97f92c",
+    "textHash": "f8f09aa1a42fe05e8c6b6d029d39d06edea47d5272c4fb8d99c9931cedbc8774",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compile {name}": {
+    "revision": "19676704072774a06fe758411bc09dee578684ade301ec28a324f71be62e02a8",
+    "textHash": "f60244284673208c66556c92cfcfe7132cebd61b04a760f91eb0d453173569f0",
+    "model": "gemini-4-argon-medium"
+  },
+  "Compiled document": {
+    "revision": "44db653b9a089653bd2a77405059084efb5ef864bcbbf06944c8005ecdb6ffff",
+    "textHash": "20f624a4ce0a7e70c0e604f2e1be1e61a04c941d403ba5cbfcd3dddd87573ca1",
+    "model": "gemini-4-argon-medium"
+  },
+  "Files": {
+    "revision": "e18da610116ca0463970132dfa2550aeee1d58981a3fd61ddb038f4f8a3988aa",
+    "textHash": "50009ce1da4d15e1c4a04024df691eed5f0d598e2c4c67092f205366d0adf99e",
+    "model": "gemini-4-argon-medium"
+  },
+  "Loading files…": {
+    "revision": "401cd081c0968990d7e81d47e683cd61b64c95dc76735ad74625ca7c08d67b55",
+    "textHash": "82554b63efbcb2297c9c7f64884ff45a6559e4dfa6495dfda7c2c1d2db7193e2",
+    "model": "gemini-4-argon-medium"
+  },
+  "Repository files": {
+    "revision": "3889129662634cab8651f081e9ebea8050591286f05762329b9ddbb2822d527a",
+    "textHash": "8624699a77d7b71d7c4227f81ad299e535c668864f87381551bca80b2892e3d0",
     "model": "gemini-4-argon-medium"
   }
 }

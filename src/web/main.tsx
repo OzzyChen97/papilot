@@ -90,6 +90,7 @@ import { UsageSummary } from './usage.tsx';
 import { useNoteUndo } from './use-note-undo.ts';
 import { NoteResultsProvider, useNoteResults } from './note-results.tsx';
 import { usePanelWidth } from './panel-width.tsx';
+import { RepositoryFilesMenu, useRepositoryFiles } from './repository-files.tsx';
 import type { OutlineItem, PdfHandle, PdfHistoryActions, Rect } from './pdf-view.tsx';
 // pdf.js is large, so the PDF view loads the first time it opens.
 const PlaygroundNotice = import.meta.env.MODE === 'playground' ? lazy(() => import('./playground/notice.tsx').then(module => ({ default: module.PlaygroundNotice }))) : null;
@@ -993,7 +994,7 @@ function PreparingTask({ task }: { task: Task }) {
 }
 
 type ManuscriptPanel = 'pdf' | 'task' | 'source';
-function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, setCollapsed, project, data, error, view, setView, region, setRegion, active, setActive, actions, newTask, tools, share, navigation, onGit, writer, reportError, onFixProblems, diagnoseBuild }: { notesRequest?: number; navigationGuard: React.Ref<NotesHandle>; collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>>; taskCards: ReturnType<typeof useNoteCards>; onFixProblems?: (request: string) => void; diagnoseBuild?: (failureId: string) => Promise<BuildRepairResult>; navigation?: React.ReactNode; newTask: (notes: React.ReactNode) => React.ReactNode; tools?: React.ReactNode; share?: React.ReactNode; onGit: (status: GitStatus) => void; writer: CommitWriter; reportError: (error: unknown) => void; project: Project; data: Manuscript | null; error: string; view: ManuscriptPanel; setView: (view: ManuscriptPanel) => void; region: boolean; setRegion: (on: boolean) => void; active: string; setActive: (id: string) => void; actions: NoteActions }) {
+function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, setCollapsed, project, data, error, view, setView, region, setRegion, active, setActive, actions, newTask, tools, share, navigation, onGit, writer, reportError, onFixProblems, diagnoseBuild, openFile, onOpened, onEditing, document }: { notesRequest?: number; /** The root document compiled, when the repository has several. */ document?: string | null; openFile?: string | null; onOpened?: () => void; onEditing?: (file: string | null) => void; navigationGuard: React.Ref<NotesHandle>; collapsed: boolean; setCollapsed: React.Dispatch<React.SetStateAction<boolean>>; taskCards: ReturnType<typeof useNoteCards>; onFixProblems?: (request: string) => void; diagnoseBuild?: (failureId: string) => Promise<BuildRepairResult>; navigation?: React.ReactNode; newTask: (notes: React.ReactNode) => React.ReactNode; tools?: React.ReactNode; share?: React.ReactNode; onGit: (status: GitStatus) => void; writer: CommitWriter; reportError: (error: unknown) => void; project: Project; data: Manuscript | null; error: string; view: ManuscriptPanel; setView: (view: ManuscriptPanel) => void; region: boolean; setRegion: (on: boolean) => void; active: string; setActive: (id: string) => void; actions: NoteActions }) {
   const build = data?.build, notes = data?.annotations || [], git = data?.git;
   const pdf = useRef<PdfHandle>(null);
   const [readingNotes, setReadingNotes] = useState(false);
@@ -1034,6 +1035,13 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
     onLine: (file, line) => { if (modeRef.current === 'changes') review.current?.select(file, line); } });
   modeRef.current = mode;
   useEffect(() => { if (view === 'source' && !source.editing) setView(window.matchMedia('(max-width: 680px)').matches ? 'pdf' : 'task'); }, [source.editing, view]);
+  // A file picked in the Manuscript row's file menu opens in the source tab.
+  useEffect(() => {
+    if (!openFile) return;
+    setView('source'); setCollapsed(false); source.openFile(openFile); onOpened?.();
+  }, [openFile]);
+  useEffect(() => { onEditing?.(source.tab?.file || null); }, [source.tab?.file]);
+  useEffect(() => () => onEditing?.(null), []);
   const problemsButton = <ProblemsButton ref={problems} counts={build?.problems} status={build?.status} failureId={build?.failureId} pdfKey={build?.key} logUrl={`/api/projects/${project.id}/manuscript/log`} diagnose={diagnoseBuild}
     load={() => api<ManuscriptProblems>(`/projects/${project.id}/manuscript/problems`)}
     onJump={problem => { if (problem.page === undefined || !problem.rect) return; if (phone()) setView('pdf'); const { page, rect } = problem; requestAnimationFrame(() => pdf.current?.showPlace(page, rect)); }}
@@ -1080,7 +1088,7 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
         // The previous PDF stays readable; the details wait in the problem list.
         ? <div className="manuscript-note error brief" role="alert"><span>{t('The latest changes did not compile. This is the last PDF that did.')}</span><button type="button" className="note-link" onClick={() => problems.current?.open()}>{t('Show problems')}</button></div>
         : <div className="manuscript-note error" role="alert"><strong>{t('The manuscript did not compile.')}</strong><pre>{build.error}</pre></div>)}
-      {build?.key ? <Suspense fallback={<div className="review-loading"><p role="status">{t('Opening the PDF…')}</p></div>}><PdfView ref={pdf} place={'pdf:' + project.id} pdfKey={build.key} url={pdfAsset(`/api/projects/${project.id}/manuscript.pdf?key=${build.key}`)} words={wordAsset(`/api/projects/${project.id}/manuscript/words?key=${build.key}`)} notes={numbered.filter(item => item.note.key === build.key)} active={active} region={region} setRegion={setRegion} group={actions.group} onGroupChange={actions.setGroup} markingDisabled={actions.sending}
+      {build?.key ? <Suspense fallback={<div className="review-loading"><p role="status">{t('Opening the PDF…')}</p></div>}><PdfView ref={pdf} place={'pdf:' + project.id + (document ? ':' + document : '')} pdfKey={build.key} url={pdfAsset(`/api/projects/${project.id}/manuscript.pdf?key=${build.key}`)} words={wordAsset(`/api/projects/${project.id}/manuscript/words?key=${build.key}`)} notes={numbered.filter(item => item.note.key === build.key)} active={active} region={region} setRegion={setRegion} group={actions.group} onGroupChange={actions.setGroup} markingDisabled={actions.sending}
           history={actions.history} noteActions={{ has: actions.selection.has, toggle: note => actions.selection.set([note.id], !actions.selection.has(note.id)), remove: actions.remove, restore: actions.restore, edit: actions.edit, onEditing: actions.onEditing, onBusy: actions.onReviewBusy, disabled: actions.sending }} onDeselect={() => setActive('')}
           onCreate={actions.add} onSelect={async note => { if (await closeReadingNotes()) setActive(note.id); }} outline={outline} section={section} onOutline={setOutline} onSection={setSection} lead={switcher} tools={pdfTools}
           onSource={async (target, key) => { if (!await closeReadingNotes()) return; setActive(''); setView('source'); setCollapsed(false); void source.open(target, key); }} passage={source.passage}/></Suspense>
@@ -1698,6 +1706,23 @@ function App() {
   }
   const updateGit = (projectId: string, status: GitStatus) => { setGit({ projectId, status }); setManuscript(current => current.projectId === projectId && current.data ? { ...current, data: { ...current.data, git: status } } : current); };
   const manuscriptData = manuscript.projectId === project?.id ? manuscript : { data: null, error: '' };
+  // The Manuscript row's file menu reads the repository again with each build,
+  // since files may have come or gone, or another window chose a document.
+  const repository = useRepositoryFiles(api, isPlayground ? undefined : project?.id, `${manuscriptData.data?.build?.tree}:${manuscriptData.data?.build?.key}`);
+  const [openFile, setOpenFile] = useState<string | null>(null), [editingFile, setEditingFile] = useState<string | null>(null);
+  const documents = repository.files?.files.filter(file => file.root).length ?? 0, compiledDocument = repository.files?.document ?? null;
+  function openRepositoryFile(file: string) {
+    setSelected(''); setPage('manuscript'); setSidebar(false); setOpenFile(file);
+  }
+  async function compileDocument(file: string) {
+    if (!project) return;
+    try {
+      await api(`/projects/${project.id}/document`, { main: file });
+      await repository.reload();
+      setSelected(''); setPage('manuscript'); setSidebar(false);
+      window.dispatchEvent(new Event('papilot:manuscript'));
+    } catch (error) { reportError(error); }
+  }
   // The reference check reads the bibliography while it is open, again when
   // the working tree changes; the sidebar keeps its last count.
   const bibliography = useBibliography(project?.id || '', JSON.stringify(projectGit?.files?.map(file => [file.path, file.lines]) || []), api, referencesOpen);
@@ -2035,7 +2060,7 @@ function App() {
       </div>
       <div className="sidebar-actions">
         {project && <>
-          <button className={'nav-link manuscript-link' + (manuscriptOpen ? ' active' : '')} aria-current={manuscriptOpen ? 'page' : undefined} title={t('Switch tasks and manuscript') + ' (' + workspaceShortcutLabel + ')'} aria-keyshortcuts={workspaceModifier + '+`'} onClick={() => { setSelected(''); setPage('manuscript'); if (mobile) setManuscriptView('pdf'); setSidebar(false); }}><Icon name="pdf" size={16}/><span className="nav-label">{t('Manuscript')}</span></button>
+          <div className="manuscript-row"><button className={'nav-link manuscript-link' + (manuscriptOpen ? ' active' : '')} aria-current={manuscriptOpen ? 'page' : undefined} title={t('Switch tasks and manuscript') + ' (' + workspaceShortcutLabel + ')'} aria-keyshortcuts={workspaceModifier + '+`'} onClick={() => { setSelected(''); setPage('manuscript'); if (mobile) setManuscriptView('pdf'); setSidebar(false); }}><Icon name="pdf" size={16}/><span className="nav-label">{t('Manuscript')}</span></button>{!isPlayground && <RepositoryFilesMenu key={project.id} projectId={project.id} files={repository.files} editing={manuscriptOpen ? editingFile : null} onOpen={openRepositoryFile} onCompile={compileDocument}/>}</div>
           <button className={'nav-link git-link' + (gitOpen ? ' active' : '')} disabled={!gitAvailable} aria-describedby={!gitAvailable ? 'git-install-hint' : undefined} aria-label={gitAvailable && projectGit?.files?.length ? t('Version Management, {n} changed', { n: projectGit.files.length }) : t('Version Management')} aria-current={gitOpen ? 'page' : undefined} title={gitAvailable ? t('Version management of the manuscript') + '\n' + gitSummary(projectGit) : t('Install Git in this environment to use version management.')} onClick={openGit}><Icon name="restore" size={16}/><span className="nav-label">{t('Version Management')}</span><span className="nav-meta">{gitAvailable && projectGit?.files?.length ? <span className="count">{projectGit.files.length}</span> : null}</span></button>
           {!gitAvailable && <p className="git-install-hint" id="git-install-hint"><a href="https://git-scm.com/install/" target="_blank" rel="noreferrer">{t('Install Git in this environment to use version management.')}</a></p>}
           <ActionMenu label={t('Research Tools')} className="nav-link paper-tools" menuClassName="paper-tools-menu" align="side" actions={[
@@ -2100,7 +2125,7 @@ function App() {
           </div> : chatOnly && task.mode !== 'review' && ['failed', 'interrupted'].includes(task.status) ? <div className="task-error-actions">
             <button type="button" className="button secondary compact" disabled={taskActionBusy} aria-busy={taskActionBusy} onClick={() => void action('/tasks/' + task.id + '/publish')}><Icon name="diff" size={14}/>{task.review?.round ? t('Regenerate PDF comparison') : t('Generate PDF comparison')}</button>
           </div> : null} onTaskSaved={acceptSavedTask} reportError={reportError} pause={pause} pausing={taskActionBusy} skills={projectSkills} feedback={chatOnly ? <>{reviewFeedback(true)}{applicationStep && <div className="review-feedback card commit-card task-delivery">{applicationStep}</div>}</> : null} openReview={chatOnly ? () => { setMobileTab('review'); setLayout(current => current === 'conversation' ? 'split' : current); } : undefined}/></div>
-      : manuscriptOpen && project ? <ManuscriptView notesRequest={playgroundNotes} taskCards={taskCards} key={project.id + project.path} navigationGuard={manuscriptNavigationGuard} collapsed={manuscriptCollapsed} setCollapsed={setManuscriptCollapsed} navigation={!mobile ? sidebarToggle : null} project={project} data={shownManuscript} error={manuscriptData.error} view={manuscriptView} setView={setManuscriptView} region={region} setRegion={setRegion} active={activeNote} setActive={setActiveNote} actions={noteActions} newTask={newTaskPanel} tools={!mobile ? manuscriptTools : null} share={!mobile ? manuscriptShare : null} onFixProblems={fixProblems} diagnoseBuild={isPlayground ? undefined : failureId => api<BuildRepairResult>(`/projects/${project.id}/manuscript/repair`, { failureId, agent: agent.agent, model: agent.model })} onGit={status => updateGit(project.id, status)} writer={{ agent: agent.agent, model: agent.model }} reportError={reportError}/>
+      : manuscriptOpen && project ? <ManuscriptView notesRequest={playgroundNotes} taskCards={taskCards} key={project.id + project.path} navigationGuard={manuscriptNavigationGuard} collapsed={manuscriptCollapsed} setCollapsed={setManuscriptCollapsed} navigation={!mobile ? sidebarToggle : null} project={project} data={shownManuscript} error={manuscriptData.error} view={manuscriptView} setView={setManuscriptView} region={region} setRegion={setRegion} active={activeNote} setActive={setActiveNote} actions={noteActions} newTask={newTaskPanel} tools={!mobile ? manuscriptTools : null} share={!mobile ? manuscriptShare : null} onFixProblems={fixProblems} diagnoseBuild={isPlayground ? undefined : failureId => api<BuildRepairResult>(`/projects/${project.id}/manuscript/repair`, { failureId, agent: agent.agent, model: agent.model })} onGit={status => updateGit(project.id, status)} writer={{ agent: agent.agent, model: agent.model }} reportError={reportError} openFile={openFile} onOpened={() => setOpenFile(null)} onEditing={setEditingFile} document={documents > 1 ? compiledDocument : null}/>
       : gitOpen && project ? <GitWorkspace key={project.id + project.path} projectId={project.id} navigation={sidebarToggle} git={projectGit} onStatus={status => updateGit(project.id, status)} writer={{ agent: agent.agent, model: agent.model }} tasks={state?.tasks.filter(task => task.projectId === project.id) || []} onOpenTask={id => { setSelected(id); setSidebar(false); }}/>
       : referencesOpen && project ? <section className="references-page" aria-label={t('Reference check')}>
           <header className="references-page-head"><h2>{t('Reference check')}</h2><span>{project.name}</span></header>

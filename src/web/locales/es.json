@@ -1442,5 +1442,11 @@
   "Your unsent text, skill and attachments are copied as a draft, without sending. Unsent review comments are copied as text with their original locations; review highlights are not transferred.": "El texto, la habilidad y los adjuntos sin enviar se copian como borrador, sin enviarse. Los comentarios de revisión sin enviar se copian como texto con sus ubicaciones originales; los resaltados de revisión no se transfieren.",
   "{selected} of {total} selected": "{selected} de {total} seleccionados",
   "Add to task": "Añadir a la tarea",
-  "Includes subsections": "Incluye subsecciones"
+  "Includes subsections": "Incluye subsecciones",
+  "Compile this document": "Compilar este documento",
+  "Compile {name}": "Compilar {name}",
+  "Compiled document": "Documento compilado",
+  "Files": "Archivos",
+  "Loading files…": "Cargando archivos…",
+  "Repository files": "Archivos del repositorio"
 }
