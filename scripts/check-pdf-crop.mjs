@@ -254,8 +254,7 @@ Second page fixture with a different passage for search and links.
     try {
       await f.openCrop();
       await expect.poll(() => f.dialog.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
-      await f.dialog.locator('footer button').last().scrollIntoViewIfNeeded();
-      await expect(f.dialog.locator('footer button').last()).toBeInViewport();
+      await expect(f.dialog.locator('.pdf-crop-apply')).toBeInViewport();
       await f.page.screenshot({ path: `test-results/pdf-crop-${options.locale}-${options.theme}.png` });
     } finally { await f.context.close(); }
   }

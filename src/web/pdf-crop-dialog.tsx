@@ -48,7 +48,14 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
     return () => { disposed = true; generation++; observer.disconnect(); cancelAnimationFrame(frame); render?.cancel(); };
   }, [document, number, retry]);
   return <dialog ref={dialog} className="pdf-crop-dialog" aria-labelledby={title} onClose={onClose}>
-    <header><h2 id={title}>{t('Crop margins')}</h2><button type="button" className="icon-button" aria-label={t('Close')} onClick={() => dialog.current!.close()}><Icon name="close"/></button></header>
+    <header>
+      <button type="button" className="icon-button" aria-label={t('Cancel')} title={t('Cancel')} autoFocus onClick={() => dialog.current!.close()}><Icon name="close" size={18}/></button>
+      <h2 id={title}>{t('Crop margins')}</h2>
+      <div className="pdf-crop-actions">
+        <button type="button" className="icon-button" aria-label={t('Reset')} title={t('Reset')} onClick={() => { onApply(FULL_PAGE); dialog.current!.close(); }}><Icon name="undo" size={18}/></button>
+        <button type="button" className="icon-button pdf-crop-apply" aria-label={t('Apply')} title={t('Apply')} disabled={!ready} onClick={() => { onApply(draft); dialog.current!.close(); }}><Icon name="check" size={20}/></button>
+      </div>
+    </header>
     <p id={hint}>{t('Drag the edges to crop.')}</p>
     <div className="pdf-crop-stage" ref={stage}>
       <div className="pdf-crop-preview" ref={preview} style={{ visibility: ready ? 'visible' : 'hidden' }}>
@@ -78,6 +85,5 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
       {!ready && <div className="pdf-crop-status">{error ? <><p role="alert">{t('The page preview could not be loaded.')}</p><button type="button" className="button secondary" onClick={() => setRetry(value => value + 1)}>{t('Retry')}</button></> : <span className="spinner" aria-label={t('Loading…')}/>}</div>}
     </div>
     <div className="pdf-crop-page"><button type="button" className="icon-button" aria-label={t('Previous page')} disabled={number <= 1} onClick={() => setNumber(value => value - 1)}><Icon name="chevronLeft"/></button><span>{t('Page {page} of {pages}', { page: number, pages: document.numPages })}</span><button type="button" className="icon-button" aria-label={t('Next page')} disabled={number >= document.numPages} onClick={() => setNumber(value => value + 1)}><Icon name="chevronRight"/></button></div>
-    <footer><button type="button" className="button secondary" onClick={() => { onApply(FULL_PAGE); dialog.current!.close(); }}>{t('Reset')}</button><div><button type="button" className="button secondary" autoFocus onClick={() => dialog.current!.close()}>{t('Cancel')}</button><button type="button" className="button primary" disabled={!ready} onClick={() => { onApply(draft); dialog.current!.close(); }}>{t('Apply')}</button></div></footer>
   </dialog>;
 }

@@ -180,11 +180,11 @@ Turn on **Settings → Notifications** to receive browser notifications while Pa
 
 ### Crop PDF margins
 
-On a phone or a narrow panel, choose **Crop margins** in the PDF toolbar to make the text fill more of the screen. Drag the four edges in the preview. You can also focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose **Apply** to apply it to the whole document and fit the remaining width.
+On a phone or a narrow panel, choose **Crop margins** in the PDF toolbar to make the text fill more of the screen. Drag the four edges in the preview. You can also focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose the checkmark (**Apply**) in the title bar to apply it to the whole document and fit the remaining width.
 
 <img src="assets/pdf-crop-editor.png" alt="Adjusting the four PDF margins on a phone" width="280"> <img src="assets/pdf-crop-reading.png" alt="Reading the cropped PDF at Fit width" width="280">
 
-The crop is saved for this document on the current device, including after reopening or recompiling it. **Cancel** discards your adjustments; **Reset** immediately restores the full page. Cropping changes the reading view only: PDF exports, LaTeX layout, annotations and source coordinates keep their original page geometry. Separate crops for odd and even pages and automatic margin detection are not included.
+The crop is saved for this document on the current device, including after reopening or recompiling it. The **×** (**Cancel**) discards your adjustments; the curved arrow (**Reset**) immediately restores the full page. Cropping changes the reading view only: PDF exports, LaTeX layout, annotations and source coordinates keep their original page geometry. Separate crops for odd and even pages and automatic margin detection are not included.
 
 ### Edit a passage yourself
 

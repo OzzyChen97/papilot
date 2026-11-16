@@ -730,7 +730,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Close": {
-    "revision": "7ddf7e81a65ef176931d15e353ece138c518a87d0ca10d7a47dd5243156cc337",
+    "revision": "95fc7864858aac92599f8add99368c00355d7c2a96282c41b28bcbd0efd933f1",
     "textHash": "b808f6e97075772fe36de2ee4ea0eb310550f84baa9ea8aa88314f21e467616d",
     "model": "gemini-4-argon-medium"
   },
