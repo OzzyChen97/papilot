@@ -192,3 +192,14 @@ it("compiles a document whose file is gone as the paper's current one", () => {
   expect(projectFor(f.root, SLIDES).main).toBe(SLIDES);
   expect(() => projectFor(f.root, "../outside.tex")).toThrow(/repository-relative/);
 });
+
+it("compiles a task as the current document once its main file is renamed, though read before", async () => {
+  const app = f.app();
+  await app.ready;
+  const task = app.tasks.create("cached", "Cached", [], ["paper"]);
+  chooseDocument(f.root, SLIDES);
+  expect(app.projectOf(task).main).toBe("paper/main.tex");
+  // Renamed without a change of settings, while the slides compile.
+  f.repo.run(["mv", "paper/main.tex", "paper/thesis.tex"]);
+  expect(app.projectOf(task).main).toBe(SLIDES);
+});

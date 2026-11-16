@@ -111,8 +111,10 @@ export class App {
   projectFor(document?: string | null): Project {
     if (!document) return this.project;
     document = cleanPath(document);
+    // The cache holds while the settings are the same and the main file is
+    // still there; one renamed or removed since compiles as the current document.
     const stamp = this.settingsStamp(), cached = this.documentProjects.get(document);
-    if (cached?.stamp === stamp) return cached.project;
+    if (cached?.stamp === stamp && fs.existsSync(path.join(this.root, document))) return cached.project;
     const project = projectFor(this.root, document);
     // A main file renamed or removed compiles as the current document, until it is back.
     if (project.main !== document) return this.project;

@@ -30,7 +30,8 @@ test('switching to another document stops the speculative build of the one befor
     await manuscripts.documentChanged('paper', root, 'letter/response.tex');
     assert.equal(speculating.signal.aborted, true);
   } finally {
-    await manuscripts.stop();
+    // Only this paper's builds stop: stop() ends every later process of the file's tests.
+    manuscripts.forgetProject('paper');
     fs.rmSync(base, { recursive: true, force: true });
   }
 });
