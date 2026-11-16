@@ -295,7 +295,7 @@
     "model": "gemini-4-argon-high"
   },
   "Apply": {
-    "revision": "d9e122e3be942da4ed2642e984e36cc7c1856b739b83bc6ca5e37bd62e66c62d",
+    "revision": "ffb02692e3bec6e785db39702ede597608027d4f45882421b1793321efbef728",
     "textHash": "6a1c963d5bc5e2e5791ed11c5915e392d85cf692172b4b9923e0d6a1af66803f",
     "model": "gemini-4-argon-high"
   },
@@ -475,7 +475,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Cancel": {
-    "revision": "c7bdbf295c2042a8273e0e0d2b474c9e760cd991c6591dd7846d723926b29b70",
+    "revision": "6b4f7596801c9171e84e087631fb902cb80a121b72a967042da9034085506ae9",
     "textHash": "be876433993ab7ba221512b5703b32060626f390aa50d7ed464a847a34539a6c",
     "model": "codex-reviewed"
   },
@@ -730,7 +730,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Close": {
-    "revision": "293bc0ffad821773d126fdb149f85464b431bcd6b77a06c79116de8fab4c57ff",
+    "revision": "43e12b30bcd574caf25a4e4166d9478b7f6df752a4190246b8f3f7ff29b5febb",
     "textHash": "1e8c10206f5b35bd96122e14038b5afd38e326a758874332b3931d6db9b25259",
     "model": "gemini-4-argon-medium"
   },
@@ -2175,7 +2175,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Loading…": {
-    "revision": "210fbf12e9b8c9708d3184a9af21e73ac73f4b5825261350b9149726fbc8969d",
+    "revision": "4168c452237aa13b176394773f3b66a395f336a3eca09504e62b8024ce9ca5ae",
     "textHash": "8bf609c884cab593bf97920607df7164e47b6f00d1c28bd6fb0d9d87ed425da2",
     "model": "gemini-4-argon-medium"
   },
@@ -2410,7 +2410,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Next page": {
-    "revision": "3a679270bc9a015055f4856859f1d5b1a72d1e7e163d968db78f191495c55261",
+    "revision": "ef7fa0981b7edfdfc47691a188f31e93a678728948e9a7e35640f2c14cf16eb3",
     "textHash": "40fbac76c13b2d8f204e0472a3d68e243a848a20b49c076d2d45fb19262306a4",
     "model": "gemini-4-argon-medium"
   },
@@ -2890,7 +2890,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Page {page}": {
-    "revision": "0ac3e9f7591bc2c4a3b5dda7854ab2a4af672fae11d859aef3128e33bcf98a3d",
+    "revision": "1129fbce261b1cd04f2cafa59926a39290b09e459405261e899810555383a689",
     "textHash": "53e82b7e5b81e4736d6bfef58348af9818ca07714ca2d7a5edb4a6133194de3c",
     "model": "codex-reviewed"
   },
@@ -3075,7 +3075,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Previous page": {
-    "revision": "5dafe24aa49d5e6f90fc7a3fd1bf3c0f3892ee5c5947e97b164fb2902feeb869",
+    "revision": "a9bbb8e761e69b6d5658a4127c39b94f1bceb4553396d4920a731625de601f35",
     "textHash": "891a8a6c4323f0795d8c2d3a5de90251f36daaa4274857dab485656089d33ea6",
     "model": "gemini-4-argon-medium"
   },
@@ -3540,7 +3540,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Retry": {
-    "revision": "d364c58da91ac18eded0166a7fc8f153c77bbba4e4b3254376a2fdf4ce1e49c3",
+    "revision": "b4171c7b24bbb06b78aa912fcf74e3e362c17ef79334007f2d07cdf85363f183",
     "textHash": "196856a662bd90843ddb2e1f68e1cc74617b43b35778c7b5f520c38ea80038e1",
     "model": "gemini-4-argon-medium"
   },
@@ -5793,5 +5793,55 @@
     "revision": "5c65200c1d54ea5ea9044be97f802bf9e35216885fc86a67884d13ff52dd8b4a",
     "textHash": "5f9ab2cc5ef6a157c23494f326d9b2b125cd82d54b4559e7a640e039ef9c87fa",
     "model": "gemini-4-argon-medium"
+  },
+  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": {
+    "revision": "9ba3058effedc671d1bb8a48d17d5660fd8d68d1a19d404113bfe8fc82260dc7",
+    "textHash": "b5741dbb3b00071da6a02e2c92e51e452c351a40a92241730baa80bff31f9e76",
+    "model": "codex"
+  },
+  "Bottom margin": {
+    "revision": "ba9c2e3a582ef0fa09bd81d3db99c1d009a820b9614a69a43fb65a164a47959a",
+    "textHash": "2f825e075eee0fe4a81cf7edbf05013179097e207af794b1a55dd59e07a89e1c",
+    "model": "codex"
+  },
+  "Crop margins": {
+    "revision": "6ed04bb6cf7ea8f7e96cdd14ef735560d68901217459ddd73fb673c17ec44f4e",
+    "textHash": "0c3389305a487724e32172b7b641e1d57cabef0bfe43677d3598248cf92eb2e5",
+    "model": "codex"
+  },
+  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": {
+    "revision": "77da1ed49717f63015d65f38d50421cc5ccd329154c3a32804cd532925d8eb34",
+    "textHash": "b9a1949a2ee1371f33cb43c3b8dd36e7bc563ebaa12dbbe4224981467de9ed1c",
+    "model": "codex"
+  },
+  "Left margin": {
+    "revision": "4b50b1ef552925e0e07207f97a7f9a83716a5fd0e6bee6c8aa897fc9891b4579",
+    "textHash": "b7210d2d5f27cea04a023bc2ca926006bc72702398d8f02d39103148cb1128e6",
+    "model": "codex"
+  },
+  "Page {page} of {pages}": {
+    "revision": "2030292f8f0230cb765a1cd446879cbf06f712225b5ad2939b45e69dd9b21e88",
+    "textHash": "4fb2d2c91fa9946237b1725dd2c68828576ab263787af9c881a687fd88994bb4",
+    "model": "codex"
+  },
+  "Reset": {
+    "revision": "934dd0c4bee4a5395298c35ebf811f1c51b747d3e37175032bdc92f6ce2df84f",
+    "textHash": "893f3d9463683c71bf5eeca6a25c54fac365b5dbd5d7b69bbc0f5e82f5f72c70",
+    "model": "codex"
+  },
+  "Right margin": {
+    "revision": "5a103c57dac43d5949b6c186f5fe21ab174b78f09dffa50928114e7a71e4d372",
+    "textHash": "a9c7d2da84f9a39c4bb3a4ccc14ceb21ad0d8bde2a205bac787c54c1a128a219",
+    "model": "codex"
+  },
+  "The page preview could not be loaded.": {
+    "revision": "69d3845f22477b5c277e0927505754c9fc7fbcfe04182e9f76fb90545bcca910",
+    "textHash": "9ffb40c12ea6264b95ab7ee18a0923d6e13a5137a03f50f924071f16df99bfc4",
+    "model": "codex"
+  },
+  "Top margin": {
+    "revision": "c1fe19c2d616cb80a50e2eeb8b3bf1335e61b49803358422017943f5b8514f3f",
+    "textHash": "43a733be649dd7725980ad9fea71f87dbbc0712bfaca9c7181c99a2af2cf2b8c",
+    "model": "codex"
   }
 }

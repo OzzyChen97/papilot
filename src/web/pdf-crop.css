@@ -1,0 +1,37 @@
+.pdf-crop-dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 24px);margin:auto;padding:20px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);color:var(--text);box-shadow:var(--float);overflow:auto;overscroll-behavior:contain}
+.pdf-crop-dialog::backdrop{background:rgb(0 0 0/.45);overflow:hidden;overscroll-behavior:contain}
+.pdf-crop-dialog header,.pdf-crop-dialog footer,.pdf-crop-dialog footer>div{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pdf-crop-dialog h2{margin:0;font-size:18px}
+.pdf-crop-dialog p{margin:10px 0;font-size:13px;line-height:1.5;color:var(--text-2)}
+.pdf-crop-stage{height:clamp(180px,45dvh,420px);position:relative;display:grid;place-items:center;background:var(--canvas);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.pdf-crop-preview{position:relative;flex-shrink:0;box-shadow:var(--shadow-sm)}
+.pdf-crop-preview canvas{display:block;width:100%;height:100%;filter:var(--pdf-filter)}
+.pdf-crop-shade{position:absolute;inset:0;background:rgb(0 0 0/.5);pointer-events:none}
+.pdf-crop-outline{position:absolute;border:2px solid var(--accent);pointer-events:none}
+.pdf-crop-handle{position:absolute;transform:translate(-50%,-50%);width:44px;height:44px;display:grid;place-items:center;padding:0;border:0;background:transparent;touch-action:none;-webkit-user-select:none;user-select:none}
+.pdf-crop-handle.vertical{cursor:ew-resize}.pdf-crop-handle.horizontal{cursor:ns-resize}
+.pdf-crop-handle span{width:10px;height:28px;border:2px solid white;border-radius:5px;background:var(--accent);box-shadow:0 1px 4px #0006;pointer-events:none}
+.pdf-crop-handle.horizontal span{width:28px;height:10px}
+.pdf-crop-handle:focus-visible{outline:2px solid var(--accent);outline-offset:-3px;border-radius:6px}
+.pdf-crop-status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center}
+.pdf-crop-page{display:flex;align-items:center;justify-content:center;gap:16px;font-size:12px;color:var(--text-2)}
+.pdf-crop-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 16px}
+.pdf-crop-fields label{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:12px;min-width:0}
+.pdf-crop-fields label>span{display:flex;align-items:center;gap:4px;color:var(--text-3)}
+.pdf-crop-fields input{width:58px;min-height:36px;padding:6px;border:1px solid var(--line-strong);border-radius:var(--r);background:var(--bg);color:var(--text);font:inherit}
+.pdf-crop-dialog footer{margin-top:14px;flex-wrap:wrap}
+.pdf-crop-dialog .icon-button{min-width:36px;min-height:36px}
+.pdf-crop-dialog .button{min-height:36px}
+.pdf-crop-dialog .pdf-crop-help{font-size:12px}
+/* Make room for the extra tool before a medium desktop toolbar wraps. */
+@container (min-width:761px) and (max-width:1000px){.pdf-toolbar .pdf-contents-trigger{width:30px;padding:0;justify-content:center}.pdf-toolbar .pdf-contents-trigger>span,.pdf-toolbar .pdf-contents-trigger>svg:last-child{display:none}}
+@media(pointer:coarse){.pdf-crop-dialog .button,.pdf-crop-dialog .icon-button,.pdf-crop-fields input{min-height:44px}.pdf-crop-dialog .icon-button{min-width:44px}}
+@media(max-width:400px){.pdf-crop-dialog{padding:12px}.pdf-crop-fields{gap:8px}.pdf-crop-fields label{flex-direction:column;align-items:flex-start}.pdf-crop-fields label>span{width:100%}.pdf-crop-fields input{flex:1;min-width:0}}
+.pdf-cropped .pdf-container .pdfViewer .page{overflow:clip}
+/* PDF.js fits to the scroll container's width, which excludes no viewer padding. */
+.pdf-cropped .pdf-container .pdfViewer{padding-inline:0}
+.pdf-crop-selection-actions{position:absolute;z-index:20;display:flex;align-items:center;gap:6px;pointer-events:none}
+.pdf-crop-selection-actions .add-note,.pdf-crop-selection-actions .add-source{position:static;transform:none;flex-shrink:0}
+.pdf-crop-selection-actions .add-note{flex-shrink:1;white-space:normal;height:auto;min-height:32px;padding-block:6px}
+.select-handle[data-inset][data-end=from]::after{top:0}
+.select-handle[data-inset][data-end=to]::after{bottom:0}

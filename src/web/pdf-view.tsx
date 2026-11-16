@@ -21,6 +21,9 @@ import { touchSelection } from './touch-select.ts';
 import { t } from './i18n.ts';
 import { PdfNoteCard, type PdfNoteActions, type PdfNoteHandle } from './pdf-suggestion.tsx';
 import { cMapData } from '../../engine/src/web/pdf-cmaps.ts';
+import { cropDocument, cropLayerStyle, isCropped, originalPageRect, readPdfCrop, savePdfCrop, type PdfCrop } from './pdf-crop.ts';
+import { PdfCropDialog } from './pdf-crop-dialog.tsx';
+import { PdfSelectionActions } from './pdf-selection-actions.tsx';
 
 pdfjs.GlobalWorkerOptions.workerSrc = worker;
 const CMapData = cMapData(import.meta.glob<string>('../../node_modules/pdfjs-dist/cmaps/*.bcmap', { eager: true, import: 'default', query: '?url&no-inline' }));
@@ -60,7 +63,7 @@ function closeDocument(task?: PDFDocumentLoadingTask) {
 // A point is a small box where the author clicked. Its quote is the line of
 // text at or beside it, with ‸ where the point falls, so the agent can find it.
 function pointAt(pageDiv: HTMLElement, clientX: number, clientY: number): Target {
-  const frame = pageDiv.getBoundingClientRect();
+  const frame = originalPageRect(pageDiv);
   const x = unit((clientX - frame.left) / frame.width), y = unit((clientY - frame.top) / frame.height);
   const words = Array.from(pageDiv.querySelectorAll<HTMLElement>('.textLayer span')).filter(span => !span.firstElementChild && span.textContent?.trim()).map(span => {
     const box = span.getBoundingClientRect();
@@ -213,7 +216,9 @@ export const PdfView = forwardRef<PdfHandle, {
 }>(function PdfView(props, ref) {
   const latest = useRef(props); latest.current = props;
   const root = useRef<HTMLDivElement>(null), container = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), findInput = useRef<HTMLInputElement>(null);
-  const tools = useRef<{ bus: EventBus; links: PDFLinkService; find: PDFFindController; viewer: PDFViewer } | null>(null);
+  const tools = useRef<{ bus: EventBus; links: PDFLinkService; find: PDFFindController; viewer: PDFViewer; cropTo: (crop: PdfCrop) => void } | null>(null);
+  const [crop, setCrop] = useState(() => readPdfCrop(props.place)), cropRef = useRef(crop);
+  const [cropping, setCropping] = useState(false), cropButton = useRef<HTMLButtonElement>(null);
   const loaded = useRef<PDFDocumentProxy | null>(null), restore = useRef<{ scale: string; top: number; left: number } | null>(null);
   const layerMap = useRef(new Map<number, HTMLElement>());
   const [layers, setLayers] = useState(new Map<number, HTMLElement>());
@@ -229,6 +234,7 @@ export const PdfView = forwardRef<PdfHandle, {
   const [zoom, setZoom] = useState({ value: 'page-width', scale: 1 });
   const [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [findOpen, setFindOpen] = useState(false), [query, setQuery] = useState(''), [matches, setMatches] = useState({ current: 0, total: 0 }), [notFound, setNotFound] = useState(false);
+  const queryRef = useRef(query); queryRef.current = query;
   const [selection, setSelection] = useState<Selection | null>(null);
   // A place shown from elsewhere, such as a compilation problem, marked briefly.
   const [flash, setFlash] = useState<{ page: number; rect: Rect; id: number } | null>(null);
@@ -341,17 +347,18 @@ export const PdfView = forwardRef<PdfHandle, {
     goToNote(note) {
       const div = tools.current?.viewer.getPageView(note.page)?.div, box = container.current;
       if (!div || !box) return;
-      box.scrollTo({ top: box.scrollTop + div.getBoundingClientRect().top - box.getBoundingClientRect().top + note.rect[1] * div.offsetHeight - 96, behavior: 'smooth' });
+      const frame = originalPageRect(div, cropRef.current);
+      box.scrollTo({ top: box.scrollTop + frame.top - box.getBoundingClientRect().top + note.rect[1] * frame.height - 96, behavior: 'smooth' });
     },
     showPlace(page, rect, options) {
       if (!pagesReady.current) { pendingPlace.current = { page, rect, ...options }; return; }
       const div = tools.current?.viewer.getPageView(page)?.div, box = container.current;
       if (!div || !box) return;
-      const pageBox = div.getBoundingClientRect(), view = box.getBoundingClientRect();
+      const pageBox = originalPageRect(div, cropRef.current), view = box.getBoundingClientRect();
       const visible = pageBox.top + rect[1] * pageBox.height >= view.top + 8 && pageBox.top + rect[3] * pageBox.height <= view.bottom - 8;
       if (options?.keep && visible) { setFlash({ page, rect, id: Date.now() }); return; }
-      const top = box.scrollTop + pageBox.top - view.top + rect[1] * div.offsetHeight - box.clientHeight / 3;
-      const middle = box.scrollLeft + pageBox.left - view.left + (rect[0] + rect[2]) / 2 * div.offsetWidth - box.clientWidth / 2;
+      const top = box.scrollTop + pageBox.top - view.top + rect[1] * pageBox.height - box.clientHeight / 3;
+      const middle = box.scrollLeft + pageBox.left - view.left + (rect[0] + rect[2]) / 2 * pageBox.width - box.clientWidth / 2;
       // A far jump lands at once, so the mark is still showing on arrival.
       box.scrollTo({ top, left: box.scrollWidth > box.clientWidth ? middle : box.scrollLeft, behavior: Math.abs(top - box.scrollTop) > box.clientHeight * 2 ? 'instant' : 'smooth' });
       setFlash({ page, rect, id: Date.now() });
@@ -391,12 +398,23 @@ export const PdfView = forwardRef<PdfHandle, {
       } else if (Number.isInteger(target)) pageNumber = (target as number) + 1;
       if (pageNumber && pageNumber >= 1 && pageNumber <= viewer.pagesCount) viewer.scrollPageIntoView({ pageNumber, destArray: explicit });
     };
-    tools.current = { bus, links, find, viewer };
+    let location: { page: number; left: number; top: number } | undefined;
+    tools.current = { bus, links, find, viewer, cropTo(next) {
+      const document = loaded.current;
+      if (!document || !pagesReady.current) return;
+      cropRef.current = next; setCrop(next); savePdfCrop(latest.current.place, next);
+      returning = { ...(location ?? { page: viewer.currentPageNumber, left: 0, top: 0 }), scale: 'page-width' };
+      restore.current = null; pagesReady.current = false;
+      layerMap.current.clear(); setLayers(new Map()); setSelection(null); picking.current?.reset();
+      setMatches({ current: 0, total: 0 }); setNotFound(false);
+      viewer.setDocument(document);
+    } };
     const attach = ({ pageNumber, source }: { pageNumber: number; source?: { div?: HTMLElement } }) => {
       const div = source?.div ?? viewer.getPageView(pageNumber - 1)?.div;
       if (!div) return;
       let layer = layerMap.current.get(pageNumber);
       if (!layer) { layer = document.createElement('div'); layer.className = 'note-layer'; layerMap.current.set(pageNumber, layer); setLayers(new Map(layerMap.current)); }
+      Object.assign(layer.style, cropLayerStyle(cropRef.current));
       if (layer.parentElement !== div) div.append(layer);
     };
     bus.on('pagerendered', attach); bus.on('textlayerrendered', attach); bus.on('annotationlayerrendered', attach);
@@ -407,7 +425,7 @@ export const PdfView = forwardRef<PdfHandle, {
     const goBack = () => {
       if (!returning || !box.clientHeight || !viewer.pagesCount) return;
       const { page, left, top } = returning; returning = undefined;
-      if (page >= 1 && page <= viewer.pagesCount) viewer.scrollPageIntoView({ pageNumber: page, destArray: [null, { name: 'XYZ' }, left, top, null], allowNegativeOffset: true });
+      if (page >= 1 && page <= viewer.pagesCount) viewer.scrollPageIntoView({ pageNumber: page, destArray: [null, { name: 'XYZ' }, left, top, null], allowNegativeOffset: !isCropped(cropRef.current) });
     };
     bus.on('pagesinit', () => {
       const keep = restore.current; restore.current = null;
@@ -420,6 +438,9 @@ export const PdfView = forwardRef<PdfHandle, {
       if (pending) requestAnimationFrame(() => handle.current?.showPlace(pending.page, pending.rect, { keep: pending.keep }));
     });
     bus.on('pagechanging', ({ pageNumber }: { pageNumber: number }) => { setPage(pageNumber); });
+    // setDocument resets PDF.js's find controller on a crop or recompilation.
+    // Wait until it is attached again before restoring the visible query.
+    bus.on('pagesloaded', () => { if (queryRef.current) search(false, false, queryRef.current); });
     bus.on('scalechanging', ({ scale, presetValue }: { scale: number; presetValue?: string }) => {
       setZoom({ value: presetValue || String(scale), scale });
       if (presetValue) browserStorage.setItem(PDF_ZOOM_STORAGE, presetValue); else browserStorage.setItem(PDF_ZOOM_STORAGE, String(Math.round(scale * 100) / 100));
@@ -440,14 +461,15 @@ export const PdfView = forwardRef<PdfHandle, {
     resize.observe(box);
     // The current section is the last bookmark above a line 40% down the view
     // (PDF units grow upwards); at the end of the document it is the last one.
-    bus.on('updateviewarea', ({ location }: { location?: { pageNumber: number; top: number; left: number; scale: number } }) => {
-      if (!location || !box.clientHeight) return;
-      if (place && !returning) savePlace(place, { page: location.pageNumber, left: location.left, top: location.top, scale: viewer.currentScaleValue });
-      const items = latest.current.outline, reading = location.top - box.clientHeight * 0.4 / (viewer.currentScale * 96 / 72);
-      let current = -1;
-      items.forEach((item, index) => { if (item.page < location.pageNumber || (item.page === location.pageNumber && (item.top === null || item.top >= reading))) current = index; });
-      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2 && items.length) current = items.length - 1;
-      if (current !== latest.current.section) latest.current.onSection(current);
+    bus.on('updateviewarea', ({ location: current }: { location?: { pageNumber: number; top: number; left: number; scale: number } }) => {
+      if (!current || !box.clientHeight) return;
+      location = { page: current.pageNumber, left: current.left, top: current.top };
+      if (place && !returning) savePlace(place, { ...location, scale: viewer.currentScaleValue });
+      const items = latest.current.outline, reading = current.top - box.clientHeight * 0.4 / (viewer.currentScale * 96 / 72);
+      let section = -1;
+      items.forEach((item, index) => { if (item.page < current.pageNumber || (item.page === current.pageNumber && (item.top === null || item.top >= reading))) section = index; });
+      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2 && items.length) section = items.length - 1;
+      if (section !== latest.current.section) latest.current.onSection(section);
     });
     bus.on('updatefindmatchescount', ({ matchesCount }: { matchesCount: { current: number; total: number } }) => setMatches(matchesCount));
     bus.on('updatefindcontrolstate', ({ state, matchesCount }: { state: number; matchesCount?: { current: number; total: number } }) => { setNotFound(state === FindState.NOT_FOUND); if (matchesCount) setMatches(matchesCount); });
@@ -482,7 +504,7 @@ export const PdfView = forwardRef<PdfHandle, {
       const { range, before, after } = wholeWords(current.getRangeAt(0)), node = range.startContainer, element = node instanceof Element ? node : node.parentElement;
       const pageDiv = element?.closest<HTMLElement>('.page');
       if (!pageDiv || !box.contains(pageDiv) || element?.closest('.pdf-note-card')) { setSelection(null); return; }
-      const frame = pageDiv.getBoundingClientRect();
+      const frame = originalPageRect(pageDiv);
       const rects = mergeLines(Array.from(range.getClientRects()).filter(r => r.width > 1 && r.height > 1 && r.top >= frame.top - 1 && r.bottom <= frame.bottom + 1)
         .map(r => [unit((r.left - frame.left) / frame.width), unit((r.top - frame.top) / frame.height), unit((r.right - frame.left) / frame.width), unit((r.bottom - frame.top) / frame.height)] as Rect));
       // The selection's own text keeps pdf.js's line breaks as spaces.
@@ -547,7 +569,7 @@ export const PdfView = forwardRef<PdfHandle, {
       if (target?.closest('button,a,input,textarea,select,[contenteditable],.select-handle,.pdf-note-card')) return;
       const page = target?.closest<HTMLElement>('.page');
       if (!page || !box.contains(page)) return;
-      const frame = page.getBoundingClientRect(), x = (event.clientX - frame.left) / frame.width, y = (event.clientY - frame.top) / frame.height;
+      const frame = originalPageRect(page), x = (event.clientX - frame.left) / frame.width, y = (event.clientY - frame.top) / frame.height;
       let hit: Annotation | undefined, area = Infinity;
       for (const { note } of notesRef.current) {
         if (note.page !== Number(page.dataset.pageNumber) - 1) continue;
@@ -591,7 +613,7 @@ export const PdfView = forwardRef<PdfHandle, {
       blocked: () => latest.current.region || Boolean(editingRef.current),
       menu: '.add-note',
       onSelect: ({ target: pageDiv, units, from, to }) => {
-        const frame = pageDiv.getBoundingClientRect(), range = document.createRange(), last = units[to].firstChild;
+        const frame = originalPageRect(pageDiv), range = document.createRange(), last = units[to].firstChild;
         // A word followed by another carries the space; the selection stops before it.
         range.setStart(units[from], 0);
         if (last?.nodeType === Node.TEXT_NODE) range.setEnd(last, (last.textContent || '').trimEnd().length); else range.setEnd(units[to], units[to].childNodes.length);
@@ -620,7 +642,7 @@ export const PdfView = forwardRef<PdfHandle, {
   // A recompiled manuscript opens at the same place and zoom. A card opened
   // during its download cancels that replacement until the card closes.
   useEffect(() => {
-    if (editing || (loaded.current && shownRef.current.url === props.url)) return;
+    if (editing || cropping || (loaded.current && shownRef.current.url === props.url)) return;
     const next = { url: props.url, words: props.words, key: props.pdfKey };
     const current = tools.current!, box = container.current!;
     let cancelled = false, attached = false;
@@ -640,6 +662,7 @@ export const PdfView = forwardRef<PdfHandle, {
       // Marks always name the pages actually attached, never a pending fetch.
       shownRef.current = next; setShown(next);
       if (next.words) exactText(document, next.words);
+      cropDocument(document, () => cropRef.current);
       current.viewer.setDocument(document); current.links.setDocument(document, null);
       setPages(document.numPages); setLoading(false);
       closeDocument(previous?.loadingTask);
@@ -652,7 +675,7 @@ export const PdfView = forwardRef<PdfHandle, {
       setLoading(false);
     });
     return () => { cancelled = true; if (!attached) { restore.current = null; closeDocument(task); } };
-  }, [props.url, props.words, props.pdfKey, editing]);
+  }, [props.url, props.words, props.pdfKey, editing, cropping]);
 
   // Opening a suggestion from the task or navigation reveals its passage.
   // Page views exist after pagesinit even when their canvases have not rendered.
@@ -662,7 +685,7 @@ export const PdfView = forwardRef<PdfHandle, {
       const viewer = tools.current?.viewer, box = container.current;
       const div = entry && viewer?.getPageView(entry.note.page)?.div;
       if (!entry || !div || !box) return;
-      const page = div.getBoundingClientRect(), view = box.getBoundingClientRect();
+      const page = originalPageRect(div, cropRef.current), view = box.getBoundingClientRect();
       const top = page.top + entry.note.rect[1] * page.height, bottom = page.top + entry.note.rect[3] * page.height;
       if (top < view.top + 16 || bottom > view.bottom - 240) box.scrollTo({ top: box.scrollTop + top - view.top - 72 });
     };
@@ -674,7 +697,7 @@ export const PdfView = forwardRef<PdfHandle, {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const viewer = tools.current?.viewer, mod = e.metaKey || e.ctrlKey;
-      if (!viewer || e.defaultPrevented || latest.current.suspended || !container.current?.clientHeight) return;
+      if (!viewer || e.defaultPrevented || latest.current.suspended || !container.current?.clientHeight || document.querySelector('dialog[open]')) return;
       if (mod && e.key.toLowerCase() === 'f') { e.preventDefault(); if (findInput.current) findInput.current.select(); else setFindOpen(true); }
       else if (mod && (e.key === '=' || e.key === '+')) { e.preventDefault(); viewer.increaseScale(); }
       else if (mod && e.key === '-') { e.preventDefault(); viewer.decreaseScale(); }
@@ -739,7 +762,7 @@ export const PdfView = forwardRef<PdfHandle, {
   }
   // Where on screen a target ends, for the wheel when a key, not the pointer, asked for it.
   function screenPoint(target: Target) {
-    const div = tools.current?.viewer.getPageView(target.page)?.div, box = div?.getBoundingClientRect(), end = target.rects.at(-1) || target.rect;
+    const div = tools.current?.viewer.getPageView(target.page)?.div, box = div && originalPageRect(div, cropRef.current), end = target.rects.at(-1) || target.rect;
     return box ? { x: box.left + end[2] * box.width, y: box.top + end[3] * box.height } : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
   }
   // Each tool's response to what was marked with it.
@@ -810,7 +833,7 @@ export const PdfView = forwardRef<PdfHandle, {
     : note.kind === 'delete' ? note.comment ? t('Replacement {n}: {text}', { n: label, text: note.comment }) : t('Deletion {n}', { n: label })
     : t('Note {n}: {comment}', { n: label, comment: note.group ? groupName(note.group) : note.comment });
 
-  return <div ref={root} className={'pdf-view' + (props.region ? ' marking' : '') + (markable ? ` tool-${active}` : '')} onKeyDown={event => {
+  return <div ref={root} className={'pdf-view' + (isCropped(crop) ? ' pdf-cropped' : '') + (props.region ? ' marking' : '') + (markable ? ` tool-${active}` : '')} onKeyDown={event => {
     if (!activeSuggestion || noteLocked || editing || props.region || event.defaultPrevented || event.nativeEvent.isComposing || event.keyCode === 229 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
     const target = event.target instanceof Element ? event.target : null;
@@ -827,6 +850,7 @@ export const PdfView = forwardRef<PdfHandle, {
       <div className="pdf-toolbar-spacer"/>
       <PdfPageControls page={page} pages={pages} zoom={zoom} onPage={number => { if (tools.current) tools.current.viewer.currentPageNumber = number; }} onZoom={value => { if (tools.current) tools.current.viewer.currentScaleValue = value; }} onZoomBy={factor => tools.current?.viewer.updateScale({ scaleFactor: factor })}/>
       <PdfFindButton open={findOpen} onClick={() => { if (findOpen) closeFind(); else setFindOpen(true); }}/>
+      <button ref={cropButton} type="button" className={'icon-button pdf-crop-toggle' + (isCropped(crop) ? ' active' : '')} aria-label={t('Crop margins')} title={t('Crop margins')} aria-haspopup="dialog" disabled={loading || Boolean(error) || Boolean(editing) || noteLocked} onClick={() => { clearSelection(); setCropping(true); }}><Icon name="crop" size={16}/></button>
 
       {/* Narrow desktop panes keep compact tools; phones show a collapsible bottom capsule. */}
       {markable && <span className="pdf-compact-tools">
@@ -851,17 +875,26 @@ export const PdfView = forwardRef<PdfHandle, {
     </div>
     {wheel && <StampWheel x={wheel.x} y={wheel.y} stamps={stamps} onPick={pickStamp} onClose={() => { setWheel(null); container.current?.focus({ preventScroll: true }); }}
       onFree={() => { const target = wheel.target; setWheel(null); openCard(target); }}/>}
+    {cropping && loaded.current && <PdfCropDialog document={loaded.current} page={page} crop={crop} onApply={next => tools.current?.cropTo(next)} onClose={() => { setCropping(false); cropButton.current?.focus({ preventScroll: true }); }}/>}
     {[...layers].map(([number, layer]) => createPortal(<Fragment>
       {(() => {
-        const compact = layer.clientWidth <= 680;
-        const notes = notesRef.current.filter(({ note }) => note.page === number - 1), spots = tagSpots(notes.map(({ note }) => ({ rect: (note.rects?.length ? note.rects : [note.rect])[0], name: note.stamp })), compact ? layer.clientHeight : undefined);
+        const width = crop[2] - crop[0], height = crop[3] - crop[1], compact = layer.clientWidth * width <= 680;
+        const notes = notesRef.current.filter(({ note }) => note.page === number - 1 && note.rect[2] >= crop[0] && note.rect[0] <= crop[2] && note.rect[3] >= crop[1] && note.rect[1] <= crop[3]);
+        const spots = tagSpots(notes.map(({ note }) => {
+          const rect = (note.rects?.length ? note.rects : [note.rect])[0];
+          return { rect: [(rect[0] - crop[0]) / width, (rect[1] - crop[1]) / height, (rect[2] - crop[0]) / width, (rect[3] - crop[1]) / height] as Rect, name: note.stamp };
+        }), compact ? layer.clientHeight * height : undefined).map(spot => ({ ...spot,
+          left: spot.left === undefined ? undefined : `calc(${crop[0] * 100}% + ${spot.left}px)`,
+          right: spot.right === undefined ? undefined : `calc(${(1 - crop[2]) * 100}% + ${spot.right}px)`,
+          top: `${crop[1] * 100 + Number.parseFloat(String(spot.top)) * height}%`,
+        }));
         return notes.map(({ note, number: label }, index) => <Fragment key={note.id}>
           {note.kind === 'point' ? <div className={'note-point' + (props.active === note.id ? ' active' : '')} data-note={note.id} data-stamp={note.stamp ? true : undefined} style={{ ...center(note.rect), ...groupStyle(note.group) }}/>
             : (note.rects?.length ? note.rects : [note.rect]).map((rect, part) => <div key={part} className={(note.rects?.length ? 'note-mark' : 'note-box') + (props.active === note.id ? ' active' : '')} data-note={note.id} data-group={note.group} data-kind={note.kind} data-stamp={note.stamp ? true : undefined} data-review={note.aiReview ? true : undefined} style={{ ...percent(rect), ...groupStyle(note.group) }}/>) }
           <button type="button" className={'note-tag' + (props.active === note.id ? ' active' : '')} data-note={note.id} data-group={note.group} data-kind={note.kind} data-stamp={note.stamp ? true : undefined} data-review={note.aiReview ? true : undefined} style={{ ...spots[index], ...groupStyle(note.group) }} aria-label={tagLabel(note, label)} aria-expanded={props.noteActions ? props.active === note.id : undefined} title={note.group ? t('Annotation groups') : note.comment} onClick={() => props.onSelect(note)}>{label}{note.stamp && <span className="note-tag-stamp" hidden={compact}>{note.stamp}</span>}</button>
         </Fragment>);
       })()}
-      {activeNote?.note.page === number - 1 && props.noteActions && !editing && !wheel && !props.region && <PdfNoteCard controller={noteCard} key={activeNote.note.id} note={activeNote.note} number={activeNote.number} index={noteIndex} total={peers.length} selected={props.noteActions.has(activeNote.note.id)} busy={noteLocked} error={noteError}
+      {activeNote?.note.page === number - 1 && props.noteActions && !editing && !wheel && !props.region && <PdfNoteCard anchorLayer={isCropped(crop) ? layer : undefined} controller={noteCard} key={activeNote.note.id} note={activeNote.note} number={activeNote.number} index={noteIndex} total={peers.length} selected={props.noteActions.has(activeNote.note.id)} busy={noteLocked} error={noteError}
         draft={noteDrafts[activeNote.note.id] ?? null} onDraftChange={draft => setNoteDrafts(current => {
           const next = { ...current };
           if (draft === null) delete next[activeNote.note.id]; else next[activeNote.note.id] = draft;
@@ -907,15 +940,19 @@ export const PdfView = forwardRef<PdfHandle, {
       {flash?.page === number - 1 && <div key={flash.id} className="problem-flash" style={percent(flash.rect)}/>}
       {selection?.handles && selection.page === number - 1 && !editing && <>
         {selection.rects.map((rect, index) => <div key={index} className="note-mark draft" style={percent(rect)}/>)}
-        {(['from', 'to'] as const).map(end => { const [x, top, bottom] = selection.handles![end]; return <span key={end} className="select-handle" data-end={end} style={{ left: `${x * 100}%`, top: `${top * 100}%`, height: `${(bottom - top) * 100}%` }}/>; })}
+        {(['from', 'to'] as const).map(end => { const [x, top, bottom] = selection.handles![end]; return <span key={end} className="select-handle" data-end={end}
+          data-inset={isCropped(crop) && (end === 'from' ? (top - crop[1]) * layer.clientHeight < 12 : (crop[3] - bottom) * layer.clientHeight < 12) || undefined}
+          style={{ left: `${Math.max(crop[0] + 6 / layer.clientWidth, Math.min(x, crop[2] - 6 / layer.clientWidth)) * 100}%`, top: `${top * 100}%`, height: `${(bottom - top) * 100}%` }}/>; })}
       </>}
+      {selection?.page === number - 1 && <PdfSelectionActions layer={layer} crop={crop} rect={bounds(selection.rects)} touch={Boolean(selection.handles)}>
       {markable && selection?.page === number - 1 && !editing && (active === 'select' || active === 'note' || selection.handles) && <button type="button" className={'add-note' + (selection.handles ? ' touch' : '')} aria-label={pillTool === 'delete' ? t('Delete') : pillTool === 'magic' ? t('Quick notes') : pillGroup ? t('Add to {group}', { group: groupName(pillGroup) }) : t('Add note')} style={{ left: `${selection.rects[selection.rects.length - 1][2] * 100}%`, top: `${selection.rects[selection.rects.length - 1][3] * 100}%` }} onPointerDown={e => e.preventDefault()} onMouseDown={e => e.preventDefault()} onClick={() => { if (pillTool) mark(selected(selection)); else startNote(); }}>{pillTool === 'delete' ? <><Icon name="toolStrike" size={14}/>{t('Delete')}</> : pillTool === 'magic' ? <><Icon name="toolMagic" size={14}/>{t('Quick notes')}</> : <><Icon name="pencil" size={14}/><GroupAction group={pillGroup}/></>}</button>}
       {!markable && props.onComment && selection?.page === number - 1 && <button type="button" className={'add-note' + (selection.handles ? ' touch' : '')} aria-label={t('Comment')} style={{ left: `${selection.rects[selection.rects.length - 1][2] * 100}%`, top: `${selection.rects[selection.rects.length - 1][3] * 100}%` }} onPointerDown={e => e.preventDefault()} onMouseDown={e => e.preventDefault()} onClick={() => openCard(selected(selection))}><Icon name="chat" size={14}/>{t('Comment')}</button>}
       {/* Beside "Add note", the Select tool also offers the passage's LaTeX. */}
       {markable && props.onSource && selection?.page === number - 1 && !selection.handles && !editing && active === 'select' && <button type="button" className="add-source" aria-label={t('Edit source')} title={t('Edit source')} style={{ left: `${selection.rects[selection.rects.length - 1][2] * 100}%`, top: `${selection.rects[selection.rects.length - 1][3] * 100}%` }} onPointerDown={e => e.preventDefault()} onMouseDown={e => e.preventDefault()} onClick={() => { const target = selected(selection); clearSelection(); props.onSource!(target, shownRef.current.key); }}><Icon name="toolSource" size={15}/></button>}
+      </PdfSelectionActions>}
       {editing?.page === number - 1 && <>
         {editing.point ? <div className="note-point draft" style={center(editing.rect)}/> : (editing.rects.length ? editing.rects : [editing.rect]).map((rect, index) => <div key={index} className={(editing.rects.length ? 'note-mark' : 'note-box') + ' draft'} style={percent(rect)}/>)}
-        <PdfNoteCard controller={noteCard} note={{ rect: editing.rect, comment: '', ...(editing.point ? { kind: 'point' as const } : {}) }} number={notes.length + 1} index={0} total={1} selected={false} busy={noteLocked} error={noteError}
+        <PdfNoteCard anchorLayer={isCropped(crop) ? layer : undefined} controller={noteCard} note={{ rect: editing.rect, comment: '', ...(editing.point ? { kind: 'point' as const } : {}) }} number={notes.length + 1} index={0} total={1} selected={false} busy={noteLocked} error={noteError}
           draft={newNoteDraft} onDraftChange={value => setNewNoteDraft(value ?? '')} onDismiss={closeNewNote} onClose={closeNewNote}
           onEditing={props.noteActions?.onEditing} onSave={saveNewNote}/>
       </>}

@@ -1448,5 +1448,15 @@
   "Compiled document": "Documento compilado",
   "Files": "Arquivos",
   "Loading files…": "Carregando arquivos…",
-  "Repository files": "Arquivos do repositório"
+  "Repository files": "Arquivos do repositório",
+  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "Aplica-se a todas as páginas e fica salvo neste dispositivo. Os PDFs exportados mantêm as margens completas.",
+  "Bottom margin": "Margem inferior",
+  "Crop margins": "Recortar margens",
+  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "Arraste as bordas ou informe as margens em porcentagem. Use as setas para mover a borda selecionada.",
+  "Left margin": "Margem esquerda",
+  "Page {page} of {pages}": "Página {page} de {pages}",
+  "Reset": "Redefinir",
+  "Right margin": "Margem direita",
+  "The page preview could not be loaded.": "Não foi possível carregar a prévia da página.",
+  "Top margin": "Margem superior"
 }

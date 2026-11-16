@@ -231,6 +231,9 @@ jobs:
       - name: pdf-tools
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-pdf-tools.mjs
+      - name: pdf-crop
+        if: ${{ !cancelled() }}
+        run: node --import tsx scripts/check-pdf-crop.mjs
       - name: pdf-floating-links
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-pdf-floating-links.mjs

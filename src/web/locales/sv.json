@@ -1448,5 +1448,15 @@
   "Compiled document": "Kompilerat dokument",
   "Files": "Filer",
   "Loading files…": "Läser in filer…",
-  "Repository files": "Arkivfiler"
+  "Repository files": "Arkivfiler",
+  "Applies to every page. Saved on this device; exported PDFs keep their full margins.": "Gäller alla sidor och sparas på den här enheten. Exporterade PDF-filer behåller sina fullständiga marginaler.",
+  "Bottom margin": "Nedre marginal",
+  "Crop margins": "Beskär marginaler",
+  "Drag the edges or enter margins as percentages. Use arrow keys to move a focused edge.": "Dra i kanterna eller ange marginalerna i procent. Använd piltangenterna för att flytta den fokuserade kanten.",
+  "Left margin": "Vänster marginal",
+  "Page {page} of {pages}": "Sida {page} av {pages}",
+  "Reset": "Återställ",
+  "Right margin": "Höger marginal",
+  "The page preview could not be loaded.": "Det gick inte att läsa in sidförhandsvisningen.",
+  "Top margin": "Övre marginal"
 }
