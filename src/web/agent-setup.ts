@@ -4,6 +4,7 @@ import { t } from './i18n.ts';
 // These describe the adapters' detection rules, not the user's whole machine.
 export function agentSetup(id: AgentId) {
   const cli = {
+    pi: ['pi', 'PAPILOT_PI_BIN'],
     codex: ['codex', 'PAPILOT_CODEX_BIN'], claude: ['claude', 'PAPILOT_CLAUDE_BIN'],
     copilot: ['copilot', 'PAPILOT_COPILOT_BIN'], grok: ['grok', 'PAPILOT_GROK_BIN'],
     antigravity: ['agy', 'PAPILOT_AGY_BIN'], kimi: ['kimi', 'PAPILOT_KIMI_BIN'],

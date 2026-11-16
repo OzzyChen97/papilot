@@ -335,5 +335,12 @@
   "too large": "過大",
   "unsupported index": "不支援的索引",
   "Choose a TeX file with \\documentclass and \\begin{document}.": "請選擇包含 \\documentclass 與 \\begin{document} 的 TeX 檔案。",
-  "Could not list the files of this repository.": "無法列出此儲存庫的檔案。"
+  "Could not list the files of this repository.": "無法列出此儲存庫的檔案。",
+  "Pi uses its own tool permissions.": "Pi 使用自身的工具權限設定。",
+  "Pi was not found. Install the Pi CLI or set PAPILOT_PI_BIN, then reconnect.": "找不到 Pi。請安裝 Pi CLI 或設定 PAPILOT_PI_BIN，然後重新連線。",
+  "Invalid Pi thread ID.": "Pi 工作階段 ID 無效。",
+  "The Pi session file is missing. Restart this task to begin a new conversation.": "Pi 工作階段檔案遺失。請重新啟動此任務，開始新的對話。",
+  "This Pi thread is still running.": "此 Pi 工作階段仍在執行。",
+  "Choose a Pi provider and model.": "請選擇 Pi 的模型供應商和模型。",
+  "Pi could not read the attached image.": "Pi 無法讀取附加的圖片。"
 }

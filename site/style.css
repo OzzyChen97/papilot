@@ -462,6 +462,7 @@ html:is([lang=zh-CN],[lang=zh-Hant]) .hero .review-page :is(del,ins){white-space
 .agent{display:flex;align-items:center;gap:12px}
 .agent i{display:grid;place-items:center;flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:12px;background:var(--bg-subtle)}
 .agent i::before{content:"";width:22px;height:22px;background:var(--brand,var(--text));-webkit-mask:var(--logo) center/contain no-repeat;mask:var(--logo) center/contain no-repeat}
+.agent.pi{--logo:url("assets/agents/pi.svg")}
 .agent.codex{--logo:url("assets/agents/codex.svg")}
 .agent.claude{--logo:url("assets/agents/claude.svg");--brand:#d97757}
 .agent.cursor{--logo:url("assets/agents/cursor.svg")}

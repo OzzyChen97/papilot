@@ -93,7 +93,7 @@ try {
 
   // Every agent shows at once; on screen they arrive, then one at a time lights up.
   const grid = page.locator('.agent-grid');
-  assert.equal(await grid.locator('li').count(), 11);
+  assert.equal(await grid.locator('li').count(), 12);
   await grid.scrollIntoViewIfNeeded();
   await page.waitForFunction(() => document.querySelector('.agent-grid.arrived'));
   const view = await page.evaluate(() => innerHeight);

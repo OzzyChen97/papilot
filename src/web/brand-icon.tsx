@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import papilot from './brand-icons/papilot.svg';
+import pi from './brand-icons/pi.svg';
 import codex from './brand-icons/codex.svg';
 import claude from './brand-icons/claude.svg';
 import cursor from './brand-icons/cursor.svg';
@@ -19,7 +20,7 @@ import openrouter from './brand-icons/openrouter.svg';
 import mistral from './brand-icons/mistral.svg';
 import './brand-icon.css';
 
-const marks = { papilot, codex, claude, cursor, copilot, grok, antigravity, kimi, glm, deepseek, qwen, opencode, git, latex, openai, gemini, openrouter, mistral };
+const marks = { papilot, pi, codex, claude, cursor, copilot, grok, antigravity, kimi, glm, deepseek, qwen, opencode, git, latex, openai, gemini, openrouter, mistral };
 export type Brand = keyof typeof marks;
 
 // Decorative beside a visible name. Local assets work offline and inherit theme colors.

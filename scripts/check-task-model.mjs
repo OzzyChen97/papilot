@@ -230,6 +230,7 @@ try {
   // Every other agent uses the same resolution in Settings, the composer and
   // task creation, even when its default isn't the first catalog entry.
   for (const [agent, label, model, name] of [
+    ['pi', 'Pi', 'custom/research', 'Research model'],
     ['claude', 'Claude', 'haiku', 'Haiku'], ['cursor', 'Cursor', 'auto', 'Auto'],
     ['kimi', 'Kimi', 'kimi/k3', 'K3'], ['copilot', 'Copilot', 'copilot-model', 'Copilot model'],
     ['grok', 'Grok', 'grok-model', 'Grok model'], ['qwen', 'Qwen', 'qwen-model', 'Qwen model'],

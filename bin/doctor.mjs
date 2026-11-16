@@ -1,3 +1,4 @@
+import { piExecutable, PI_MIN_VERSION, supportedPi } from './pi-cli.mjs';
 import { agentPath, findExecutable, killTree, spawnCommand } from './agent-paths.mjs';
 import { codexInstallations } from './codex-lookup.mjs';
 import { agentSdkFolder, managedInstall } from './installation.mjs';
@@ -257,7 +258,15 @@ export async function doctor(args) {
     check('agent.glm', Boolean(configured && sdk), configured ? 'warn' : 'info', !configured ? 'ZHIPU_API_KEY or ZAI_API_KEY is not set, so Papilot does not offer GLM.' : sdk ? `GLM key configured for ${process.env.ZHIPU_API_KEY ? 'open.bigmodel.cn' : 'api.z.ai'} (not validated).` : `GLM key configured; the Claude Agent SDK that runs GLM is ${method ? 'not installed' : 'installed on first use'}.`, !configured ? 'Start Papilot with ZHIPU_API_KEY (open.bigmodel.cn) or ZAI_API_KEY (api.z.ai) set to your GLM Coding Plan or API key.' : sdkFix('@anthropic-ai/claude-agent-sdk', 'Start papilot and choose GLM once to install the Claude Agent SDK.'));
     return configured;
   }
-  const agents = await Promise.all([codexCheck(), claudeCheck(), cursorCheck(), copilotCheck(), grokCheck(), agyCheck(), kimiCheck(), glmCheck(), deepseekCheck(), qwenCheck(), opencodeCheck()]);
+  async function piCheck() {
+    const file = piExecutable(process.env);
+    if (!file) { check('agent.pi', false, 'info', missingAgent('pi', 'PAPILOT_PI_BIN'), 'Install Pi from https://pi.dev and configure a provider in pi. Set PAPILOT_PI_BIN if needed.'); return false; }
+    const result = await command(file, ['--version']);
+    const ready = result.ok && supportedPi(result.stdout);
+    check('agent.pi', ready, 'warn', `${file}: ${ready ? 'Pi CLI available; login and generation were not tested' : result.reason || `Pi ${PI_MIN_VERSION} or newer is required`}.`, 'Update Pi, run pi and use /login or configure a provider, then reconnect.');
+    return ready;
+  }
+  const agents = await Promise.all([piCheck(), codexCheck(), claudeCheck(), cursorCheck(), copilotCheck(), grokCheck(), agyCheck(), kimiCheck(), glmCheck(), deepseekCheck(), qwenCheck(), opencodeCheck()]);
   check('agents', agents.some(Boolean), 'warn', agents.some(Boolean) ? 'At least one agent passed its configuration check; live editing was not tested.' : 'No agent passed its configuration check. PDF reading can still be used with a working TeX installation.', 'Configure one agent before starting editing tasks.');
 
   if (repo) {
@@ -324,7 +333,7 @@ export async function doctor(args) {
     }
   }
   // Keep reports stable even though independent probes finish in any order.
-  const order = ['node', 'dependencies', 'frontend', 'review-engine', 'data', 'git', 'latexmk', 'synctex', 'tex-engines', 'agent.codex', 'agent.claude', 'agent.cursor', 'agent.copilot', 'agent.grok', 'agent.antigravity', 'agent.kimi', 'agent.glm', 'agent.deepseek', 'agent.qwen', 'agent.opencode', 'agents', 'project', 'project.git', 'project.head', 'project.main', 'project.engine', 'project.worktrees', 'remote', 'server', 'service', 'service.tools', 'service.data'];
+  const order = ['node', 'dependencies', 'frontend', 'review-engine', 'data', 'git', 'latexmk', 'synctex', 'tex-engines', 'agent.pi', 'agent.codex', 'agent.claude', 'agent.cursor', 'agent.copilot', 'agent.grok', 'agent.antigravity', 'agent.kimi', 'agent.glm', 'agent.deepseek', 'agent.qwen', 'agent.opencode', 'agents', 'project', 'project.git', 'project.head', 'project.main', 'project.engine', 'project.worktrees', 'remote', 'server', 'service', 'service.tools', 'service.data'];
   checks.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   const report = { name: 'Papilot', version: pkg.version, ok: !checks.some(item => !item.ok && item.severity === 'error'), checks };
   if (json) console.log(JSON.stringify(report, null, 2));

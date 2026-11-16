@@ -335,5 +335,12 @@
   "too large": "サイズが大きすぎます",
   "unsupported index": "サポートされていないインデックスです",
   "Choose a TeX file with \\documentclass and \\begin{document}.": "\\documentclass と \\begin{document} を含む TeX ファイルを選択してください。",
-  "Could not list the files of this repository.": "このリポジトリのファイル一覧を取得できませんでした。"
+  "Could not list the files of this repository.": "このリポジトリのファイル一覧を取得できませんでした。",
+  "Pi uses its own tool permissions.": "Pi は独自のツール権限設定を使用します。",
+  "Pi was not found. Install the Pi CLI or set PAPILOT_PI_BIN, then reconnect.": "Pi が見つかりません。Pi CLI をインストールするか PAPILOT_PI_BIN を設定してから、再接続してください。",
+  "Invalid Pi thread ID.": "Pi スレッド ID が無効です。",
+  "The Pi session file is missing. Restart this task to begin a new conversation.": "Pi のセッションファイルがありません。このタスクを再起動して新しい会話を開始してください。",
+  "This Pi thread is still running.": "この Pi スレッドはまだ実行中です。",
+  "Choose a Pi provider and model.": "Pi のプロバイダーとモデルを選択してください。",
+  "Pi could not read the attached image.": "Pi は添付画像を読み取れませんでした。"
 }

@@ -42,7 +42,7 @@ Open `http://127.0.0.1:7276`. For the latest committed development version witho
 
 | Path | What it holds |
 | --- | --- |
-| `src/server` | The Fastify server, the agent adapters (Codex, Claude, Cursor, GLM, Antigravity, and Copilot, Grok, Kimi, DeepSeek, Qwen and OpenCode through ACP), tasks, Git and the PDF build |
+| `src/server` | The Fastify server, the agent adapters (Papilot Writer, Pi through RPC, Codex, Claude, Cursor, GLM, Antigravity, and Copilot, Grok, Kimi, DeepSeek, Qwen and OpenCode through ACP), tasks, Git and the PDF build |
 | `src/web` | The React interface and the PDF viewer |
 | `src/shared.ts` | Types shared by the server and the interface |
 | `desktop/` | Electron app, native assets, packaging and desktop runtime |

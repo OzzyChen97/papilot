@@ -224,5 +224,6 @@
   "{n} places in the paper": "论文中 {n} 处",
   "Add to chat": "添加到聊天",
   "Add to task": "加入任务",
-  "Includes subsections": "包含子章节"
+  "Includes subsections": "包含子章节",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "使用你的 Pi CLI、模型提供商、技能和扩展。工具按 Pi 的权限设置在主机上运行。"
 }

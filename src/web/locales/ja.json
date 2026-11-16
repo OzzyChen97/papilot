@@ -1448,5 +1448,6 @@
   "Compiled document": "コンパイル済みドキュメント",
   "Files": "ファイル",
   "Loading files…": "ファイルを読み込み中…",
-  "Repository files": "リポジトリのファイル"
+  "Repository files": "リポジトリのファイル",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "お使いの Pi CLI、プロバイダー、スキル、拡張機能を使用します。ツールは Pi の権限設定に従ってホスト上で実行されます。"
 }

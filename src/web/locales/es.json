@@ -1448,5 +1448,6 @@
   "Compiled document": "Documento compilado",
   "Files": "Archivos",
   "Loading files…": "Cargando archivos…",
-  "Repository files": "Archivos del repositorio"
+  "Repository files": "Archivos del repositorio",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "Usa tu CLI de Pi, proveedores, habilidades y extensiones. Las herramientas se ejecutan en el equipo anfitrión con los permisos de Pi."
 }

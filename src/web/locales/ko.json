@@ -1448,5 +1448,6 @@
   "Compiled document": "컴파일된 문서",
   "Files": "파일",
   "Loading files…": "파일 불러오는 중…",
-  "Repository files": "저장소 파일"
+  "Repository files": "저장소 파일",
+  "Uses your Pi CLI, providers, skills and extensions. Tools run on the host with Pi’s permissions.": "사용자의 Pi CLI, 공급자, 스킬 및 확장 기능을 사용합니다. 도구는 Pi의 권한 설정에 따라 호스트에서 실행됩니다."
 }

@@ -335,5 +335,12 @@
   "too large": "demasiado grande",
   "unsupported index": "índice no compatible",
   "Choose a TeX file with \\documentclass and \\begin{document}.": "Elige un archivo TeX con \\documentclass y \\begin{document}.",
-  "Could not list the files of this repository.": "No se pudieron listar los archivos de este repositorio."
+  "Could not list the files of this repository.": "No se pudieron listar los archivos de este repositorio.",
+  "Pi uses its own tool permissions.": "Pi usa sus propios permisos para las herramientas.",
+  "Pi was not found. Install the Pi CLI or set PAPILOT_PI_BIN, then reconnect.": "No se encontró Pi. Instala la CLI de Pi o configura PAPILOT_PI_BIN y vuelve a conectarte.",
+  "Invalid Pi thread ID.": "ID de conversación de Pi no válido.",
+  "The Pi session file is missing. Restart this task to begin a new conversation.": "Falta el archivo de sesión de Pi. Reinicia esta tarea para comenzar una conversación nueva.",
+  "This Pi thread is still running.": "Esta conversación de Pi sigue en ejecución.",
+  "Choose a Pi provider and model.": "Elige un proveedor y un modelo de Pi.",
+  "Pi could not read the attached image.": "Pi no pudo leer la imagen adjunta."
 }
