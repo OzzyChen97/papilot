@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useId, useRef, useState } from 'react';
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { NoteGroup } from '../note-groups.ts';
 import { GroupPicker } from './note-groups.tsx';
 import { StampMenu } from './stamp-menu.tsx';
@@ -33,10 +33,11 @@ function showRailTip(button: Element | null) {
 }
 
 // Shared by the manuscript and the embedded review; gestures stay with each viewer.
-export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended, editing, stamps, locked, onLock, history, sourceTool }: {
+export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended, editing, stamps, locked, onLock, history, sourceTool, readingTools }: {
   tool: PdfTool; onTool: (tool: PdfTool) => void;
   /** Offer the tool that opens a passage's LaTeX for editing by hand. */
   sourceTool?: boolean;
+  readingTools?: ReactNode;
   group: NoteGroup | null; onGroup?: (group: NoteGroup | null) => void;
   disabled?: boolean; suspended?: boolean; editing?: boolean;
   stamps: Stamp[]; locked: number | null; onLock: (slot: number | null) => void;
@@ -128,6 +129,7 @@ export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended,
       {mobile && !collapsed && <span className="rail-separator rail-collapse-separator" aria-hidden="true"/>}
       <div id={railId} className="rail-items" hidden={collapsed}>
       <div className="rail-tools">
+      {!collapsed && readingTools && <>{readingTools}<span className="rail-separator" aria-hidden="true"/></>}
       {!collapsed && visibleTools.map(item => {
         const content = <><Icon name={item.icon} size={item.id === 'magic' ? 22 : 18}/>
           {item.id === 'magic' && locked !== null && <span className="rail-badge" aria-hidden="true">{slotKey(locked)}</span>}

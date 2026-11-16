@@ -180,7 +180,7 @@ Turn on **Settings → Notifications** to receive browser notifications while Pa
 
 ### Crop PDF margins
 
-On a phone or a narrow panel, choose **Crop margins** in the PDF toolbar to make the text fill more of the screen. Drag the four edges in the preview. You can also focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose the checkmark (**Apply**) in the title bar to apply it to the whole document and fit the remaining width.
+Choose **Crop margins** beside **Find** at the start of the PDF tool rail (the floating bottom toolbar on phones, or the left toolbar on desktop). Narrow desktop panels and read-only PDFs keep these controls in the top bar. The crop preview follows the page proportions and fits the available screen space. Drag its four edges, or focus an edge and use the arrow keys. Use the page arrows to check the crop on other pages, then choose the checkmark (**Apply**) in the title bar to apply it to the whole document and fit the remaining width.
 
 <img src="assets/pdf-crop-editor.png" alt="Adjusting the four PDF margins on a phone" width="280"> <img src="assets/pdf-crop-reading.png" alt="Reading the cropped PDF at Fit width" width="280">
 

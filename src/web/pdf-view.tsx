@@ -218,7 +218,7 @@ export const PdfView = forwardRef<PdfHandle, {
   const root = useRef<HTMLDivElement>(null), container = useRef<HTMLDivElement>(null), inner = useRef<HTMLDivElement>(null), findInput = useRef<HTMLInputElement>(null);
   const tools = useRef<{ bus: EventBus; links: PDFLinkService; find: PDFFindController; viewer: PDFViewer; cropTo: (crop: PdfCrop) => void } | null>(null);
   const [crop, setCrop] = useState(() => readPdfCrop(props.place)), cropRef = useRef(crop);
-  const [cropping, setCropping] = useState(false), cropButton = useRef<HTMLButtonElement>(null);
+  const [cropping, setCropping] = useState(false);
   const loaded = useRef<PDFDocumentProxy | null>(null), restore = useRef<{ scale: string; top: number; left: number } | null>(null);
   const layerMap = useRef(new Map<number, HTMLElement>());
   const [layers, setLayers] = useState(new Map<number, HTMLElement>());
@@ -833,6 +833,10 @@ export const PdfView = forwardRef<PdfHandle, {
     : note.kind === 'delete' ? note.comment ? t('Replacement {n}: {text}', { n: label, text: note.comment }) : t('Deletion {n}', { n: label })
     : t('Note {n}: {comment}', { n: label, comment: note.group ? groupName(note.group) : note.comment });
 
+  const readingTools = (className: string) => <>
+    <button type="button" className={className + ' pdf-crop-toggle' + (isCropped(crop) ? ' active' : '')} aria-label={t('Crop margins')} title={t('Crop margins')} aria-haspopup="dialog" disabled={loading || Boolean(error) || Boolean(editing) || noteLocked} onClick={() => { clearSelection(); setCropping(true); }}><Icon name="crop" size={16}/></button>
+    <PdfFindButton className={className} open={findOpen} onClick={() => { if (findOpen) closeFind(); else setFindOpen(true); }}/>
+  </>;
   return <div ref={root} className={'pdf-view' + (isCropped(crop) ? ' pdf-cropped' : '') + (props.region ? ' marking' : '') + (markable ? ` tool-${active}` : '')} onKeyDown={event => {
     if (!activeSuggestion || noteLocked || editing || props.region || event.defaultPrevented || event.nativeEvent.isComposing || event.keyCode === 229 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -849,11 +853,11 @@ export const PdfView = forwardRef<PdfHandle, {
       <PdfContents outline={props.outline} section={props.section} ready={!loading} onSelect={item => { void tools.current?.links.goToDestination(item.dest as string | unknown[]); }}/>
       <div className="pdf-toolbar-spacer"/>
       <PdfPageControls page={page} pages={pages} zoom={zoom} onPage={number => { if (tools.current) tools.current.viewer.currentPageNumber = number; }} onZoom={value => { if (tools.current) tools.current.viewer.currentScaleValue = value; }} onZoomBy={factor => tools.current?.viewer.updateScale({ scaleFactor: factor })}/>
-      <PdfFindButton open={findOpen} onClick={() => { if (findOpen) closeFind(); else setFindOpen(true); }}/>
-      <button ref={cropButton} type="button" className={'icon-button pdf-crop-toggle' + (isCropped(crop) ? ' active' : '')} aria-label={t('Crop margins')} title={t('Crop margins')} aria-haspopup="dialog" disabled={loading || Boolean(error) || Boolean(editing) || noteLocked} onClick={() => { clearSelection(); setCropping(true); }}><Icon name="crop" size={16}/></button>
+      {!markable && readingTools('icon-button')}
 
       {/* Narrow desktop panes keep compact tools; phones show a collapsible bottom capsule. */}
       {markable && <span className="pdf-compact-tools">
+        {readingTools('icon-button')}
         <button type="button" className={'icon-button region-toggle' + (props.region ? ' active' : '')} aria-label={t('Mark region')} aria-pressed={props.region} title={t('Mark a figure or region')} onClick={() => pickTool(props.region ? 'select' : 'region')}><Icon name="region" size={16}/></button>
         {props.onGroupChange && <GroupPicker value={props.group || null} onChange={group => { props.onGroupChange!(group); if (group && tool !== 'region') choose('note'); }} disabled={props.markingDisabled || Boolean(editing)}/>}
       </span>}
@@ -862,7 +866,7 @@ export const PdfView = forwardRef<PdfHandle, {
     </div>
     {findOpen && <PdfFind inputRef={findInput} query={query} matches={matches} notFound={notFound} onQuery={text => { setQuery(text); search(false, false, text); }} onNext={previous => search(true, previous)} onClose={closeFind}/>}
     <div className="pdf-body">
-    {markable && <PdfToolRail tool={tool} onTool={pickTool} group={props.group || null} onGroup={props.onGroupChange} disabled={props.markingDisabled} suspended={props.suspended} editing={Boolean(editing)} stamps={stamps} locked={locked} onLock={slot => slot === null ? setLocked(null) : lock(slot)} history={props.history} sourceTool={Boolean(props.onSource)}/>}
+    {markable && <PdfToolRail tool={tool} onTool={pickTool} group={props.group || null} onGroup={props.onGroupChange} disabled={props.markingDisabled} suspended={props.suspended} editing={Boolean(editing)} stamps={stamps} locked={locked} onLock={slot => slot === null ? setLocked(null) : lock(slot)} history={props.history} sourceTool={Boolean(props.onSource)} readingTools={readingTools('rail-tool')}/>}
     <div className="pdf-scroll-host">
       <div ref={container} className="pdf-container" tabIndex={0} aria-label={t('PDF pages')}>
         <div ref={inner} className="pdfViewer"/>
@@ -875,7 +879,12 @@ export const PdfView = forwardRef<PdfHandle, {
     </div>
     {wheel && <StampWheel x={wheel.x} y={wheel.y} stamps={stamps} onPick={pickStamp} onClose={() => { setWheel(null); container.current?.focus({ preventScroll: true }); }}
       onFree={() => { const target = wheel.target; setWheel(null); openCard(target); }}/>}
-    {cropping && loaded.current && <PdfCropDialog document={loaded.current} page={page} crop={crop} onApply={next => tools.current?.cropTo(next)} onClose={() => { setCropping(false); cropButton.current?.focus({ preventScroll: true }); }}/>}
+    {cropping && loaded.current && <PdfCropDialog document={loaded.current} page={page} crop={crop} onApply={next => tools.current?.cropTo(next)} onClose={() => {
+      setCropping(false);
+      // A resize can move the entry between the rail and compact toolbar.
+      const buttons = root.current?.querySelectorAll<HTMLButtonElement>('.pdf-crop-toggle');
+      [...buttons || []].find(button => button.getClientRects().length)?.focus({ preventScroll: true });
+    }}/>}
     {[...layers].map(([number, layer]) => createPortal(<Fragment>
       {(() => {
         const width = crop[2] - crop[0], height = crop[3] - crop[1], compact = layer.clientWidth * width <= 680;

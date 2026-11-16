@@ -31,13 +31,17 @@ Second page fixture with a different passage for search and links.
 `);
   for (let pass = 0; pass < 2; pass++) execFileSync('pdflatex', ['-interaction=batchmode', '-halt-on-error', 'main.tex'], { cwd: directory });
   const pdf = fs.readFileSync(path.join(directory, 'main.pdf'));
+  const mixedSource = fs.readFileSync(path.join(directory, 'main.tex'), 'utf8').replace('\\section{Method}', '\\pdfpagewidth=792pt\\pdfpageheight=612pt\n\\section{Method}');
+  fs.writeFileSync(path.join(directory, 'main.tex'), mixedSource);
+  execFileSync('pdflatex', ['-interaction=batchmode', '-halt-on-error', 'main.tex'], { cwd: directory });
+  const mixedPdf = fs.readFileSync(path.join(directory, 'main.pdf'));
   fs.mkdirSync('test-results', { recursive: true });
   await server.register(staticFiles, { root: path.resolve('dist') });
   const origin = await server.listen({ host: '127.0.0.1', port: 0 });
   const useWebkit = process.env.PAPILOT_CROP_WEBKIT === '1';
   browser = await (useWebkit ? webkit : chromium).launch({ ...(useWebkit ? {} : { channel: process.env.PAPILOT_BROWSER_CHANNEL || 'chrome' }), headless: true });
   const errors = [];
-  async function open({ width = 390, height = 844, mobile = true, theme = 'light', locale = 'en' } = {}) {
+  async function open({ width = 390, height = 844, mobile = true, theme = 'light', locale = 'en', mixed = false } = {}) {
     const context = await browser.newContext({ viewport: { width, height }, hasTouch: mobile, isMobile: mobile, colorScheme: theme, locale: 'en-US' });
     const page = await context.newPage();
     page.on('pageerror', error => errors.push(error.message));
@@ -46,7 +50,7 @@ Second page fixture with a different passage for search and links.
       localStorage.setItem('papilot:theme', theme);
     }, { theme, locale });
     const state = { version: 'test', csrf: 'fixture', projects: [{ id: 'paper', name: 'Crop paper', path: directory }], tasks: [], requests: [], runtime: { connected: true, authenticated: true, models: [] } };
-    const manuscript = { git: { branch: 'main', files: [] }, build: { status: 'ready', key: 'pdf', document: 'main.tex', pages: [[612, 792], [612, 792]] }, annotations: [] };
+    const manuscript = { git: { branch: 'main', files: [] }, build: { status: 'ready', key: 'pdf', document: 'main.tex', pages: [[612, 792], mixed ? [792, 612] : [612, 792]] }, annotations: [] };
     const sourceRequests = [], mutations = [];
     await page.route('**/api/**', route => {
       const url = new URL(route.request().url()), json = value => route.fulfill({ json: value });
@@ -59,7 +63,7 @@ Second page fixture with a different passage for search and links.
       if (url.pathname.endsWith('/skills')) return json({ skills: [] });
       if (url.pathname.endsWith('/git')) return json(manuscript.git);
       if (url.pathname.endsWith('/manuscript')) return json(manuscript);
-      if (url.pathname.endsWith('/manuscript.pdf')) return route.fulfill({ contentType: 'application/pdf', body: pdf });
+      if (url.pathname.endsWith('/manuscript.pdf')) return route.fulfill({ contentType: 'application/pdf', body: mixed ? mixedPdf : pdf });
       if (url.pathname.endsWith('/manuscript/words')) return route.fulfill({ status: 404, json: { error: 'Use PDF text' } });
       if (url.pathname.endsWith('/manuscript/source/locate')) { sourceRequests.push(route.request().postDataJSON()); return json({ source: null }); }
       if (url.pathname === '/api/quick-notes') return json({ quickNotes: null });
@@ -74,7 +78,7 @@ Second page fixture with a different passage for search and links.
     await page.goto(origin);
     const text = page.locator('.page[data-page-number="1"] .textLayer span').filter({ hasText: 'Crop fixture' }).first();
     await expect(text).toBeVisible();
-    const cropButton = page.locator('.pdf-crop-toggle');
+    const cropButton = page.locator('.pdf-crop-toggle:visible');
     const dialog = page.locator('.pdf-crop-dialog');
     const openCrop = async () => { await cropButton.click(); await expect(dialog.locator('.pdf-crop-preview')).toBeVisible(); await expect(dialog.locator('input')).toHaveCount(0); };
     const dragMargin = async (edge, margin) => {
@@ -118,6 +122,11 @@ Second page fixture with a different passage for search and links.
     await page.getByRole('textbox', { name: 'Search the PDF', exact: true }).fill('Crop fixture');
     await expect(page.locator('.pdf-container .highlight')).toHaveCount(1);
     await f.openCrop();
+    const previewSize = await dialog.locator('.pdf-crop-preview').boundingBox();
+    assert.ok(previewSize.width > 320, 'phone preview uses the available width');
+    assert.ok(Math.abs(previewSize.width / previewSize.height - 612 / 792) < 0.01, 'preview keeps the PDF aspect ratio');
+    await expect(page.locator('.pdf-rail .pdf-crop-toggle')).toBeAttached();
+    await expect(dialog.getByRole('button', { name: 'Apply', exact: true })).toBeInViewport();
     await f.dragMargin(0, 0.1); await f.dragMargin(2, 0.1);
     await f.dragMargin(1, 0.08); await f.dragMargin(3, 0.08);
     for (const [edge, label] of ['Left margin (10%)', 'Top margin (8%)', 'Right margin (10%)', 'Bottom margin (8%)'].entries()) await expect(dialog.locator('.pdf-crop-handle').nth(edge)).toHaveAccessibleName(label);
@@ -186,6 +195,7 @@ Second page fixture with a different passage for search and links.
       return [(word.left - page.left) / page.width, (word.top - page.top) / page.height];
     });
     await desktop.openCrop();
+    assert.ok((await dialog.locator('.pdf-crop-preview').boundingBox()).height > 700, 'desktop preview uses the available height');
     await desktop.dragMargin(0, 0.1); await desktop.dragMargin(2, 0.1); await desktop.dragMargin(1, 0.08);
     await desktop.apply();
     await dragPdfText(page, text);
@@ -258,6 +268,44 @@ Second page fixture with a different passage for search and links.
       await f.page.screenshot({ path: `test-results/pdf-crop-${options.locale}-${options.theme}.png` });
     } finally { await f.context.close(); }
   }
+
+  const resizing = await open({ mixed: true });
+  try {
+    const { page, dialog } = resizing;
+    const rail = page.getByRole('toolbar', { name: 'Marking tools' });
+    await expect(rail.getByRole('button', { name: 'Crop margins', exact: true })).toBeInViewport();
+    await expect(rail.getByRole('button', { name: 'Find in PDF', exact: true })).toBeInViewport();
+    await rail.getByRole('button', { name: 'Collapse marking tools', exact: true }).click();
+    await rail.getByRole('button', { name: 'Expand marking tools', exact: true }).click();
+    await resizing.openCrop();
+    await dialog.getByRole('button', { name: 'Next page', exact: true }).click();
+    await expect.poll(async () => {
+      const box = await dialog.locator('.pdf-crop-preview').boundingBox();
+      return Math.abs(box.width / box.height - 792 / 612);
+    }).toBeLessThan(0.01);
+    await page.setViewportSize({ width: 844, height: 390 });
+    await expect(dialog.locator('.pdf-crop-preview')).toBeVisible();
+    await expect.poll(() => dialog.evaluate(el => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
+    for (const handle of await dialog.locator('.pdf-crop-handle').all()) await expect(handle).toBeInViewport({ ratio: 1 });
+    await expect(dialog.getByRole('button', { name: 'Apply', exact: true })).toBeInViewport();
+    await page.screenshot({ path: 'test-results/pdf-crop-landscape-editor.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect.poll(async () => (await dialog.locator('.pdf-crop-preview').boundingBox()).width).toBeGreaterThan(320);
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(resizing.cropButton).toBeFocused();
+    await page.setViewportSize({ width: 1000, height: 900 });
+    await expect(page.locator('.pdf-compact-tools .pdf-crop-toggle')).toBeVisible();
+    await resizing.openCrop();
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.locator('.pdf-rail .pdf-crop-toggle')).toBeFocused();
+    await resizing.openCrop();
+    await page.setViewportSize({ width: 1000, height: 900 });
+    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+    await expect(page.locator('.pdf-compact-tools .pdf-crop-toggle')).toBeFocused();
+    await page.getByRole('button', { name: 'Find in PDF', exact: true }).click();
+    await expect(page.getByRole('textbox', { name: 'Search the PDF', exact: true })).toBeFocused();
+  } finally { await resizing.context.close(); }
 
   const recovery = await open();
   try {

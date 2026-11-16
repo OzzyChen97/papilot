@@ -30,10 +30,15 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
         await render?.promise.catch(() => {});
         const pdfPage = await document.getPage(number);
         if (disposed || own !== generation) return;
-        const area = stage.current!, full = fullPageViewport(pdfPage, { scale: 1 });
-        const scale = Math.min((area.clientWidth - 48) / full.width, (area.clientHeight - 48) / full.height);
+        const area = stage.current!, modal = dialog.current!, full = fullPageViewport(pdfPage, { scale: 1 });
+        const style = getComputedStyle(modal), border = modal.offsetHeight - modal.clientHeight;
+        // Fit the page to the viewport, reserving the actual height of the
+        // controls and 24px on each edge for the 44px drag targets.
+        const controls = modal.scrollHeight - area.clientHeight + border;
+        const scale = Math.min((parseFloat(style.maxWidth) - border - 48) / full.width, (parseFloat(style.maxHeight) - controls - 48) / full.height);
         if (scale <= 0) return;
         const viewport = fullPageViewport(pdfPage, { scale }), pixelRatio = Math.min(window.devicePixelRatio || 1, 2), target = canvas.current!;
+        area.style.width = `${viewport.width + 48}px`; area.style.height = `${viewport.height + 48}px`;
         target.width = Math.ceil(viewport.width * pixelRatio); target.height = Math.ceil(viewport.height * pixelRatio);
         preview.current!.style.width = `${viewport.width}px`; preview.current!.style.height = `${viewport.height}px`;
         render = pdfPage.render({ canvas: target, viewport, transform: [pixelRatio, 0, 0, pixelRatio, 0, 0] });
@@ -43,9 +48,11 @@ export function PdfCropDialog({ document, page, crop, onApply, onClose }: {
         if (!disposed && own === generation) setError(true);
       }
     };
-    const observer = new ResizeObserver(() => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => void draw()); });
-    observer.observe(stage.current!);
-    return () => { disposed = true; generation++; observer.disconnect(); cancelAnimationFrame(frame); render?.cancel(); };
+    const resize = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(() => void draw()); };
+    const observer = new ResizeObserver(resize);
+    for (const element of dialog.current!.children) if (element !== stage.current) observer.observe(element);
+    window.addEventListener('resize', resize);
+    return () => { disposed = true; generation++; observer.disconnect(); window.removeEventListener('resize', resize); cancelAnimationFrame(frame); render?.cancel(); };
   }, [document, number, retry]);
   return <dialog ref={dialog} className="pdf-crop-dialog" aria-labelledby={title} onClose={onClose}>
     <header>
