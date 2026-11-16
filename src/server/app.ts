@@ -34,6 +34,7 @@ import { attachmentIds } from './attachments.ts';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '../shared.ts';
 import { PaperImports, openFolder } from './imports.ts';
 import { PaperCreations } from './create-paper.ts';
+import { Universe } from './universe.ts';
 import { DATA, pageViewDir } from './paths.ts';
 import { registerAiReviewRoutes } from './ai-review-routes.ts';
 import { detectLatex } from './latex-installation.ts';
@@ -115,6 +116,7 @@ function readQuickNotes(value: unknown): QuickNote[] {
 }
 
 export interface AppOptions {
+  universe?: Universe;
   listener: Listener; store: Store; workspace: Workspace; manuscripts: Manuscripts; changes?: Changes;
   csrf: string; serialGit: ReturnType<typeof gitQueue>; dist: string | null; version: string;
   connectReview?: typeof reviewClient;
@@ -134,7 +136,9 @@ export async function buildApp(options: AppOptions) {
   let imports = importsByWorkspace.get(workspace);
   if (!imports) { imports = new PaperImports(manuscripts, DATA, root => Boolean(workspace.projectByPath(root))); importsByWorkspace.set(workspace, imports); }
   let creations = creationsByWorkspace.get(workspace);
-  if (!creations) { creations = new PaperCreations(DATA); creationsByWorkspace.set(workspace, creations); }
+  let universe = options.universe;
+  if (!universe) try { universe = new Universe(); } catch { /* An invalid PAPILOT_UNIVERSE_URL leaves only the blank paper. */ }
+  if (!creations) { creations = new PaperCreations(DATA, universe); creationsByWorkspace.set(workspace, creations); }
   workspace.importsBusy = () => imports!.busy || creations!.busy;
   // Whether rounds list what each edit changes elsewhere, such as the uses of
   // a macro: the choice in Settings, off by default, since finding
@@ -332,6 +336,11 @@ export async function buildApp(options: AppOptions) {
   const effort = (value: unknown) => typeof value === 'string' && /^[a-z]{1,16}$/.test(value) ? value : undefined;
   const string = (value: unknown, name: string, max?: number) => { if (typeof value !== 'string' || !value.trim()) throw new Error(`${name} is required.`); if (max !== undefined && value.length > max) throw new Error(`${name} is required and must be no longer than ${max} characters.`); return value.trim(); };
   app.get('/api/projects/create-defaults', () => creations!.defaults());
+  app.get('/api/universe', async () => {
+    if (!universe) return { templates: [], error: 'Templates are not available here.' };
+    try { return { templates: await universe.templates() }; }
+    catch (error) { return { templates: [], error: (error as Error).message }; }
+  });
   app.post('/api/projects/create', request => creations!.create((request.body || {}) as any, (root, name) => workspace.addProject(root, name)));
   app.post('/api/projects/open', request => openFolder((request.body || {}) as any, root => workspace.projectByPath(root), (root, name) => workspace.addProject(root, name)));
   app.post('/api/imports', { bodyLimit: 90 * 1024 * 1024 }, request => imports!.create((request.body || {}) as any));

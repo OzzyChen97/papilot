@@ -105,7 +105,7 @@ function engineFor(root: string, main: string, settings: Record<string, unknown>
 }
 // Keep the author's settings, including a source folder that still contains
 // the main file; without one, the whole folder compiles.
-async function rememberMain(root: string, main: string, engine: string) {
+export async function rememberMain(root: string, main: string, engine: string) {
   const { readSettings, writeSettings } = await configModule();
   const settings = readSettings(root), folder = typeof settings.source_dir === 'string' ? settings.source_dir.replace(/\/+$/, '') : null;
   const contains = folder === '' || (folder !== null && main.startsWith(folder + '/'));
@@ -150,7 +150,8 @@ export async function openFolder(input: { path?: unknown; main?: unknown }, know
   await rememberMain(root, main, engineFor(root, main, (await configModule()).readSettings(root)));
   return { project: await register(root, path.basename(root)) };
 }
-export async function extractZip(buffer: Buffer, root: string) {
+// Uploaded ZIPs and Universe templates share the same path, size and file-type rules.
+async function zipEntries(buffer: Buffer, visit: (name: string, stream: NodeJS.ReadableStream) => Promise<void>) {
   if (buffer.length > MAX_BYTES) throw new Error('Choose a ZIP smaller than 64 MB.');
   const zip = await new Promise<yauzl.ZipFile>((resolve, reject) => yauzl.fromBuffer(buffer, { lazyEntries: true, strictFileNames: true, validateEntrySizes: true }, (error, value) => error ? reject(error) : resolve(value)));
   await new Promise<void>((resolve, reject) => {
@@ -163,12 +164,29 @@ export async function extractZip(buffer: Buffer, root: string) {
       const mode = (entry.externalFileAttributes >>> 16) & 0o170000;
       if (mode && mode !== 0o100000 && mode !== 0o040000) throw new Error('ZIP links and special files are not supported.');
       if (name.split('/').some(skip) || entry.fileName.endsWith('/')) { zip.readEntry(); return; }
-      const target = path.join(root, name); fs.mkdirSync(path.dirname(target), { recursive: true });
       const stream = await new Promise<NodeJS.ReadableStream>((resolve, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve(stream)));
-      await pipeline(stream, fs.createWriteStream(target, { flags: 'wx', mode: 0o600 })); zip.readEntry();
+      await visit(name, stream); zip.readEntry();
     })().catch(fail); });
     zip.readEntry();
   });
+}
+export function extractZip(buffer: Buffer, root: string) {
+  return zipEntries(buffer, async (name, stream) => {
+    const target = path.join(root, name); fs.mkdirSync(path.dirname(target), { recursive: true });
+    await pipeline(stream, fs.createWriteStream(target, { flags: 'wx', mode: 0o600 }));
+  });
+}
+export async function readZip(buffer: Buffer) {
+  const files = new Map<string, Buffer>(), seen = new Set<string>();
+  await zipEntries(buffer, async (name, stream) => {
+    // Case-insensitive file systems would merge these into one file.
+    if (seen.has(name.toLowerCase())) throw new Error('The ZIP contains the same file twice.');
+    seen.add(name.toLowerCase());
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(chunk as Buffer);
+    files.set(name, Buffer.concat(chunks));
+  });
+  return files;
 }
 
 export class PaperImports {
