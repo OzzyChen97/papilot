@@ -83,10 +83,19 @@ try {
   for (const note of store.annotations('paper')) store.saveAnnotation((({ document: _, ...rest }) => rest)(note));
   const deleted = store.annotations('paper').find(note => note.comment === 'Deleted note');
   await api(`/projects/paper/annotations/${deleted.id}/delete`, {});
-  await page.addInitScript(() => { localStorage.setItem('papilot:project', 'paper'); localStorage.setItem('papilot:language', 'en'); });
+  await page.addInitScript(() => {
+    localStorage.setItem('papilot:project', 'paper'); localStorage.setItem('papilot:language', 'en');
+    // A reading place saved before documents had their own, once.
+    if (!sessionStorage.getItem('seeded')) { sessionStorage.setItem('seeded', '1'); localStorage.setItem('papilot:places', JSON.stringify({ 'pdf:paper': { page: 1, left: 0, top: 0 } })); }
+  });
   await page.goto(origin);
   const word = text => page.locator('.pdf-view .textLayer span', { hasText: text }).first();
   await expect(word('Pelicans')).toBeVisible({ timeout: 60000 });
+  // The place saved before goes to the document compiled now.
+  await page.locator('.manuscript-link').click();
+  await expect(page.locator('.manuscript .pdf-view .textLayer span', { hasText: 'Pelicans' }).first()).toBeVisible({ timeout: 60000 });
+  const places = () => page.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('papilot:places') || '{}')).filter(key => key.startsWith('pdf:')));
+  await expect.poll(places).toEqual(['pdf:paper:thesis/main.tex']);
   // The Manuscript row names the compiled document and opens the file menu.
   const menu = page.locator('.manuscript-row').getByRole('button', { name: /^Files/ }), files = page.getByRole('list', { name: 'Repository files' });
   const row = name => files.locator('.repo-row.file', { has: page.getByRole('button', { name, exact: true }) });
@@ -131,6 +140,8 @@ try {
   await expect(row('response.tex').getByRole('img', { name: 'Compiled document' })).toBeVisible();
   const settings = JSON.parse(fs.readFileSync(path.join(root, '.git/papilot/settings.json'), 'utf8'));
   assert.equal(settings.main, 'letter/response.tex');
+  // The manuscript names the document of its PDF, which keeps its own place.
+  assert.equal((await api('/projects/paper/manuscript')).build.document, 'letter/response.tex');
   // The thesis notes stay with the thesis, also one restored meanwhile.
   assert.deepEqual((await api('/projects/paper/manuscript')).annotations, []);
   assert.deepEqual((await api(`/projects/paper/annotations/${deleted.id}/restore`, {})).annotations, []);
@@ -168,6 +179,26 @@ try {
   // Only root documents compile.
   await assert.rejects(api('/projects/paper/document', { main: 'thesis/sections/intro.tex' }), /documentclass/);
   await assert.rejects(api('/projects/paper/document', { main: '../outside.tex' }), /documentclass/);
+  // Settings edited by hand to name the letter while the thesis PDF shows:
+  // choosing the thesis puts it back in the settings.
+  await api('/projects/paper/manuscript', {});
+  await settle();
+  assert.equal((await api('/projects/paper/manuscript')).build.document, 'thesis/main.tex');
+  const settingsFile = path.join(root, '.git/papilot/settings.json');
+  fs.writeFileSync(settingsFile, JSON.stringify({ ...JSON.parse(fs.readFileSync(settingsFile, 'utf8')), main: 'letter/response.tex' }));
+  await api('/projects/paper/document', { main: 'thesis/main.tex' });
+  assert.notEqual(JSON.parse(fs.readFileSync(settingsFile, 'utf8')).main, 'letter/response.tex');
+  await settle();
+
+  // A list that cannot be read says so, and Retry reads it again.
+  await page.route('**/api/projects/paper/files', route => route.fulfill({ status: 400, contentType: 'application/json', body: JSON.stringify({ error: 'Could not list the files of this repository.' }) }));
+  await page.reload();
+  await menu.click();
+  await expect(files.getByRole('alert')).toHaveText('Could not list the files of this repository.');
+  await page.unroute('**/api/projects/paper/files');
+  await files.getByRole('button', { name: 'Retry' }).click();
+  await expect(files.getByRole('button', { name: 'thesis' })).toBeVisible();
+  await page.keyboard.press('Escape');
 
   // Escape closes the menu and the browser returns focus to its button; the
   // folders opened stay open.

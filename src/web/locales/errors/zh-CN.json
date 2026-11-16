@@ -320,5 +320,6 @@
   "Wait for this task to restart before deleting it.": "请等待此任务重新启动后再删除。",
   "Wait for this task to restart before sending more instructions.": "请等待此任务重新启动后再发送更多指令。",
   "Choose valid destination model settings.": "请选择有效的目标模型设置。",
-  "Choose a TeX file with \\documentclass and \\begin{document}.": "请选择包含 \\documentclass 和 \\begin{document} 的 TeX 文件。"
+  "Choose a TeX file with \\documentclass and \\begin{document}.": "请选择包含 \\documentclass 和 \\begin{document} 的 TeX 文件。",
+  "Could not list the files of this repository.": "无法列出此仓库中的文件。"
 }

@@ -99,9 +99,11 @@ export class Tasks {
     sections: string[] = [],
     files: string[] = [],
     deferred = false,
+    document?: string,
   ): Task {
-    // The task compiles the root document the paper compiles now.
-    const project = this.app.project, reserved = this.reserve(project, name, title, sections, files);
+    // The task compiles the root document asked for, by default the one the
+    // paper compiles now.
+    const project = this.app.projectFor(document), reserved = this.reserve(project, name, title, sections, files);
     if ("existing" in reserved) return reserved.existing;
     const base = this.app.repo.snapshot([project.source_dir, ...reserved.paths], GENERATED);
     const scope = this.scopeOf(project, sections.length ? revisionReader(this.app.repo, base, project.doc_dir) : null, sections, reserved.paths);
@@ -117,8 +119,9 @@ export class Tasks {
     sections: string[] = [],
     files: string[] = [],
     deferred = false,
+    document?: string,
   ): Promise<Task> {
-    const project = this.app.project, reserved = this.reserve(project, name, title, sections, files);
+    const project = this.app.projectFor(document), reserved = this.reserve(project, name, title, sections, files);
     if ("existing" in reserved) return reserved.existing;
     this.creating.add(reserved.name);
     try {

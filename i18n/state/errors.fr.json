@@ -1178,5 +1178,10 @@
     "revision": "e8b9cad1f0c38c469bb29e613f80f9cac8d4c325820e3266606347a71ff8ca43",
     "textHash": "4e781a3db355183d3575a38922a6e79bfdf85fee6db6d512b34068cd2a43abcc",
     "model": "gemini-4-argon-medium"
+  },
+  "Could not list the files of this repository.": {
+    "revision": "7933748a44e7270ce4748f11f23f86771f97f18e7f6bea64915b440ff47bc571",
+    "textHash": "bf9f5c2b0e9a60a452d614bbf0ba1d2efd0eaa44711d03c6b35b8284cc04ffd4",
+    "model": "gemini-4-argon-medium"
   }
 }

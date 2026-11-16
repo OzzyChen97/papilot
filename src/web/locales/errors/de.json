@@ -320,5 +320,6 @@
   "Wait for this task to restart before deleting it.": "Warten Sie, bis diese Aufgabe neu gestartet wurde, bevor Sie sie löschen.",
   "Wait for this task to restart before sending more instructions.": "Warten Sie, bis diese Aufgabe neu gestartet wurde, bevor Sie weitere Anweisungen senden.",
   "Choose valid destination model settings.": "Wählen Sie gültige Einstellungen für das Zielmodell.",
-  "Choose a TeX file with \\documentclass and \\begin{document}.": "Wählen Sie eine TeX-Datei mit \\documentclass und \\begin{document} aus."
+  "Choose a TeX file with \\documentclass and \\begin{document}.": "Wählen Sie eine TeX-Datei mit \\documentclass und \\begin{document} aus.",
+  "Could not list the files of this repository.": "Die Dateien dieses Repositorys konnten nicht aufgelistet werden."
 }

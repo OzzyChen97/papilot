@@ -2758,6 +2758,24 @@ test('AI review captures the task worktree before enqueueing and retries keep th
   } finally { f.close(); }
 });
 
+test('a retried AI review copies the document it was started on after the paper switched', async () => {
+  const f = fixture(async (_method, route) => route === '/api/tasks' ? { worktree: '/task-copy', deferred: true, document: 'thesis/main.tex' } : route.endsWith('/finish') ? { finished: true } : {});
+  try {
+    const captured = { key: 'thesis-pdf', pdf: '/saved-review.pdf', lines: [{ id: 'p1-l1', page: 0, text: 'The thesis.', rect: [0.1, 0.2, 0.8, 0.3] as [number, number, number, number] }] };
+    let fail = true;
+    const input = { id: 'ai-review-switched-task', projectId: f.task.projectId, title: 'AI review', instructions: '', skill: 'ai-review', prepareReview: async () => { if (fail) throw new Error('The manuscript could not be compiled for AI review.'); return captured; } };
+    await f.workspace.createTask(input);
+    await assert.rejects(preparation(f, input.id), /could not be compiled/);
+    // The paper switched to the letter, and stamped the task with the thesis.
+    f.store.updateTask(input.id, { document: 'thesis/main.tex' });
+    fail = false;
+    await f.workspace.createTask(input);
+    await preparation(f, input.id);
+    const asked = f.calls.filter(call => call.route === '/api/tasks').map(call => (call.body as { document?: string }).document);
+    assert.deepEqual(asked, [undefined, 'thesis/main.tex']);
+  } finally { f.close(); }
+});
+
 test('a new AI review copies the document the engine recorded for it, though the paper switched meanwhile', async () => {
   const f = fixture(async (_method, route) => route === '/api/tasks' ? { worktree: '/task-copy', deferred: true, document: 'thesis/main.tex' } : {});
   try {

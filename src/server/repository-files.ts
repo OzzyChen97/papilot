@@ -35,13 +35,18 @@ export async function compiledBefore(root: string) {
  *  untracked ones it does not ignore. The root documents are those that
  *  begin a document, the current one and those the paper compiled before. */
 export async function repositoryFiles(root: string, current?: string): Promise<RepositoryFile[]> {
-  const { stdout } = await execute('git', ['-C', root, 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { timeout: 30000, maxBuffer: 64 * 1024 * 1024 });
+  let stdout: string;
+  try { ({ stdout } = await execute('git', ['-C', root, 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], { timeout: 30000, maxBuffer: 64 * 1024 * 1024 })); }
+  catch { throw new Error('Could not list the files of this repository.'); }
+  const listed = [...new Set(stdout.split('\0').filter(Boolean))].sort(), stats: (fs.Stats | undefined)[] = [];
+  // Off the event loop, in batches: a thesis can have thousands of figures and data files.
+  for (let start = 0; start < listed.length; start += 64)
+    stats.push(...await Promise.all(listed.slice(start, start + 64).map(file => fs.promises.stat(path.join(root, file)).catch(() => undefined))));
   const files: RepositoryFile[] = [], before = await compiledBefore(root);
-  for (const file of [...new Set(stdout.split('\0').filter(Boolean))].sort()) {
-    let stat: fs.Stats;
-    try { stat = fs.statSync(path.join(root, file)); } catch { continue; }
-    // A submodule is listed as one entry, a folder.
-    if (!stat.isFile()) continue;
+  for (const [index, file] of listed.entries()) {
+    const stat = stats[index];
+    // A tracked file deleted since is gone; a submodule is listed as one entry, a folder.
+    if (!stat?.isFile()) continue;
     const isRoot = /\.tex$/i.test(file) && (file === current || before.has(file) || rootDocument(root, file, stat));
     files.push(isRoot ? { path: file, root: true } : { path: file });
   }

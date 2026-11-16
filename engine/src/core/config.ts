@@ -55,7 +55,10 @@ export function saveBuildOverrides(root: string, settings: BuildOverrides) {
     throw new Error("The Papilot data directory for build settings must be outside the paper.");
   const defaults = buildDefaults(readSettings(root)), previous = readJson<BuildOverrideRecord | null>(file, null);
   const others = { ...previous?.others, ...(previous?.project === project && previous.defaults !== defaults ? { [previous.defaults]: previous.settings } : {}) };
-  delete others[defaults];
+  // This document's repair under its settings before an explicit choice
+  // changed them no longer applies, also if the choice is undone.
+  const mainOf = (key: string) => { try { return (JSON.parse(key) as unknown[])[0] ?? null; } catch { return undefined; } };
+  for (const key of Object.keys(others)) if (mainOf(key) === mainOf(defaults)) delete others[key];
   writeJson(file, { project, defaults, settings, ...(Object.keys(others).length ? { others } : {}) }, 0o600);
 }
 
@@ -172,8 +175,11 @@ export function documentSettings(root: string, main: string): Record<string, unk
   const kept = readJson<Record<string, unknown>>(documentsFile(root), {})[main];
   const folder = typeof settings.source_dir === "string" ? cleanPath(settings.source_dir)
     : current && path.posix.dirname(current) !== "." ? path.posix.dirname(current) : current ? "" : null;
-  const own = kept && typeof kept === "object" && !Array.isArray(kept) ? documentPart(kept as Record<string, unknown>, true)
-    : { source_dir: folder !== null && within(main, [folder]) ? folder : "" };
+  const shared = { source_dir: folder !== null && within(main, [folder]) ? folder : "" };
+  const own: Record<string, unknown> = kept && typeof kept === "object" && !Array.isArray(kept) ? documentPart(kept as Record<string, unknown>, true)
+    // While no document could be told apart, such as with several and none
+    // named, the paper's own document settings are for the one chosen.
+    : current === null ? { ...documentPart(settings, true), ...shared } : shared;
   // A main file that was detected stays so: its settings, and an agent's
   // repair of them, are those it had.
   if (own.main === undefined) {
@@ -273,6 +279,17 @@ export function loadBuildDocuments(root: string, settings: { main?: unknown; lat
   return { main, doc_dir, latexmkrc };
 }
 /** The paper's build settings, for its current root document or for `document`. */
+/** The settings `document` compiles with: those of the paper's current
+ *  document without one, and once that file was renamed or removed, since
+ *  its text went to the current document. */
+export function projectFor(root: string, document?: string | null): Project {
+  if (document) {
+    document = cleanPath(document);
+    try { return loadProject(root, undefined, document); }
+    catch (error) { if (fs.existsSync(path.join(root, document))) throw error; }
+  }
+  return loadProject(root);
+}
 export function loadProject(root: string, overrides?: BuildOverrides, document?: string): Project {
   root = realPath(root);
   const defaults = document ? documentSettings(root, document) : readSettings(root);

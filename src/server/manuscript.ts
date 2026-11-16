@@ -417,12 +417,6 @@ interface Build {
   // Stops the compilation when the paper compiles another document instead.
   stop?: AbortController;
 }
-// The settings a task compiles with: those of its root document, or the
-// paper's current ones once that file was renamed or removed.
-function taskProject(loadProject: (root: string, overrides?: undefined, document?: string) => BuildProject, root: string, document?: string) {
-  if (document) try { return loadProject(root, undefined, document); } catch (error) { if (fs.existsSync(path.join(root, document))) throw error; }
-  return loadProject(root);
-}
 
 
 
@@ -580,8 +574,8 @@ export class Manuscripts extends EventEmitter {
     const tree = building ? current.tree : await this.snapshot(root), status = await this.gitStatus(root, building, building ? undefined : tree);
     let build = this.builds.get(projectId);
     if (!build || (build.status !== 'building' && (build.tree !== tree || rebuild))) build = this.start(projectId, root, tree, build, rebuild);
-    const { status: state, key, pages, builtAt, error, failureId } = build;
-    return { git: status, build: { status: state, key, pages, builtAt, error, failureId, tree: build.tree, current: build.tree === tree && state === 'ready', problems: build.problems && countProblems(build.problems), ...(state === 'building' && build.progress ? { progress: build.progress } : {}) } };
+    const { status: state, key, pages, builtAt, error, failureId } = build, document = key ? this.documentOf(projectId, key) : undefined;
+    return { git: status, build: { status: state, key, ...(document ? { document } : {}), pages, builtAt, error, failureId, tree: build.tree, current: build.tree === tree && state === 'ready', problems: build.problems && countProblems(build.problems), ...(state === 'building' && build.progress ? { progress: build.progress } : {}) } };
   }
 
   /** Compiles the working tree if it changed, without waiting for anyone to
@@ -648,6 +642,8 @@ export class Manuscripts extends EventEmitter {
     const tree = await this.snapshot(root), previous = this.builds.get(projectId);
     if (previous?.key && previous.pdf) this.oldPdfs.set(`${root}:${previous.key}`, previous.pdf);
     previous?.stop?.abort();
+    // A speculative build of the document no longer compiled is not wanted either.
+    this.speculation.get(projectId)?.abort(); this.speculation.delete(projectId);
     this.builds.delete(projectId);
     this.documents.set(projectId, document);
     this.emit('build-settings', projectId);
@@ -884,8 +880,9 @@ export class Manuscripts extends EventEmitter {
   // Compile the task's frozen source tree, then retain its PDF outside the build cache.
   // A preview build of the same tree is shared, not repeated.
   async captureReview(root: string, worktree: string, taskId: string, document?: string): Promise<ReviewSnapshot> {
-    const { Builder, BuildError, Repo, loadProject } = await engine();
-    const tree = await workingTree(worktree), project = taskProject(loadProject, root, document);
+    const { Builder, BuildError, Repo, config } = await engine();
+    // The task's root document, as the engine compiles it.
+    const tree = await workingTree(worktree), project = config.projectFor(root, document);
     let result;
     try { result = await new Builder(project, new Repo(root)).build(tree, ['full']); }
     catch (error) { throw error instanceof BuildError ? new Error('The manuscript could not be compiled for AI review. Fix the errors shown in the manuscript preview, then try again.') : error; }
@@ -1087,7 +1084,7 @@ export class Manuscripts extends EventEmitter {
    *  `working`'s files: a task's PDF of its decisions, located in its worktree. */
   async locateBuild(root: string, key: string, page: number, rect: Rect, rects: Rect[], selected: string, working: string, document?: string) {
     if (!/^[0-9a-f]{32}$/.test(key)) throw Object.assign(new Error('Unknown PDF.'), { statusCode: 404 });
-    const { loadProject } = await engine(), project = taskProject(loadProject, root, document);
+    const project = (await engine()).config.projectFor(root, document);
     let info: { pdf?: unknown; root?: unknown };
     try { info = JSON.parse(await fs.promises.readFile(path.join(project.state, 'cache/builds', key, 'result.json'), 'utf8')); }
     catch { throw Object.assign(new Error('This PDF is no longer available.'), { statusCode: 404 }); }

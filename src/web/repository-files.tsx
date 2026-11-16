@@ -39,6 +39,7 @@ const ancestors = (file: string | null) => file ? file.split('/').slice(0, -1).m
  *  `version` changes, such as after a build of a new working tree. */
 export function useRepositoryFiles(api: Api, projectId: string | undefined, version: unknown) {
   const [value, setValue] = useState<{ projectId: string; files: RepositoryFiles } | null>(null);
+  const [failure, setFailure] = useState<{ projectId: string; message: string } | null>(null);
   const request = useRef(0);
   const load = useCallback(async () => {
     if (!projectId) return;
@@ -47,18 +48,24 @@ export function useRepositoryFiles(api: Api, projectId: string | undefined, vers
       const files = await api<RepositoryFiles>(`/projects/${projectId}/files`);
       if (id !== request.current || !Array.isArray(files?.files)) return;
       setValue({ projectId, files: { document: typeof files.document === 'string' ? files.document : null, files: files.files.filter(file => typeof file?.path === 'string') } });
-    } catch { /* The browser keeps the last list; the next change reads it again. */ }
+      setFailure(null);
+    } catch (error) {
+      // The menu keeps the last list it had; without one it says why.
+      if (id === request.current) setFailure({ projectId, message: error instanceof Error ? error.message : String(error) });
+    }
   }, [api, projectId]);
   useEffect(() => { void load(); }, [load, version]);
   useEffect(() => {
     window.addEventListener('focus', load);
     return () => window.removeEventListener('focus', load);
   }, [load]);
-  return { files: value && value.projectId === projectId ? value.files : null, reload: load };
+  return { files: value && value.projectId === projectId ? value.files : null, error: failure && failure.projectId === projectId ? failure.message : null, reload: load };
 }
 
-export function RepositoryFilesMenu({ projectId, files, editing, onOpen, onCompile }: {
+export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing, onOpen, onCompile }: {
   projectId: string; files: RepositoryFiles | null;
+  /** Why the files could not be listed, while there is no list. */
+  error: string | null; onRetry: () => void;
   /** The file open in the source editor. */
   editing: string | null;
   onOpen: (file: string) => void;
@@ -156,7 +163,9 @@ export function RepositoryFilesMenu({ projectId, files, editing, onOpen, onCompi
     <ul ref={panel} id={id} popover="auto" role="list" aria-label={t('Repository files')} className="repo-files-panel"
       onToggle={event => setShown((event.nativeEvent as ToggleEvent).newState === 'open')}
       onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
-      {!root ? <li><span className="spinner" role="status" aria-label={t('Loading files…')}/></li> : rows(root, 0)}
+      {root ? rows(root, 0)
+        : error ? <li className="repo-files-error"><span role="alert">{error}</span><button type="button" className="note-link" onClick={onRetry}>{t('Retry')}</button></li>
+        : <li><span className="spinner" role="status" aria-label={t('Loading files…')}/></li>}
     </ul>
   </span>;
 }

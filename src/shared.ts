@@ -181,7 +181,9 @@ export interface GitOverview { worktrees: GitWorktree[]; commits: GitGraphCommit
 export interface BuildProgress { step: 'tex' | 'bibliography' | 'pdf'; pass: number; pages: number; total: number | null; startedAt: number }
 export interface ManuscriptBuild { status: 'building' | 'ready' | 'failed'; key?: string; pages?: [number, number][]; builtAt?: number; error?: string; failureId?: string; current: boolean;
   /** The working tree this build compiles or compiled, failed or not. */
-  tree?: string; problems?: BuildProblemCounts; progress?: BuildProgress }
+  tree?: string; problems?: BuildProblemCounts; progress?: BuildProgress;
+  /** The root document whose PDF `key` is. */
+  document?: string }
 // What the last finished build reported. Errors stop the build; warnings are
 // mistakes in the PDF (?? and missing citations); minor problems are
 // typesetting (overfull lines) and package remarks, listed but never counted.

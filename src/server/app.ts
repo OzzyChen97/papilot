@@ -733,8 +733,7 @@ export async function buildApp(options: AppOptions) {
   app.post<{ Params: { id: string } }>('/api/projects/:id/document', project(), async request => {
     const project = store.project(request.params.id), previous = await manuscripts.document(project.id, project.path);
     const main = await checkDocument(project.path, (request.body as { main?: unknown } | null)?.main);
-    if (main === previous) return { document: main };
-    if (previous) {
+    if (previous && main !== previous) {
       // Notes and tasks from before a paper could compile several documents
       // are on the one it compiled until now; the review engine marks its
       // tasks as it starts. A task prepared later takes the engine's record.
@@ -744,9 +743,9 @@ export async function buildApp(options: AppOptions) {
       });
       if (store.tasks().some(task => task.projectId === project.id)) await connectReview(project.path);
     }
-    await chooseDocument(project.path, main);
-    // Settings may already name it, edited by hand, with its PDF not compiled.
-    await manuscripts.documentChanged(project.id, project.path, main);
+    // The settings may name another document than the PDF shown, or already
+    // name this one, edited by hand: either way the PDF shown is not its own.
+    if (await chooseDocument(project.path, main) || main !== previous) await manuscripts.documentChanged(project.id, project.path, main);
     return { document: main };
   });
   const isRect = (value: unknown): value is [number, number, number, number] => Array.isArray(value) && value.length === 4 && value.every(v => typeof v === 'number' && v >= 0 && v <= 1) && value[2] > value[0] && value[3] > value[1];

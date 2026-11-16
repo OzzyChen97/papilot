@@ -5,9 +5,9 @@ import Fastify from "fastify";
 import staticFiles from "@fastify/static";
 import compress from "@fastify/compress";
 import { WEB, codeVersion, environmentVersion } from "./runtime.ts";
-import { Repo, stateDir } from "./core/git.ts";
+import { Repo, cleanPath, stateDir } from "./core/git.ts";
 import { serverHome } from "./client.ts";
-import { buildOverridesFile, documentsFile, loadProject, settingsFile, type Project } from "./core/config.ts";
+import { buildOverridesFile, documentsFile, loadProject, projectFor, settingsFile, type Project } from "./core/config.ts";
 import { Store } from "./core/store.ts";
 import { Tasks } from "./core/tasks.ts";
 import { Review } from "./core/review.ts";
@@ -105,15 +105,17 @@ export class App {
   /** The settings a task compiles with: those of the root document it was
    *  started on, which the paper may no longer be compiling. */
   projectOf(task: Task | string): Project {
-    const { document } = typeof task === "string" ? this.tasks.get(task, false) : task;
+    return this.projectFor((typeof task === "string" ? this.tasks.get(task, false) : task).document);
+  }
+  /** The settings `document` compiles with, or the paper's current ones. */
+  projectFor(document?: string | null): Project {
     if (!document) return this.project;
+    document = cleanPath(document);
     const stamp = this.settingsStamp(), cached = this.documentProjects.get(document);
     if (cached?.stamp === stamp) return cached.project;
-    let project: Project;
-    try { project = loadProject(this.root, undefined, document); }
-    // A main file renamed or removed since: the paper's current document is
-    // where its text went.
-    catch (error) { if (fs.existsSync(path.join(this.root, document))) throw error; return this.project; }
+    const project = projectFor(this.root, document);
+    // A main file renamed or removed compiles as the current document, until it is back.
+    if (project.main !== document) return this.project;
     this.documentProjects.set(document, { stamp, project });
     return project;
   }
@@ -444,6 +446,7 @@ export function createServer(app: App) {
         sections?: string[];
         files?: string[];
         deferred?: boolean;
+        document?: string;
       };
     }>(
       "/api/tasks",
@@ -457,6 +460,8 @@ export function createServer(app: App) {
               sections: { type: "array", items: { type: "string" } },
               files: { type: "array", items: { type: "string" } },
               deferred: { type: "boolean" },
+              // The root document a new task compiles; the current one by default.
+              document: { type: "string" },
             },
           },
         },
@@ -464,7 +469,7 @@ export function createServer(app: App) {
       async (request) => {
         const d = request.body;
         return app.taskInfo(
-          (await app.tasks.createAsync(d.name, d.title, d.sections, d.files, d.deferred)).name,
+          (await app.tasks.createAsync(d.name, d.title, d.sections, d.files, d.deferred, d.document)).name,
         );
       },
     );

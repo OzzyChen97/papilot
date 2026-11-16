@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, beforeEach, expect, it } from "vitest";
-import { chooseDocument, documentsFile, loadProject, readBuildOverrides, readSettings, saveBuildOverrides, writeSettings } from "../../src/core/config.ts";
+import { chooseDocument, documentsFile, loadProject, projectFor, readBuildOverrides, readSettings, saveBuildOverrides, writeSettings } from "../../src/core/config.ts";
 import { Fixture } from "./helpers.ts";
+import { createServer } from "../../src/server.ts";
 
 // A repository with several root documents, such as a paper and its slides:
 // the paper compiles one at a time, each keeps its own settings, and a task
@@ -135,4 +136,59 @@ it("resumes a named task on its document after the paper switches", async () => 
   const other = app.tasks.create(undefined, "Resumed");
   expect(other.name).not.toBe(task.name);
   expect(other.document).toBe(SLIDES);
+});
+
+it("creates a task on the document asked for, as a retry after a switch does", async () => {
+  const app = f.app();
+  await app.ready;
+  chooseDocument(f.root, SLIDES);
+  const server = createServer(app);
+  try {
+    const post = (body: object) => server.inject({ method: "POST", url: "/api/tasks", headers: { host: "127.0.0.1:9", origin: app.url, "x-review-token": app.csrf }, payload: body });
+    const asked = await post({ name: "asked", title: "Asked", deferred: true, document: "paper/main.tex" });
+    expect(asked.statusCode, asked.body).toBe(200);
+    expect(asked.json().document).toBe("paper/main.tex");
+    expect(app.projectOf("asked")).toMatchObject({ main: "paper/main.tex", source_dir: "paper" });
+    // A document since removed: the one the paper compiles now.
+    expect((await post({ name: "gone", title: "Gone", deferred: true, document: "paper/gone.tex" })).json().document).toBe(SLIDES);
+    expect((await post({ name: "outside", title: "Outside", document: "../main.tex" })).statusCode).not.toBe(200);
+  } finally {
+    await server.close();
+  }
+});
+
+it("gives the paper's document settings to the document chosen while none could be told apart", () => {
+  // Two main files of the same rank: detection cannot choose, so nothing compiles yet.
+  f.write("thesis/main.tex", TALK);
+  writeSettings(f.root, { engine: "xelatex", build_workers: 2 });
+  expect(() => loadProject(f.root)).toThrow(/Several root documents/);
+  chooseDocument(f.root, "paper/main.tex");
+  expect(readSettings(f.root)).toEqual({ engine: "xelatex", build_workers: 2, source_dir: "", main: "paper/main.tex" });
+  expect(loadProject(f.root).engine).toBe("xelatex");
+});
+
+it("drops a document's repair once its settings are chosen by hand, also when undone", () => {
+  const data = process.env.PAPILOT_DATA;
+  process.env.PAPILOT_DATA = path.join(f.base, "data");
+  try {
+    saveBuildOverrides(f.root, { engine: "lualatex" });
+    // The author names the engine; the next repair is made for that.
+    writeSettings(f.root, { engine: "xelatex" });
+    saveBuildOverrides(f.root, { source_dir: "" });
+    writeSettings(f.root, {});
+    expect(loadProject(f.root).engine).toBe("pdflatex");
+    // Another document's repair stays.
+    chooseDocument(f.root, SLIDES);
+    saveBuildOverrides(f.root, { engine: "xelatex" });
+    chooseDocument(f.root, "paper/main.tex");
+    expect(readBuildOverrides(f.root, { main: SLIDES, source_dir: "" })).toEqual({ engine: "xelatex" });
+  } finally {
+    if (data === undefined) delete process.env.PAPILOT_DATA; else process.env.PAPILOT_DATA = data;
+  }
+});
+
+it("compiles a document whose file is gone as the paper's current one", () => {
+  expect(projectFor(f.root, "paper/gone.tex").main).toBe("paper/main.tex");
+  expect(projectFor(f.root, SLIDES).main).toBe(SLIDES);
+  expect(() => projectFor(f.root, "../outside.tex")).toThrow(/repository-relative/);
 });
