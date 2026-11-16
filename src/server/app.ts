@@ -32,8 +32,8 @@ import type { Updates } from './updates.ts';
 import { Diagnostics } from './diagnostics.ts';
 import { attachmentIds } from './attachments.ts';
 import { MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS } from '../shared.ts';
-import { PaperImports, openFolder } from './imports.ts';
-import { checkDocument, chooseDocument, repositoryFiles, rootDocument } from './repository-files.ts';
+import { PaperImports, existingTex, openFolder } from './imports.ts';
+import { checkDocument, chooseDocument, compiledBefore, repositoryFiles, rootDocument } from './repository-files.ts';
 import { PaperCreations } from './create-paper.ts';
 import { DATA, pageViewDir } from './paths.ts';
 import { registerAiReviewRoutes } from './ai-review-routes.ts';
@@ -144,9 +144,12 @@ export async function buildApp(options: AppOptions) {
   const indirectChanges = () => store.preference<boolean>('indirect-changes') === true;
   workspace.indirectChanges = changes.indirectChanges = indirectChanges;
   // An AI review resumed after a restart compiles its copy here too.
+  // A task's document as the store has it now: a running turn may have
+  // started before the paper first switched documents and stamped it.
+  const taskDocument = (task: Task) => store.findTask(task.id)?.document ?? task.document;
   workspace.prepareReview = (task, worktree) => manuscripts.captureReview(store.project(task.projectId).path, worktree, task.id, task.document);
-  workspace.sourcePages = (task, file, lines) => manuscripts.sourcePages(task.projectId, file, lines, task.document);
-  workspace.paperBuild = task => manuscripts.paperBuild(task.projectId, task.document);
+  workspace.sourcePages = (task, file, lines) => manuscripts.sourcePages(task.projectId, file, lines, taskDocument(task));
+  workspace.paperBuild = task => manuscripts.paperBuild(task.projectId, taskDocument(task));
   const app = Fastify({ logger: false, bodyLimit: Number.MAX_SAFE_INTEGER });
   const buildSettingsChanged = (projectId: string) => changes.buildSettingsChanged(projectId);
   manuscripts.on('build-settings', buildSettingsChanged);
@@ -212,11 +215,14 @@ export async function buildApp(options: AppOptions) {
   });
   // The manuscript's own notes: on the PDF of the root document it compiles,
   // not sent to a task, and not an AI review's suggestions.
-  // A note on another root document that is still one waits for it; one on a
-  // main file since renamed or removed moves to the current document.
+  // A note on another document waits for it while the paper can compile it
+  // again, as the file menu offers it: a root document, or one compiled
+  // before, even while it lacks \documentclass of its own. One on a main file
+  // since renamed or removed moves to the current document.
   async function paperNotes(id: string) {
     const root = store.project(id).path, document = await manuscripts.document(id, root), elsewhere = new Map<string, boolean>();
-    const away = (file: string) => elsewhere.get(file) ?? elsewhere.set(file, rootDocument(root, file)).get(file)!;
+    const before = await compiledBefore(root);
+    const away = (file: string) => elsewhere.get(file) ?? elsewhere.set(file, before.has(file) ? existingTex(root, file) : rootDocument(root, file)).get(file)!;
     return store.annotations(id).filter(note => !note.taskId && !isTaskReviewNote(note) && (!note.document || note.document === document || !away(note.document)));
   }
   async function manuscript(id: string, rebuild = false) {
@@ -731,8 +737,11 @@ export async function buildApp(options: AppOptions) {
     if (previous) {
       // Notes and tasks from before a paper could compile several documents
       // are on the one it compiled until now; the review engine marks its
-      // tasks as it starts.
-      store.transaction(() => { for (const note of store.annotations(project.id, true)) if (!note.document) store.saveAnnotation({ ...note, document: previous }); });
+      // tasks as it starts. A task prepared later takes the engine's record.
+      store.transaction(() => {
+        for (const note of store.annotations(project.id, true)) if (!note.document) store.saveAnnotation({ ...note, document: previous });
+        for (const task of store.tasks()) if (task.projectId === project.id && !task.document) store.updateTask(task.id, { document: previous });
+      });
       if (store.tasks().some(task => task.projectId === project.id)) await connectReview(project.path);
     }
     await chooseDocument(project.path, main);

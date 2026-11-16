@@ -74,6 +74,9 @@ const settle = async () => {
 
 try {
   const thesis = await settle();
+  // A task from before tasks kept their document, as Papilot recorded it.
+  const older = engine.tasks.create('older-task', 'Older');
+  store.saveTask({ id: 'older', projectId: 'paper', name: older.name, title: 'Older', instructions: '', worktree: older.worktree, threadId: null, turnId: null, model: null, status: 'idle', createdAt: 1, updatedAt: 1, feedbackCursor: 0, error: null, review: null });
   // Notes on the thesis, saved before the paper could compile anything
   // else: one shown, one deleted.
   for (const comment of ['Thesis note', 'Deleted note']) await api('/projects/paper/annotations', { key: thesis.key, page: 0, rect: [0.1, 0.1, 0.3, 0.12], comment, quote: 'Pelicans' });
@@ -133,6 +136,15 @@ try {
   assert.deepEqual((await api(`/projects/paper/annotations/${deleted.id}/restore`, {})).annotations, []);
   assert.deepEqual(store.annotations('paper').map(note => note.document), ['thesis/main.tex', 'thesis/main.tex']);
   await api(`/projects/paper/annotations/${deleted.id}/delete`, {});
+  // Also while the thesis takes \documentclass from another file.
+  const thesisText = fs.readFileSync(path.join(root, 'thesis/main.tex'), 'utf8');
+  write('thesis/preamble.tex', '\\documentclass{article}\n');
+  write('thesis/main.tex', thesisText.replace('\\documentclass{article}', '\\input{preamble}'));
+  assert.deepEqual((await api('/projects/paper/manuscript')).annotations, []);
+  write('thesis/main.tex', thesisText); fs.rmSync(path.join(root, 'thesis/preamble.tex'));
+  // The older task compiled the thesis, and its agent reads no letter PDF.
+  assert.equal(store.task('older').document, 'thesis/main.tex');
+  assert.equal(workspace.paperBuild(store.task('older')), null);
   await shot('letter');
 
   // A task started now compiles the letter; one started before, the thesis.
@@ -145,6 +157,7 @@ try {
   await expect(menu).toHaveText('main.tex');
   assert.deepEqual((await api('/projects/paper/manuscript')).annotations.map(note => note.comment), ['Thesis note']);
   assert.equal(engine.projectOf(letterTask).main, 'letter/response.tex');
+  assert.ok(workspace.paperBuild(store.task('older')), 'the older task reads the thesis PDF again');
   // A renamed main file keeps its notes.
   git('mv', 'thesis/main.tex', 'thesis/thesis.tex');
   await api('/projects/paper/manuscript', {});

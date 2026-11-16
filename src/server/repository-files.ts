@@ -26,7 +26,7 @@ export function rootDocument(root: string, file: string, stat = fs.statSync(path
 }
 const config = () => import(pathToFileURL(path.join(ENGINE, 'src/core/config.ts')).href) as Promise<typeof import('../../engine/src/core/config.ts')>;
 // The documents the paper compiled before, which can always compile again.
-async function compiledBefore(root: string) {
+export async function compiledBefore(root: string) {
   const { documentsFile } = await config();
   try { return new Set(Object.keys(JSON.parse(fs.readFileSync(documentsFile(root), 'utf8')))); } catch { return new Set<string>(); }
 }
