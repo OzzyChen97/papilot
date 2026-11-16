@@ -108,8 +108,9 @@ test('Pi discovery skips regular bundled shims before a native CLI on PATH', asy
     for (const folder of [bundled, native]) fs.writeFileSync(path.join(folder, name), 'fixture wrapper', { mode: 0o755 });
     const { piExecutable: find } = await import(pathToFileURL(path.join(bin, 'pi-cli.mjs')).href);
     const env = { PATH: [bundled, native].join(path.delimiter), HOME: dir, USERPROFILE: dir };
-    assert.equal(find(env), path.join(native, name));
-    assert.equal(find({ ...env, PAPILOT_PI_BIN: path.join(native, name) }), path.join(native, name));
+    // Windows lookup may return PATHEXT's casing for the same executable.
+    assert.equal(path.relative(find(env)!, path.join(native, name)), '');
+    assert.equal(path.relative(find({ ...env, PAPILOT_PI_BIN: path.join(native, name) })!, path.join(native, name)), '');
   } finally { fs.rmSync(dir, { recursive: true, force: true }); }
 });
 
