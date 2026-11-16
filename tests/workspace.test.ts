@@ -2758,6 +2758,19 @@ test('AI review captures the task worktree before enqueueing and retries keep th
   } finally { f.close(); }
 });
 
+test('a new AI review copies the document the engine recorded for it, though the paper switched meanwhile', async () => {
+  const f = fixture(async (_method, route) => route === '/api/tasks' ? { worktree: '/task-copy', deferred: true, document: 'thesis/main.tex' } : {});
+  try {
+    const captured = { key: 'thesis-pdf', pdf: '/saved-review.pdf', lines: [{ id: 'p1-l1', page: 0, text: 'The thesis.', rect: [0.1, 0.2, 0.8, 0.3] as [number, number, number, number] }] };
+    let copied: string | undefined;
+    const input = { id: 'ai-review-document-task', projectId: f.task.projectId, title: 'AI review', instructions: '', skill: 'ai-review', prepareReview: async (_worktree: string, document?: string) => { copied = document; return captured; } };
+    await f.workspace.createTask(input);
+    const created = await f.workspace.prepareTask(input.id);
+    assert.equal(copied, 'thesis/main.tex');
+    assert.equal(created.document, 'thesis/main.tex');
+  } finally { f.close(); }
+});
+
 for (const lifecycle of ['start', 'resume', 'loaded', 'fallback'] as const) {
   test(`editing network permissions survive ${lifecycle} without removing the file sandbox`, async () => {
     const f = fixture();

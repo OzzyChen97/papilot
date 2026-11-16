@@ -160,7 +160,9 @@ export class Tasks {
         candidate,
       );
       if (!existing || existing.closed) break;
-      if (this.matches(existing, sections, files) && (existing.document ?? project.main) === project.main) return { existing };
+      // A named task asked for again is that task, resumed on the document it
+      // recorded; an unnamed request reuses one only on the document compiled now.
+      if (this.matches(existing, sections, files) && (explicit || (existing.document ?? project.main) === project.main)) return { existing };
       if (explicit)
         throw new Error(
           `Task ${JSON.stringify(name)} already exists with a different scope. Finish it first or choose another name.`,

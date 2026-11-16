@@ -122,3 +122,17 @@ it("compiles a task with the document it was started on", async () => {
   expect(app.projectOf(paper.name).main).toBe(SLIDES);
   expect(fs.existsSync(path.join(f.root, SLIDES))).toBe(true);
 });
+
+it("resumes a named task on its document after the paper switches", async () => {
+  const app = f.app();
+  await app.ready;
+  const task = await app.tasks.createAsync("resumed", "Resumed", [], [], true);
+  chooseDocument(f.root, SLIDES);
+  // Papilot asks for the task by name again to finish preparing it.
+  const again = await app.tasks.createAsync("resumed", "Resumed", [], [], true);
+  expect(again).toMatchObject({ name: task.name, worktree: task.worktree, document: "paper/main.tex" });
+  // An unnamed request is a new task, on the slides.
+  const other = app.tasks.create(undefined, "Resumed");
+  expect(other.name).not.toBe(task.name);
+  expect(other.document).toBe(SLIDES);
+});

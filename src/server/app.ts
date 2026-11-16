@@ -399,7 +399,7 @@ export async function buildApp(options: AppOptions) {
         if (context) noteContexts[note.id] = { note, context };
       }
     }
-    return workspace.createTask({ id, projectId, noteContexts, ...(reviewing ? { prepareReview: (worktree: string) => manuscripts.captureReview(store.project(projectId).path, worktree, id) } : {}), title: string(b.title, 'Task title', 120), permissions: b.permissions, instructions: skill || annotations?.length || attachments.length ? optional(b.instructions, 'Instructions') : string(b.instructions, 'Instructions'), skill, annotations, groupInstructions, attachments, agent: agent(b.agent), model: typeof b.model === 'string' ? b.model : undefined, effort: effort(b.effort), serviceTier: b.serviceTier === undefined ? undefined : string(b.serviceTier, 'Service tier', 64) });
+    return workspace.createTask({ id, projectId, noteContexts, ...(reviewing ? { prepareReview: (worktree: string, document?: string) => manuscripts.captureReview(store.project(projectId).path, worktree, id, document) } : {}), title: string(b.title, 'Task title', 120), permissions: b.permissions, instructions: skill || annotations?.length || attachments.length ? optional(b.instructions, 'Instructions') : string(b.instructions, 'Instructions'), skill, annotations, groupInstructions, attachments, agent: agent(b.agent), model: typeof b.model === 'string' ? b.model : undefined, effort: effort(b.effort), serviceTier: b.serviceTier === undefined ? undefined : string(b.serviceTier, 'Service tier', 64) });
   });
   // Retry for a task whose preparation failed; it answers at once as well.
   app.post<{ Params: { id: string } }>('/api/tasks/:id/prepare', task, request => workspace.retryTask(request.params.id));
