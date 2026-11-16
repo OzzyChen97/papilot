@@ -119,7 +119,7 @@ try {
   await page.keyboard.press('Enter');
   await expect(collapse()).toHaveAttribute('aria-expanded', 'true');
   await expect(collapse()).toBeFocused();
-  await expect(rail().getByRole('button')).toHaveCount(11);
+  await expect(rail().getByRole('button')).toHaveCount(13);
   // The note tool is its own color picker: a click picks it, a second opens colors.
   await tool('Note').click();
   await expect(tool('Note')).toHaveAttribute('aria-pressed', 'true');
