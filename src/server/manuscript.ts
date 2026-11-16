@@ -631,9 +631,10 @@ export class Manuscripts extends EventEmitter {
     if (known) return known;
     try { return (await engine()).loadProject(root).main as string; } catch { return undefined; }
   }
-  /** The root document whose PDF `key` is, as far as this process knows. */
+  /** The root document whose PDF `key` is, when this process knows it: a
+   *  note can only be made on such a PDF, which is never guessed. */
   documentOf(projectId: string, key: string) {
-    return this.shown.get(`${projectId}:${key}`)?.document ?? this.documents.get(projectId);
+    return this.shown.get(`${projectId}:${key}`)?.document;
   }
   /** The paper compiles another of its root documents now. The PDF on screen
    *  is not an earlier version of that one, so it does not stay while the

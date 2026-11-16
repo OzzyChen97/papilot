@@ -321,6 +321,9 @@ test('a task\'s full paper compiles the root document the task was started on', 
     const connect = async () => ({ get: async () => ({ before: rev, after: rev, document: 'letter/response.tex' }) as any });
     const pdf = await fullPaperPdf(connect, f.root, 'letter-task', 1, 'after');
     assert.equal(path.basename(pdf), 'response.pdf');
+    // A round of a main file renamed since compiles as the current document, as the engine does.
+    const renamed = async () => ({ get: async () => ({ before: rev, after: rev, document: 'letter/old.tex' }) as any });
+    assert.equal(path.basename(await fullPaperPdf(renamed, f.root, 'renamed-task', 1, 'after')), 'main.pdf');
   } finally { f.close(); }
 });
 

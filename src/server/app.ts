@@ -23,7 +23,7 @@ import { gitOverview } from './git-overview.ts';
 import { findSkill, listedSkill, loadSkills } from './skills.ts';
 import { registerSkillRoutes } from './skill-routes.ts';
 import { type Listener, equals, guard } from './access.ts';
-import { isTaskReviewNote, isAgentId, isMarkKind, PRESET_QUICK_NOTES, QUICK_NOTE_LIMIT, type AgentId, type NoteSummary, type QuickNote, type SourceFile, type Task } from '../shared.ts';
+import { isTaskReviewNote, isAgentId, isMarkKind, PRESET_QUICK_NOTES, QUICK_NOTE_LIMIT, type AgentId, type Annotation, type NoteSummary, type QuickNote, type SourceFile, type Task } from '../shared.ts';
 import type { SourceFileRead } from '../../engine/src/types.ts';
 import { parseGroupInstructions } from '../note-groups.ts';
 import { noteOptionContext, noteOptionsKey } from './note-options.ts';
@@ -219,16 +219,17 @@ export async function buildApp(options: AppOptions) {
   // again, as the file menu offers it: a root document, or one compiled
   // before, even while it lacks \documentclass of its own. One on a main file
   // since renamed or removed moves to the current document.
-  async function paperNotes(id: string) {
+  async function paperNoteFilter(id: string) {
     const root = store.project(id).path, document = await manuscripts.document(id, root), elsewhere = new Map<string, boolean>();
     const before = await compiledBefore(root);
     const away = (file: string) => elsewhere.get(file) ?? elsewhere.set(file, before.has(file) ? existingTex(root, file) : rootDocument(root, file)).get(file)!;
-    return store.annotations(id).filter(note => !note.taskId && !isTaskReviewNote(note) && (!note.document || note.document === document || !away(note.document)));
+    return (note: Annotation) => !note.taskId && !isTaskReviewNote(note) && (!note.document || note.document === document || !away(note.document));
   }
+  async function paperNotes(id: string) { return store.annotations(id).filter(await paperNoteFilter(id)); }
   async function manuscript(id: string, rebuild = false) {
     await options.prepareDemo?.();
     const root = store.project(id).path, state = await manuscripts.state(id, root, rebuild);
-    const notes = await paperNotes(id);
+    const paperNote = await paperNoteFilter(id), notes = store.annotations(id).filter(paperNote);
     const placed = await manuscripts.reanchor(id, root, notes).catch(() => notes);
     for (let index = 0; index < notes.length; index++) {
       const next = placed[index], previous = notes[index];
@@ -240,7 +241,7 @@ export async function buildApp(options: AppOptions) {
       const document = manuscripts.documentOf(id, next.key);
       store.saveAnnotation({ ...current, ...(document ? { document } : {}), key: next.key, page: next.page, rect: next.rect, rects: next.rects, source: next.source });
     }
-    const annotations = await paperNotes(id);
+    const annotations = store.annotations(id).filter(paperNote);
     const scope = state.build.key ? await manuscripts.noteSections(id, state.build.key, annotations).catch(() => null) : null;
     return { ...state, annotations, ...(scope ? { noteSections: scope.sections, unplacedSectionNotes: scope.unplaced } : {}) };
   }
@@ -730,7 +731,9 @@ export async function buildApp(options: AppOptions) {
     const document = await manuscripts.document(project.id, project.path);
     return { document: document ?? null, files: await repositoryFiles(project.path, document) };
   });
-  app.post<{ Params: { id: string } }>('/api/projects/:id/document', project(), async request => {
+  // One switch at a time per paper, and not during its other Git work: each
+  // reads and writes the settings and the documents compiled before.
+  app.post<{ Params: { id: string } }>('/api/projects/:id/document', project(), request => serialGit(request.params.id, async () => {
     const project = store.project(request.params.id), previous = await manuscripts.document(project.id, project.path);
     const main = await checkDocument(project.path, (request.body as { main?: unknown } | null)?.main);
     if (previous && main !== previous) {
@@ -747,7 +750,7 @@ export async function buildApp(options: AppOptions) {
     // name this one, edited by hand: either way the PDF shown is not its own.
     if (await chooseDocument(project.path, main) || main !== previous) await manuscripts.documentChanged(project.id, project.path, main);
     return { document: main };
-  });
+  }));
   const isRect = (value: unknown): value is [number, number, number, number] => Array.isArray(value) && value.length === 4 && value.every(v => typeof v === 'number' && v >= 0 && v <= 1) && value[2] > value[0] && value[3] > value[1];
   // Manual LaTeX edits from the PDF, without an agent: the passage under a
   // click as it is on disk now, any lines of a file, a save of those lines

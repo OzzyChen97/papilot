@@ -101,7 +101,9 @@ export class App {
     }
     return this.cachedProject;
   }
-  private documentProjects = new Map<string, { stamp: string; project: Project }>();
+  // By document: its settings, or null while its main file is gone and it
+  // compiles as the current document.
+  private documentProjects = new Map<string, { stamp: string; project: Project | null }>();
   /** The settings a task compiles with: those of the root document it was
    *  started on, which the paper may no longer be compiling. */
   projectOf(task: Task | string): Project {
@@ -112,14 +114,13 @@ export class App {
     if (!document) return this.project;
     document = cleanPath(document);
     // The cache holds while the settings are the same and the main file is
-    // still there; one renamed or removed since compiles as the current document.
-    const stamp = this.settingsStamp(), cached = this.documentProjects.get(document);
-    if (cached?.stamp === stamp && fs.existsSync(path.join(this.root, document))) return cached.project;
-    const project = projectFor(this.root, document);
-    // A main file renamed or removed compiles as the current document, until it is back.
-    if (project.main !== document) return this.project;
-    this.documentProjects.set(document, { stamp, project });
-    return project;
+    // still there, or still gone: one renamed or removed compiles as the
+    // current document until it is back.
+    const stamp = this.settingsStamp(), there = fs.existsSync(path.join(this.root, document)), cached = this.documentProjects.get(document);
+    if (cached?.stamp === stamp && (cached.project !== null) === there) return cached.project ?? this.project;
+    const project = projectFor(this.root, document), own = project.main === document ? project : null;
+    this.documentProjects.set(document, { stamp, project: own });
+    return own ?? this.project;
   }
   /** The root document a task compiles, when it can be told. */
   documentOf(name: string) {

@@ -2758,6 +2758,23 @@ test('AI review captures the task worktree before enqueueing and retries keep th
   } finally { f.close(); }
 });
 
+test('a task prepared while the paper switched documents is created on the document it was started on', async () => {
+  let asks = 0;
+  const f = fixture(async (_method, route, body) => {
+    if (route !== '/api/tasks') return {};
+    // The paper switches while the engine is still making another copy.
+    if (++asks === 1) { f.store.updateTask('switched-document-task', { document: 'thesis/main.tex' }); throw new Error('Task "p-switched-document-task" is being created. Try again in a moment.'); }
+    return { worktree: '/task-copy', deferred: true, document: (body as { document?: string }).document ?? 'letter/response.tex' };
+  });
+  try {
+    const input = { id: 'switched-document-task', projectId: f.task.projectId, title: 'Revise', instructions: 'Revise.' };
+    await f.workspace.createTask(input);
+    const created = await preparation(f, input.id);
+    assert.deepEqual(f.calls.filter(call => call.route === '/api/tasks').map(call => (call.body as { document?: string }).document), [undefined, 'thesis/main.tex']);
+    assert.equal(created.document, 'thesis/main.tex');
+  } finally { f.close(); }
+});
+
 test('a retried AI review copies the document it was started on after the paper switched', async () => {
   const f = fixture(async (_method, route) => route === '/api/tasks' ? { worktree: '/task-copy', deferred: true, document: 'thesis/main.tex' } : route.endsWith('/finish') ? { finished: true } : {});
   try {

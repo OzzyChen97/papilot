@@ -35,37 +35,41 @@ function tree(files: RepositoryFile[]): Folder {
 }
 const ancestors = (file: string | null) => file ? file.split('/').slice(0, -1).map((_, index, parts) => parts.slice(0, index + 1).join('/')) : [];
 
-/** The paper's files and the root document it compiles, read again whenever
- *  `version` changes, such as after a build of a new working tree. */
-export function useRepositoryFiles(api: Api, projectId: string | undefined, version: unknown) {
-  const [value, setValue] = useState<{ projectId: string; files: RepositoryFiles } | null>(null);
-  const [failure, setFailure] = useState<{ projectId: string; message: string } | null>(null);
-  const request = useRef(0);
+/** The paper's files and the root document it compiles. They are read once
+ *  for the menu's name, then again only while the menu is open: when it
+ *  opens after `version` changed, such as with a new working tree, when
+ *  `version` changes meanwhile, and when the window comes back. */
+function useRepositoryFiles(api: Api, projectId: string, version: unknown, open: boolean) {
+  const [value, setValue] = useState<RepositoryFiles | null>(null), [error, setError] = useState<string | null>(null);
+  const request = useRef(0), read = useRef<unknown>(undefined);
   const load = useCallback(async () => {
-    if (!projectId) return;
     const id = ++request.current;
+    read.current = version;
     try {
       const files = await api<RepositoryFiles>(`/projects/${projectId}/files`);
       if (id !== request.current || !Array.isArray(files?.files)) return;
-      setValue({ projectId, files: { document: typeof files.document === 'string' ? files.document : null, files: files.files.filter(file => typeof file?.path === 'string') } });
-      setFailure(null);
-    } catch (error) {
+      setValue({ document: typeof files.document === 'string' ? files.document : null, files: files.files.filter(file => typeof file?.path === 'string') });
+      setError(null);
+    } catch (failure) {
       // The menu keeps the last list it had; without one it says why.
-      if (id === request.current) setFailure({ projectId, message: error instanceof Error ? error.message : String(error) });
+      if (id === request.current) setError(failure instanceof Error ? failure.message : String(failure));
     }
-  }, [api, projectId]);
-  useEffect(() => { void load(); }, [load, version]);
+  }, [api, projectId, version]);
+  useEffect(() => { if (read.current === undefined || (open && read.current !== version)) void load(); }, [load, open, version]);
   useEffect(() => {
+    if (!open) return;
     window.addEventListener('focus', load);
     return () => window.removeEventListener('focus', load);
-  }, [load]);
-  return { files: value && value.projectId === projectId ? value.files : null, error: failure && failure.projectId === projectId ? failure.message : null, reload: load };
+  }, [load, open]);
+  return { files: value, error: value ? null : error, reload: load };
 }
 
-export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing, onOpen, onCompile }: {
-  projectId: string; files: RepositoryFiles | null;
-  /** Why the files could not be listed, while there is no list. */
-  error: string | null; onRetry: () => void;
+export function RepositoryFilesMenu({ api, projectId, version, shownDocument, editing, onOpen, onCompile }: {
+  api: Api; projectId: string;
+  /** Changes when the list may have: the working tree, or the document compiled. */
+  version: string;
+  /** The root document of the PDF on screen, when it is known. */
+  shownDocument?: string;
   /** The file open in the source editor. */
   editing: string | null;
   onOpen: (file: string) => void;
@@ -73,6 +77,7 @@ export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing,
 }) {
   const id = useId(), trigger = useRef<HTMLButtonElement>(null), panel = useRef<HTMLUListElement>(null);
   const [shown, setShown] = useState(false);
+  const { files, error, reload } = useRepositoryFiles(api, projectId, version, shown);
   // Open folders, per paper (the menu is keyed by it); at first those
   // leading to the compiled document.
   const openKey = `papilot:files-open:${projectId}`;
@@ -102,7 +107,7 @@ export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing,
   async function compile(file: string) {
     if (switching) return;
     setSwitching(file);
-    try { await onCompile(file); close(); } finally { setSwitching(null); }
+    try { await onCompile(file); await reload(); close(); } finally { setSwitching(null); }
   }
   useEffect(() => {
     if (!shown) return;
@@ -150,13 +155,14 @@ export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing,
     }),
   ];
 
-  // The trigger names the compiled document; the menu lists every file.
-  const name = document ? document.slice(document.lastIndexOf('/') + 1) : '';
+  // The trigger names the document of the PDF on screen, else the one the
+  // paper compiles; the menu lists every file.
+  const named = shownDocument ?? document, name = named ? named.slice(named.lastIndexOf('/') + 1) : '';
   const label = name ? `${t('Files')} · ${name}` : t('Files');
   // A dropdown list, not a dialog: the popover dismisses itself on Escape or
   // a click elsewhere. Escape stops here so the sidebar's own does not run.
   return <span className="menu-anchor repo-files-anchor">
-    <button ref={trigger} type="button" className="repo-files-trigger" aria-label={label} title={document ? `${t('Files')} · ${document}` : label} aria-expanded={shown} aria-controls={id}
+    <button ref={trigger} type="button" className="repo-files-trigger" aria-label={label} title={named ? `${t('Files')} · ${named}` : label} aria-expanded={shown} aria-controls={id}
       popoverTarget={id} onClick={event => { event.preventDefault(); if (panel.current?.matches(':popover-open')) close(); else show(); }}>
       {name ? <span className="repo-files-name">{name}</span> : <Icon name="folder" size={14}/>}<Icon name="chevronDown" size={12}/>
     </button>
@@ -164,7 +170,7 @@ export function RepositoryFilesMenu({ projectId, files, error, onRetry, editing,
       onToggle={event => setShown((event.nativeEvent as ToggleEvent).newState === 'open')}
       onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation(); }}>
       {root ? rows(root, 0)
-        : error ? <li className="repo-files-error"><span role="alert">{error}</span><button type="button" className="note-link" onClick={onRetry}>{t('Retry')}</button></li>
+        : error ? <li className="repo-files-error"><span role="alert">{error}</span><button type="button" className="note-link" onClick={() => void reload()}>{t('Retry')}</button></li>
         : <li><span className="spinner" role="status" aria-label={t('Loading files…')}/></li>}
     </ul>
   </span>;

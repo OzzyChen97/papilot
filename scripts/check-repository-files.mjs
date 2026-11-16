@@ -206,6 +206,22 @@ try {
   await expect(files.getByRole('button', { name: 'thesis' })).toBeVisible();
   await page.keyboard.press('Escape');
 
+  // Closed, the menu reads no files, also when the paper changes; opened
+  // after a change, it reads them again.
+  await page.locator('.manuscript-link').click();
+  let reads = 0;
+  page.on('request', request => { if (new URL(request.url()).pathname === '/api/projects/paper/files') reads++; });
+  write('notes.tex', 'Notes.\n');
+  const manuscriptRead = page.waitForResponse(response => new URL(response.url()).pathname === '/api/projects/paper/manuscript' && response.request().method() === 'GET');
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await manuscriptRead;
+  await page.waitForTimeout(500);
+  assert.equal(reads, 0, 'the closed menu read the files');
+  await menu.click();
+  await expect(files.getByRole('button', { name: 'notes.tex' })).toBeVisible();
+  assert.ok(reads > 0);
+  await page.keyboard.press('Escape');
+
   // Escape closes the menu and the browser returns focus to its button; the
   // folders opened stay open.
   await menu.click();

@@ -158,6 +158,12 @@ export function writeSettings(root: string, settings: Record<string, unknown>) {
 // belong to it, and the others keep theirs, by main file, in documents.json.
 const DOCUMENT_SETTINGS = ["main", "engine", "latexmkrc", "source_dir", "preload", "dependencies", "figures"];
 export const documentsFile = (root: string) => path.join(stateOf(root), "documents.json");
+// The settings of the root documents the paper compiled before; nothing
+// usable from a file edited or written by something else.
+function readDocuments(root: string): Record<string, unknown> {
+  const documents = readJson<unknown>(documentsFile(root), {});
+  return documents && typeof documents === "object" && !Array.isArray(documents) ? documents as Record<string, unknown> : {};
+}
 const documentPart = (settings: Record<string, unknown>, document: boolean) =>
   Object.fromEntries(Object.entries(settings).filter(([key]) => DOCUMENT_SETTINGS.includes(key) === document));
 function currentDocument(root: string, settings: Record<string, unknown>) {
@@ -172,7 +178,7 @@ export function documentSettings(root: string, main: string): Record<string, unk
   main = cleanPath(main);
   const settings = readSettings(root), current = currentDocument(root, settings);
   if (current === main) return settings;
-  const kept = readJson<Record<string, unknown>>(documentsFile(root), {})[main];
+  const kept = readDocuments(root)[main];
   const folder = typeof settings.source_dir === "string" ? cleanPath(settings.source_dir)
     : current && path.posix.dirname(current) !== "." ? path.posix.dirname(current) : current ? "" : null;
   const shared = { source_dir: folder !== null && within(main, [folder]) ? folder : "" };
@@ -197,7 +203,7 @@ export function chooseDocument(root: string, main: string) {
   if (current === main) return false;
   const next = documentSettings(root, main);
   if (current) {
-    const documents = readJson<Record<string, unknown>>(documentsFile(root), {});
+    const documents = readDocuments(root);
     writeJson(documentsFile(root), { ...documents, [current]: documentPart(settings, true) });
   }
   writeSettings(root, next);
@@ -278,7 +284,6 @@ export function loadBuildDocuments(root: string, settings: { main?: unknown; lat
         .find((f) => fs.existsSync(path.join(root, f))) ?? null);
   return { main, doc_dir, latexmkrc };
 }
-/** The paper's build settings, for its current root document or for `document`. */
 /** The settings `document` compiles with: those of the paper's current
  *  document without one, and once that file was renamed or removed, since
  *  its text went to the current document. */
@@ -290,6 +295,7 @@ export function projectFor(root: string, document?: string | null): Project {
   }
   return loadProject(root);
 }
+/** The paper's build settings, for its current root document or for `document`. */
 export function loadProject(root: string, overrides?: BuildOverrides, document?: string): Project {
   root = realPath(root);
   const defaults = document ? documentSettings(root, document) : readSettings(root);

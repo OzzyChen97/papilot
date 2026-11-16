@@ -33,12 +33,13 @@ const REMEMBERED = 32;
 
 // A task compiles the root document it was started on (`document`).
 async function builder(root: string, document?: string) {
-  const [{ Builder }, { Repo }, { loadProject }] = await Promise.all([
+  const [{ Builder }, { Repo }, { projectFor }] = await Promise.all([
     import(pathToFileURL(path.join(ENGINE, 'src/core/build.ts')).href),
     import(pathToFileURL(path.join(ENGINE, 'src/core/git.ts')).href),
     import(pathToFileURL(path.join(ENGINE, 'src/core/config.ts')).href),
   ]);
-  return new Builder(loadProject(root, undefined, document), new Repo(root));
+  // A main file renamed since compiles as the current document, as the engine does.
+  return new Builder(projectFor(root, document), new Repo(root));
 }
 
 const notFound = () => Object.assign(new Error('Review resource not found.'), { statusCode: 404 });

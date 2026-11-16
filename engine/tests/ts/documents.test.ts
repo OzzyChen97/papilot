@@ -202,4 +202,16 @@ it("compiles a task as the current document once its main file is renamed, thoug
   // Renamed without a change of settings, while the slides compile.
   f.repo.run(["mv", "paper/main.tex", "paper/thesis.tex"]);
   expect(app.projectOf(task).main).toBe(SLIDES);
+  expect(app.projectOf(task).main).toBe(SLIDES);
+  // Back again, it compiles as itself.
+  f.repo.run(["mv", "paper/thesis.tex", "paper/main.tex"]);
+  expect(app.projectOf(task).main).toBe("paper/main.tex");
+});
+
+it("reads a documents file it cannot use as none", () => {
+  fs.mkdirSync(path.dirname(documentsFile(f.root)), { recursive: true });
+  fs.writeFileSync(documentsFile(f.root), "null");
+  expect(loadProject(f.root, undefined, SLIDES).main).toBe(SLIDES);
+  expect(chooseDocument(f.root, SLIDES)).toBe(true);
+  expect(JSON.parse(fs.readFileSync(documentsFile(f.root), "utf8"))).toHaveProperty(["paper/main.tex"]);
 });

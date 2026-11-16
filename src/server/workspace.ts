@@ -576,8 +576,10 @@ export class Workspace extends EventEmitter {
     let info: { worktree: string; deferred?: boolean; document?: string | null };
     for (;;) {
       // A task that knows its document, such as a retry after a failed copy
-      // and a switch of document, is copied for that one again.
-      try { info = await client.post('/api/tasks', { name: task.name, title: task.title, deferred: true, ...(task.document ? { document: task.document } : {}) }); break; }
+      // and a switch of document, is copied for that one again. A switch
+      // while this waited may have just recorded it.
+      const document = this.store.findTask(taskId)?.document ?? task.document;
+      try { info = await client.post('/api/tasks', { name: task.name, title: task.title, deferred: true, ...(document ? { document } : {}) }); break; }
       catch (error) {
         if (this.closing || !/ is being created\. Try again in a moment\.$/.test(errorText(error))) throw error;
         await delay(1000);
