@@ -4,22 +4,34 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Fastify from 'fastify';
 import staticFiles from '@fastify/static';
+import multipart from '@fastify/multipart';
 import { chromium } from '../engine/node_modules/playwright/index.mjs';
 import { selectOption } from './select.mjs';
-const server = Fastify(); await server.register(staticFiles, { root: path.resolve('dist') }); await server.listen({ host: '127.0.0.1', port: 0 });
+const server = Fastify(); await server.register(staticFiles, { root: path.resolve('dist') });
 const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHANNEL || 'chrome', headless: true });
 const state = { version: '0.6.0', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: true, account: 'Owner', error: null, models: [] } };
 const imported = { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'My paper', path: '/papers/copied-paper', copied: true, candidates: ['main.tex', 'supplement.tex'], main: 'main.tex', engine: 'pdflatex', phase: 'choose' };
 const requests = [], errors = []; let draft = structuredClone(imported), result = 'failed', failure = 'fontspec needs XeLaTeX';
 let linkResult = 'error', releaseLink;
 fs.mkdirSync('test-results', { recursive: true });
+await server.register(multipart, { limits: { fileSize: Infinity, files: Infinity, parts: Infinity } });
+server.post('/api/imports/upload', async request => {
+  const files = [];
+  for await (const file of request.files()) files.push({ path: decodeURIComponent(file.filename), data: (await file.toBuffer()).toString('base64') });
+  const body = request.query.archive === 'true' ? { zip: files[0].data } : { files };
+  requests.push({ route: '/api/imports/upload', body });
+  draft = structuredClone(imported); return draft;
+});
+await server.listen({ host: '127.0.0.1', port: 0 });
 try {
   const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 850 } });
   const mockApi = async route => {
     const url = new URL(route.request().url()), method = route.request().method();
     if (url.pathname.startsWith('/api/imports')) {
-      const body = method === 'POST' ? route.request().postDataJSON() : null; requests.push({ route: url.pathname, body });
-      if (url.pathname === '/api/imports') {
+      if (url.pathname === '/api/imports/upload') return route.continue();
+      const body = method === 'POST' ? route.request().postDataJSON() : null;
+      requests.push({ route: url.pathname, body });
+      if (['/api/imports', '/api/imports/upload'].includes(url.pathname)) {
         if (body.url && linkResult === 'error') return route.fulfill({ status: 400, json: { error: 'No source was found at this link. Check the paper link and version.' } });
         if (body.url && linkResult === 'wait') await new Promise(resolve => { releaseLink = resolve; });
         draft = { ...structuredClone(imported), ...(body.path ? { path: body.path, copied: false } : {}) }; return route.fulfill({ json: draft });
@@ -41,13 +53,14 @@ try {
   await context.route('**/api/**', mockApi);
   const page = await context.newPage(); page.setDefaultTimeout(10000); page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.server.address().port}`);
-  await page.getByRole('button', { name: 'Import', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Import or open', exact: true }).first().click();
   let dialog = page.getByRole('dialog', { name: 'New paper' }); await dialog.waitFor();
   assert.equal(await dialog.getByRole('button', { name: 'Cancel', exact: true }).count(), 0);
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
   await dialog.waitFor({ state: 'hidden' });
-  await page.getByRole('button', { name: 'Import', exact: true }).first().click();
-  await dialog.locator('.import-host-folder summary').click();
+  await page.getByRole('button', { name: 'Import or open', exact: true }).first().click();
+  assert.equal(await dialog.getByRole('heading', { name: 'Open existing folder' }).isVisible(), true);
+  assert.deepEqual(await dialog.locator('.import-copy h3, .import-original h3').allTextContents(), ['Import a copy', 'Open existing folder']);
   assert.equal(await page.getByLabel('Folder path', { exact: true }).isVisible(), true);
   const [folderButton, zipButton] = await dialog.locator('.import-options button').evaluateAll(buttons => buttons.map(button => { const rect = button.getBoundingClientRect(); return { y: rect.y, height: rect.height }; }));
   assert.ok(Math.abs(folderButton.y - zipButton.y) < 1); assert.ok(folderButton.height <= 32 && zipButton.height <= 32);
@@ -92,7 +105,7 @@ try {
   assert.equal(requests.filter(item => item.body?.zip).at(-1).body.zip, Buffer.from('fixture zip bytes').toString('base64'));
   await page.getByText('The paper needs a little help').waitFor(); await page.getByText('This paper may need XeLaTeX. Change the engine below and retry.').waitFor();
   await page.getByRole('button', { name: 'Continue later' }).click();
-  await page.getByRole('button', { name: 'Import', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Import or open', exact: true }).first().click();
   await page.getByText('The paper needs a little help').waitFor();
   await selectOption(page.getByRole('combobox', { name: 'LaTeX engine', exact: true }), 'xelatex');
   await page.setViewportSize({ width: 360, height: 740 }); await page.emulateMedia({ colorScheme: 'dark' });
@@ -106,15 +119,17 @@ try {
   await page.setViewportSize({ width: 1280, height: 850 }); await page.emulateMedia({ colorScheme: 'light' });
   await page.getByRole('button', { name: 'Paper: My paper', exact: true }).click();
   assert.equal(await page.getByRole('menuitem', { name: /^(Open paper…|Import from link…)$/ }).count(), 0);
-  assert.equal(await page.getByRole('menuitem', { name: 'Import', exact: true }).count(), 1);
-  await page.getByRole('menuitem', { name: 'Import', exact: true }).click();
+  assert.equal(await page.getByRole('menuitem', { name: 'Import or open', exact: true }).count(), 1);
+  await page.getByRole('menuitem', { name: 'Import or open', exact: true }).click();
   // Browser folder input preserves relative file names, including binary assets.
   const temp = fs.mkdtempSync('/tmp/papilot-ui-import-');
   try {
+    for (const name of ['a"b.tex', 'a%22b.tex', '论文.tex']) fs.writeFileSync(path.join(temp, name), 'asset');
     fs.writeFileSync(path.join(temp, 'main.tex'), 'source'); fs.writeFileSync(path.join(temp, 'figure.png'), Buffer.from([0, 255, 32]));
     await page.locator('input[webkitdirectory]').setInputFiles(temp);
     await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
-    const uploaded = requests.filter(request => request.route === '/api/imports').at(-1).body.files;
+    const uploaded = requests.filter(request => request.route === '/api/imports/upload').at(-1).body.files;
+    for (const name of ['a"b.tex', 'a%22b.tex', '论文.tex']) assert.ok(uploaded.some(file => file.path.endsWith('/' + name)), name);
     assert.ok(uploaded.some(file => file.path.endsWith('/main.tex'))); assert.ok(uploaded.some(file => file.data === Buffer.from([0, 255, 32]).toString('base64')));
     await page.getByText('Your paper compiled successfully. It is ready for editing.').waitFor();
     await page.getByRole('button', { name: 'Choose different files', exact: true }).click();
@@ -123,8 +138,8 @@ try {
     const dropBox = await page.locator('.import-drop').boundingBox(), cdp = await context.newCDPSession(page);
     for (const type of ['dragEnter', 'dragOver', 'drop']) await cdp.send('Input.dispatchDragEvent', { type, x: dropBox.x + 20, y: dropBox.y + 20, data: { items: [], files: [temp], dragOperationsMask: 1 } });
     await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
-    const dropped = requests.filter(request => request.route === '/api/imports').at(-1).body.files;
-    assert.equal(dropped.length, 122, 'Folder drops read all directory batches');
+    const dropped = requests.filter(request => request.route === '/api/imports/upload').at(-1).body.files;
+    assert.equal(dropped.length, 125, 'Folder drops read all directory batches');
     assert.ok(dropped.some(file => file.path.endsWith('/nested/119.txt')));
     assert.ok(dropped.some(file => file.data === Buffer.from([0, 255, 32]).toString('base64')));
     await cdp.detach();
@@ -132,7 +147,7 @@ try {
   await page.getByText('Your paper compiled successfully. It is ready for editing.').waitFor();
   await page.getByRole('button', { name: 'Choose different files', exact: true }).click();
   const builds = requests.filter(request => request.route.endsWith('/build')).length;
-  await page.locator('.import-host-folder summary').click();
+  assert.equal(await page.getByLabel('Folder path', { exact: true }).isVisible(), true);
   await page.getByLabel('Folder path', { exact: true }).fill('/papers/large-local-paper');
   await page.getByRole('button', { name: 'Open', exact: true }).click();
   await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
@@ -149,17 +164,17 @@ try {
   await page.evaluate(() => localStorage.removeItem('papilot:paper-import'));
   await page.reload();
   await page.getByRole('button', { name: 'Paper: My paper', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Import', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Import or open', exact: true }).click();
   await page.getByRole('dialog', { name: 'New paper' }).getByRole('textbox', { name: 'Paper or repository link', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.fixturePickerCalls), 0, 'Import opens without invoking the native picker');
-  await dialog.getByRole('button', { name: 'Choose folder', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
   await dialog.getByRole('status').waitFor();
-  assert.equal(await dialog.getByRole('button', { name: 'Choose folder', exact: true }).isDisabled(), true);
+  assert.equal(await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).isDisabled(), true);
   await page.evaluate(() => window.fixtureRejectPicker());
   await dialog.getByRole('alert').filter({ hasText: 'Folder picker unavailable.' }).waitFor();
   await page.waitForFunction(() => document.activeElement?.matches('[data-choose-folder]'));
   const beforeCancel = requests.length;
-  await dialog.getByRole('button', { name: 'Choose folder', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
   await dialog.getByRole('status').waitFor();
   await page.evaluate(() => window.fixtureResolvePicker(null));
   await dialog.getByRole('status').waitFor({ state: 'hidden' });
@@ -173,7 +188,7 @@ try {
     const phone = await touchContext.newPage(); await phone.goto(`http://127.0.0.1:${server.server.address().port}`);
     await phone.getByRole('button', { name: '显示任务列表', exact: true }).click();
     await phone.getByRole('button', { name: '论文：My paper', exact: true }).click();
-    await phone.getByRole('menuitem', { name: '导入', exact: true }).click();
+    await phone.getByRole('menuitem', { name: '导入或打开', exact: true }).click();
     const phoneDialog = phone.getByRole('dialog', { name: '新建论文', exact: true }), input = phoneDialog.getByRole('textbox', { name: '论文或仓库链接', exact: true });
     await input.waitFor();
     await phoneDialog.screenshot({ animations: 'disabled', path: 'test-results/import-link-touch-zh.png' });

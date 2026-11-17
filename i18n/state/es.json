@@ -634,11 +634,6 @@
     "textHash": "ec4af260340438e3c6bfd06bc6ee508f7c61203d8967b7fd4c7d38c291893b9e",
     "model": "gemini-4-argon-medium"
   },
-  "Choose ZIP": {
-    "revision": "9db5bf1f8e553e5d35bf35e5f63c1018c3b3ad2e55ef54c97d5d420e85bfe615",
-    "textHash": "33de77fed79d66be7602de8e4c4ceb092642f086157dd038decc78ff69ce5164",
-    "model": "gemini-4-argon-medium"
-  },
   "Choose a shortcut to edit:": {
     "revision": "657d8f13e3a50b7cd9f224fab3515089e83678c4a4b699dcb2a6038d822244f2",
     "textHash": "2b72414801574aa844d9963c168e808eb35ecd329c594fe887d1c451090a0a68",
@@ -668,11 +663,6 @@
     "revision": "34dc3101318a3658335ae71c244fc1340a90cf9b3def2da589fd5501dcf260ce",
     "textHash": "bfe286aef437c076c64cb08198cda9befe3c952920f288826526b656b0a05eb5",
     "model": "gemini-4-argon-medium"
-  },
-  "Choose up to 5,000 files, totaling less than 64 MB.": {
-    "revision": "bf624d96c7c951a9b8ccea29c29dce9224a650e04351e0e60a844ce89bb9c7ba",
-    "textHash": "461a06ffcf5874aed125b591d18e87507698bc9e3274963d060d17f65e93fe58",
-    "model": "gemini-4-argon-high"
   },
   "Choose {color} color": {
     "revision": "d25d946cec80309dc9a54cc5c2327fbd8f04cf444d60a27dc5373868f01c4971",
@@ -1172,11 +1162,6 @@
   "Could not read the LaTeX installation. Try again.": {
     "revision": "44a6f8a4ec17115dc0acf0c9afe989e41e8beb90680c86d5c18d95cae737e6e9",
     "textHash": "4870cc1a76bb1d87e6a3645f0a6c77dc42e00d78dd0677ef7de0970a275eef64",
-    "model": "gemini-4-argon-medium"
-  },
-  "Could not read the selected file.": {
-    "revision": "02b5b5b5a5731fb96b59b57c01ec10d0dd94d5a9069acfc98def77a89ae6d394",
-    "textHash": "c3b67870202e9430b72bf95d18fc78f95ec6b3689aa8ce4cdec4dca217a5bd53",
     "model": "gemini-4-argon-medium"
   },
   "Could not read this worktree.": {
@@ -5835,7 +5820,7 @@
     "model": "manual-review"
   },
   "Import": {
-    "revision": "313b83aad64711c6a52aa9ccdb822c7ac85417dc016f85e6d7538a1378daaaf8",
+    "revision": "3ee2ab37d83c76c4e733377383eda36857f396966dc7df71d6e63df0221f45dd",
     "textHash": "e7f0e6d956c17ec852f8ecd9e559271f42b40cf4a6daf51f2b42edec7fd92ced",
     "model": "manual-review"
   },
@@ -5847,11 +5832,6 @@
   "Open": {
     "revision": "ccad034ee8042b80b84a46d9e2efa07f43f42f7054da463343b197830cad40d7",
     "textHash": "a01a5fce396edb612052db25ebeb325a72134c8369eb9c771d47ab18d8124247",
-    "model": "manual-review"
-  },
-  "Open a folder on this computer": {
-    "revision": "8992efaef63eb580f45439e1af15f67d27f70ffef728fcf5d1f3bdb5a9a88c34",
-    "textHash": "c7c504d00064b9c205ad95aec9a36b612bdfce1fa96512656beb47e24b96dc1a",
     "model": "manual-review"
   },
   "Paper or repository link": {
@@ -5867,11 +5847,6 @@
   "Paste a link…": {
     "revision": "552237ba1160340513c3c3ea37ee2f6e7d8ef0cded1559ecce07e503b34da1c8",
     "textHash": "d0bf1eb31b2ccd3594010bf149bdddc9c71f9aaa9856c6a0e6f83035c8d460e7",
-    "model": "manual-review"
-  },
-  "ZIP": {
-    "revision": "759ae0c59b02ccc3aca91951def8c11d95a5d0d4bc8ea930285ffd028e9f5ee5",
-    "textHash": "eaca4b30692888d0183a2b77143637676909413108ce72808d7bf7438679536a",
     "model": "manual-review"
   },
   "Templates are unavailable. You can still create a blank paper.": {
@@ -6012,6 +5987,46 @@
   "Anchor shortcuts work while the PDF is focused.": {
     "revision": "85f9330da6bd0a2c2107cbc3d2716227f8570fcb8421f065f2631596707e05d9",
     "textHash": "234adc79cf66cca9b7382bd028426742bb5a282f2745c25c5ab6e93d97fb6393",
+    "model": "manual"
+  },
+  "Copy folder": {
+    "revision": "47c7040de2da21cca691014579c4a5684a1def420adb97db140bb791937ebc5f",
+    "textHash": "4ade6f2efe7cca5396f8878ae929f1bd27cc556f91bd3e4615677f1f47f7f274",
+    "model": "manual"
+  },
+  "Import ZIP": {
+    "revision": "735167e381deeb67a04e22e18a8b5d4b6581bc3aef777ffeb39c05a0969105c4",
+    "textHash": "9a0e9892256d0bd9ecd17d36f63f4a77a5d742d4400fcdcfb1e8d95acf1597ca",
+    "model": "manual"
+  },
+  "Import a copy": {
+    "revision": "78c7b12661b3e8cd6e09b42daa0091d7026fa5b3fefb2ad1506f4376331112bb",
+    "textHash": "830b71fe8d036f2426c7731b77f9b3ed1844a0da45e60ccad0817fbca1aacb58",
+    "model": "manual"
+  },
+  "Open existing folder": {
+    "revision": "cdc07d82a1a0f496a9a40467337c14989fbef8789e6927fb76fd64b5d3c52503",
+    "textHash": "dde5d5350d2f794879f5bded67b83ad05f8311006d1ac2061e3b14d7e10f7615",
+    "model": "manual"
+  },
+  "Import or open": {
+    "revision": "c506f57bf45be7bfd197fd041a9187d84d4bfa98f27b0236404b5eedd7ac245b",
+    "textHash": "505a3f408a9278e506e3ebb31ebefdd89369ada90129475a79ca10af2b16aef4",
+    "model": "manual"
+  },
+  "Save a separate copy in Papilot. Your original files stay unchanged.": {
+    "revision": "ad01cb4fd357faa04d647a996a6537f71df5801f0db15eec6d19de5c8b0a6978",
+    "textHash": "cb2ae1e6466c0be222b6ca623b9064e0cb236b544775383c96d63c1eef44c8a2",
+    "model": "manual"
+  },
+  "Use a path on the computer running Papilot.": {
+    "revision": "dfc64df5356cdd7567928bb83152cc13b4c3a732ecdb35c093d5bed6ad693aa9",
+    "textHash": "488430576a79ffde6292f92e88715036b67d1e0f7083569cb04da849eb597e4e",
+    "model": "manual"
+  },
+  "Work in the original folder. Changes are saved directly to your files.": {
+    "revision": "9dde3f79fd32736d6d9840e1a067cb91d291af66dbf19480edb19bf4be2c76a9",
+    "textHash": "01868ff2dfd5e349ad5889c4421f93a2ce5f472d85564572f414b99565a4b9fb",
     "model": "manual"
   }
 }

@@ -244,9 +244,7 @@
   "Import": "导入",
   "Paper source": "论文来源",
   "Blank": "空白",
-  "Open a folder on this computer": "打开此电脑上的文件夹",
   "Example project": "示例项目",
-  "ZIP": "ZIP",
   "Archive all tasks?": "归档全部任务？",
   "Task progress": "任务进度",
   "Delete all current tasks…": "删除全部未归档任务…",
@@ -273,5 +271,13 @@
   "Saved anchors": "已保存的锚点",
   "Previous anchor": "上一个锚点",
   "Next anchor": "下一个锚点",
-  "Anchor shortcuts work while the PDF is focused.": "PDF 获得焦点时可使用锚点快捷键。"
+  "Anchor shortcuts work while the PDF is focused.": "PDF 获得焦点时可使用锚点快捷键。",
+  "Copy folder": "复制文件夹",
+  "Import ZIP": "导入 ZIP",
+  "Import a copy": "导入副本",
+  "Open existing folder": "打开现有文件夹",
+  "Import or open": "导入或打开",
+  "Save a separate copy in Papilot. Your original files stay unchanged.": "在 Papilot 中保存独立副本。原始文件保持不变。",
+  "Use a path on the computer running Papilot.": "请使用运行 Papilot 的电脑上的路径。",
+  "Work in the original folder. Changes are saved directly to your files.": "直接使用原始文件夹。更改会保存到原始文件中。"
 }

@@ -38,7 +38,7 @@ export function NewPaperDialog({ initialTab = 'blank', preset, onClose, ...props
   }
   const tabs = [
     { value: 'blank', label: t('Blank'), icon: 'plus' },
-    { value: 'import', label: t('Import'), icon: 'download' },
+    { value: 'import', label: t('Import or open'), icon: 'download' },
     { value: 'templates', label: t('Templates'), icon: 'paper' },
   ] as const;
   return <dialog ref={dialog} className="modal-backdrop new-paper-backdrop" aria-labelledby={id + '-title'} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>

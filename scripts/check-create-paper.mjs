@@ -201,7 +201,7 @@ try {
     assert.deepEqual(requests.at(-1).template, link ? { id: 'neurips', version: '2026' } : { id: 'thuthesis', version: '7.6.0' });
     if (link?.version === '2026') {
       // Tabs retain each draft, but a blank creation never inherits a template.
-      await dialog.getByRole('tab', { name: 'Import', exact: true }).click();
+      await dialog.getByRole('tab', { name: 'Import or open', exact: true }).click();
       const url = dialog.getByRole('textbox', { name: 'Paper or repository link', exact: true });
       await url.fill('https://arxiv.org/abs/1706.03762');
       const blankTab = dialog.getByRole('tab', { name: 'Blank', exact: true });
@@ -211,7 +211,7 @@ try {
       await dialog.getByRole('alert').waitFor();
       assert.equal(requests.at(-1).template, undefined);
       await blankTab.focus(); await page.keyboard.press('ArrowRight');
-      assert.equal(await dialog.getByRole('tab', { name: 'Import', exact: true }).getAttribute('aria-selected'), 'true');
+      assert.equal(await dialog.getByRole('tab', { name: 'Import or open', exact: true }).getAttribute('aria-selected'), 'true');
       assert.equal(await url.inputValue(), 'https://arxiv.org/abs/1706.03762');
       await page.keyboard.press('End');
       assert.equal(await chosen.locator('strong').textContent(), 'NeurIPS 2026');
@@ -220,11 +220,11 @@ try {
       await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
       await dialog.getByRole('alert').waitFor();
       assert.equal(requests.at(-1).example, true); assert.equal(requests.at(-1).template, undefined);
-      await dialog.getByRole('tab', { name: 'Import', exact: true }).click();
-      await dialog.getByRole('button', { name: 'Choose folder', exact: true }).click();
+      await dialog.getByRole('tab', { name: 'Import or open', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
       await dialog.waitFor({ state: 'hidden' });
       const switcher = page.getByRole('button', { name: 'Paper: Local paper', exact: true });
-      for (const [entry, tab] of [['New paper…', 'Blank'], ['Import', 'Import']]) {
+      for (const [entry, tab] of [['New paper…', 'Blank'], ['Import or open', 'Import or open']]) {
         await switcher.click(); await page.getByRole('menuitem', { name: entry, exact: true }).click();
         assert.equal(await dialog.getByRole('tab', { name: tab, exact: true }).getAttribute('aria-selected'), 'true', 'Ordinary entries do not reuse a closed template link');
         await page.keyboard.press('Escape'); await dialog.waitFor({ state: 'hidden' });

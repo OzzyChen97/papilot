@@ -2,6 +2,7 @@ import { isNoteGroup } from '../note-groups.ts';
 import { noteAlternativeRange, NOTE_ALTERNATIVE_RANGES } from '../shared.ts';
 import Fastify from 'fastify';
 import compress from '@fastify/compress';
+import { registerImportUpload } from './import-upload.ts';
 import rateLimit from '@fastify/rate-limit';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -362,6 +363,8 @@ export async function buildApp(options: AppOptions) {
   });
   app.post('/api/projects/create', request => creations!.create((request.body || {}) as any, (root, name) => workspace.addProject(root, name)));
   app.post('/api/projects/open', request => openFolder((request.body || {}) as any, root => workspace.projectByPath(root), (root, name) => workspace.addProject(root, name)));
+  registerImportUpload(app, imports);
+  // Legacy base64 clients still buffer JSON; browser file uploads use the streaming route above.
   app.post('/api/imports', { bodyLimit: 90 * 1024 * 1024 }, request => imports!.create((request.body || {}) as any));
   app.get<{ Params: { id: string } }>('/api/imports/:id', request => imports!.get(request.params.id));
   app.post<{ Params: { id: string } }>('/api/imports/:id/build', request => imports!.build(request.params.id, (request.body || {}) as any));

@@ -62,8 +62,14 @@ try {
     await page.reload();
     await page.getByRole('button', { name: label(id, 'Settings'), exact: true }).waitFor();
     assert.equal(await page.locator('html').getAttribute('lang'), id, 'preference survives reload');
-    await page.locator('.home').getByRole('button', { name: label(id, 'Import'), exact: true }).click();
-    await page.locator('.import-host-folder summary').click();
+    await page.locator('.home').getByRole('button', { name: label(id, 'Import or open'), exact: true }).click();
+    const importDialog = page.getByRole('dialog', { name: label(id, 'New paper'), exact: true });
+    for (const width of [1440, 390, 320]) {
+      await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
+      assert.equal(await importDialog.getByRole('heading', { name: label(id, 'Open existing folder'), exact: true }).isVisible(), true);
+      assert.ok(await importDialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1), `${id} import content overflows at ${width}px`);
+      await importDialog.screenshot({ path: `test-results/locales/import-${id}-${width}.png`, animations: 'disabled' });
+    }
     await page.getByRole('textbox', { name: label(id, 'Folder path'), exact: true }).fill('/tmp/example');
     await page.getByRole('button', { name: label(id, 'Open'), exact: true }).click();
     const error = id === 'en' ? 'Paper name is too long.' : errorMessages[id]['Paper name is too long.'];
