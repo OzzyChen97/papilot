@@ -187,6 +187,65 @@ Second page fixture with a different passage for search and links.
     if (!useWebkit) assert.equal(f.manuscript.annotations.length, 1, 'reset keeps the note');
   } finally { await f.context.close(); }
 
+  // Recompilation leaves the current PDF usable while its replacement
+  // downloads. Opening Crop pauses that download without disabling Apply.
+  const delayed = await open();
+  let releasePdf;
+  try {
+    const { page, dialog } = delayed;
+    let pendingPdf;
+    await page.route('**/manuscript.pdf*', async route => {
+      await pendingPdf;
+      return route.fulfill({ contentType: 'application/pdf', body: pdf });
+    });
+    await page.route('**/manuscript/problems', route => route.fulfill({ json: {
+      status: 'ready', key: delayed.manuscript.build.key, log: true,
+      problems: [{ kind: 'reference', severity: 'warning', message: 'Undefined reference in the replacement PDF', key: 'missing', page: 1, rect: [0.2, 0.2, 0.4, 0.25] }],
+    } }));
+    let preference;
+    for (const action of ['Apply', 'Cancel', 'Reset']) {
+      pendingPdf = new Promise(resolve => { releasePdf = resolve; });
+      const key = `delayed-${action.toLowerCase()}`;
+      const requested = request => request.url().includes(`manuscript.pdf?key=${key}`);
+      const started = page.waitForRequest(requested);
+      delayed.manuscript.build.key = key;
+      delayed.manuscript.build.problems = { errors: 0, warnings: 1, minor: 0 };
+      await delayed.sync(); await started;
+      if (action === 'Apply') {
+        await page.locator('.pdf-toolbar .problems-button').click();
+        await page.locator('.problems-panel li button').first().click();
+        await expect(page.locator('.problems-panel')).toBeHidden();
+      }
+      await delayed.openCrop();
+      await delayed.dragMargin(0, action === 'Apply' ? 0.1 : 0.2);
+      const resumed = page.waitForRequest(requested);
+      await dialog.getByRole('button', { name: action, exact: true }).click();
+      await expect(dialog).toHaveCount(0); await resumed;
+      if (action === 'Apply') {
+        preference = JSON.parse(await delayed.saved());
+        assert.ok(preference && Math.abs(preference[0] - 0.1) < 0.005, 'Apply saves the crop while the replacement is pending');
+      } else if (action === 'Cancel') assert.deepEqual(JSON.parse(await delayed.saved()), preference, 'Cancel preserves the previous crop while downloading');
+      else assert.equal(await delayed.saved(), null, 'Reset clears the crop while downloading');
+      await expect(page.locator('.pdf-cropped')).toHaveCount(action === 'Reset' ? 0 : 1);
+      await expect(delayed.text).toBeVisible();
+      const oldPage = await page.locator('.page').first().elementHandle();
+      // A queued jump belongs to the incoming PDF, even when cropping
+      // rebuilds the displayed PDF's page views before it arrives.
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+      await expect(page.locator('.problem-flash')).toHaveCount(0);
+      releasePdf();
+      await expect.poll(() => oldPage.evaluate(element => element.isConnected)).toBe(false);
+      await expect(delayed.text).toBeVisible();
+      await expect(page.locator('.pdf-cropped')).toHaveCount(action === 'Reset' ? 0 : 1);
+      if (action === 'Apply') {
+        await expect(page.locator('.page[data-page-number="2"] .problem-flash')).toBeVisible();
+        await expect(page.getByRole('textbox', { name: 'Page number', exact: true })).toHaveValue('2');
+        await page.screenshot({ path: 'test-results/pdf-crop-delayed-replacement.png' });
+        await expect(page.locator('.problem-flash')).toHaveCount(0, { timeout: 5000 });
+      }
+    }
+  } finally { releasePdf?.(); await delayed.context.close(); }
+
   const desktop = await open({ width: 1440, height: 1000, mobile: false });
   try {
     const { page, text, dialog } = desktop;

@@ -351,7 +351,7 @@ export const PdfView = forwardRef<PdfHandle, {
       box.scrollTo({ top: box.scrollTop + frame.top - box.getBoundingClientRect().top + note.rect[1] * frame.height - 96, behavior: 'smooth' });
     },
     showPlace(page, rect, options) {
-      if (!pagesReady.current) { pendingPlace.current = { page, rect, ...options }; return; }
+      if (!pagesReady.current || shownRef.current.url !== latest.current.url) { pendingPlace.current = { page, rect, ...options }; return; }
       const div = tools.current?.viewer.getPageView(page)?.div, box = container.current;
       if (!div || !box) return;
       const pageBox = originalPageRect(div, cropRef.current), view = box.getBoundingClientRect();
@@ -647,7 +647,6 @@ export const PdfView = forwardRef<PdfHandle, {
     const current = tools.current!, box = container.current!;
     let cancelled = false, attached = false;
     if (loaded.current && box.clientHeight > 0) restore.current = { scale: current.viewer.currentScaleValue, top: box.scrollTop, left: box.scrollLeft };
-    pagesReady.current = false;
     setLoading(!loaded.current); setError('');
     const task = pdfjs.getDocument({ url: next.url, enableXfa: false, BinaryDataFactory: CMapData });
     void task.promise.then(async document => {
@@ -663,6 +662,9 @@ export const PdfView = forwardRef<PdfHandle, {
       shownRef.current = next; setShown(next);
       if (next.words) exactText(document, next.words);
       cropDocument(document, () => cropRef.current);
+      // The displayed PDF stays ready during the download, including when
+      // opening Crop pauses the replacement and rebuilds its current pages.
+      pagesReady.current = false;
       current.viewer.setDocument(document); current.links.setDocument(document, null);
       setPages(document.numPages); setLoading(false);
       closeDocument(previous?.loadingTask);
