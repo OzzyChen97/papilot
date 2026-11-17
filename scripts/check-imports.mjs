@@ -121,6 +121,11 @@ try {
   assert.equal(await page.getByRole('menuitem', { name: /^(Open paper…|Import from link…)$/ }).count(), 0);
   assert.equal(await page.getByRole('menuitem', { name: 'Import or open', exact: true }).count(), 1);
   await page.getByRole('menuitem', { name: 'Import or open', exact: true }).click();
+  // Dismissing a native file picker fires a bubbling `cancel` at its input; only the dialog's own cancel (Escape) closes it.
+  for (const input of ['input[webkitdirectory]', 'input[accept^=".zip"]']) {
+    await page.locator(input).dispatchEvent('cancel');
+    assert.equal(await page.getByRole('dialog', { name: 'New paper', exact: true }).isVisible(), true, `${input} cancel closed the dialog`);
+  }
   // Browser folder input preserves relative file names, including binary assets.
   const temp = fs.mkdtempSync('/tmp/papilot-ui-import-');
   try {

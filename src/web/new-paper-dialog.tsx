@@ -41,7 +41,7 @@ export function NewPaperDialog({ initialTab = 'blank', preset, onClose, ...props
     { value: 'import', label: t('Import or open'), icon: 'download' },
     { value: 'templates', label: t('Templates'), icon: 'paper' },
   ] as const;
-  return <dialog ref={dialog} className="modal-backdrop new-paper-backdrop" aria-labelledby={id + '-title'} onCancel={event => { event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
+  return <dialog ref={dialog} className="modal-backdrop new-paper-backdrop" aria-labelledby={id + '-title'} onCancel={event => { if (event.target !== event.currentTarget) return; event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section className="modal new-paper-dialog">
       <button type="button" className="modal-close icon-button" aria-label={t('Close')} disabled={busy} onClick={close}><Icon name="close"/></button>
       <h2 id={id + '-title'}>{t('New paper')}</h2>
