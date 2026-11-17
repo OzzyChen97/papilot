@@ -1495,6 +1495,7 @@
   "Open this folder": "このフォルダーを開く",
   "Use this folder": "このフォルダーを使用",
   "Folders on the computer running Papilot": "Papilot を実行しているコンピューターのフォルダー",
-  "Browse here instead": "ここで参照",
-  "Choosing…": "選択中…"
+  "Open": "開く",
+  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
+  "Browse…": "参照…"
 }

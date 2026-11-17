@@ -3,7 +3,7 @@ import type { AgentId, PaperImport, Project } from '../shared.ts';
 import { Icon } from './icons.tsx';
 import { BrandIcon } from './brand-icon.tsx';
 import { ChipSelect } from './chip-select.tsx';
-import { FolderBrowser, FolderChooser, useFolderPicker } from './folder-browser.tsx';
+import { FolderField } from './folder-browser.tsx';
 import { t } from './i18n.ts';
 import { browserStorage } from './storage.ts';
 import { droppedFolder, ignoredImportPath, type ImportFile } from './import-files.ts';
@@ -42,10 +42,9 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   const dialog = useRef<HTMLDivElement>(null), folder = useRef<HTMLInputElement>(null), zip = useRef<HTMLInputElement>(null), pending = useRef(false);
   const linkInput = useRef<HTMLInputElement>(null), linkId = useId();
   const [link, setLink] = useState(''), [fromLink, setFromLink] = useState(false);
-  const [draft, setDraft] = useState<PaperImport | null>(null), [form, setForm] = useState({ name: '', main: '', engine: 'pdflatex' });
-  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [dragging, setDragging] = useState(false), [browsing, setBrowsing] = useState(false), picker = useFolderPicker(api), live = useRef(true);
-  useEffect(() => () => { live.current = false; }, []);
-  const working = draft?.phase === 'building' || draft?.phase === 'repairing', locked = busy || working || picker.waiting;
+  const [draft, setDraft] = useState<PaperImport | null>(null), [form, setForm] = useState({ name: '', path: '', main: '', engine: 'pdflatex' });
+  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [dragging, setDragging] = useState(false);
+  const working = draft?.phase === 'building' || draft?.phase === 'repairing', locked = busy || working;
   function receive(value: PaperImport) { setDraft(value); setForm(current => ({ ...current, name: value.name, main: value.main, engine: value.engine })); browserStorage.setItem(memoryKey, value.id); }
   useEffect(() => {
     folder.current?.setAttribute('webkitdirectory', '');
@@ -88,19 +87,10 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   const openFolder = async (path: string) => start(await api<PaperImport>('/imports', { path }));
   const importLink = (url: string) => run(async () => start(await api<PaperImport>('/imports', { url: url.trim() })), true);
   const focusChooser = () => requestAnimationFrame(() => dialog.current?.querySelector<HTMLButtonElement>('[data-choose-folder]')?.focus());
-  // The desktop app opens the chosen folder at once; a browser on this computer uses
-  // the system picker through the server, and other devices browse in the page.
+  // The desktop app opens the folder chosen in its system picker at once.
   async function chooseFolder() {
-    if (pending.current || picker.waiting) return;
-    if (onChooseFolder) { await run(onChooseFolder); focusChooser(); return; }
-    setError('');
-    let path: string | null | undefined = null;
-    try { path = await picker.pick(t('Open existing folder'), ''); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
-    if (!live.current) return;
-    if (path === undefined) setBrowsing(true);
-    else if (path) await run(() => openFolder(path));
-    else focusChooser();
+    if (pending.current || !onChooseFolder) return;
+    await run(onChooseFolder); focusChooser();
   }
   function drop(transfer: DataTransfer) {
     // Capture entries while the drop event still owns access to the data store.
@@ -156,8 +146,13 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
         <section className="import-original" aria-labelledby={linkId + '-original'}>
           <h3 id={linkId + '-original'}>{t('Open existing folder')}</h3>
           <p id={linkId + '-original-hint'}>{t('Work in the original folder. Changes are saved directly to your files.')}</p>
-          {browsing ? <FolderBrowser api={api} start="" action={t('Open this folder')} onCancel={() => { setBrowsing(false); focusChooser(); }} onChoose={path => { setBrowsing(false); void run(() => openFolder(path)); }}/>
-            : <FolderChooser picker={picker} label={t('Choose folder…')} data-choose-folder aria-describedby={linkId + '-original-hint'} disabled={busy || working} onChoose={() => void chooseFolder()}/>}
+          {onChooseFolder ? <button type="button" data-choose-folder className="button secondary compact" aria-describedby={linkId + '-original-hint'} disabled={locked} onClick={() => void chooseFolder()}><Icon name="folder" size={15}/>{t('Choose folder…')}</button>
+            : <form className="import-path" aria-labelledby={linkId + '-original'} onSubmit={event => { event.preventDefault(); void run(() => openFolder(form.path)); }}>
+              <FolderField id={linkId + '-path'} api={api} label={t('Folder path')} value={form.path} onChange={path => setForm(current => ({ ...current, path }))} title={t('Open existing folder')} action={t('Open this folder')}
+                placeholder={t('/Users/you/papers/my-paper')} describedBy={linkId + '-original-hint'} disabled={locked} onError={setError} onPicked={path => { setForm(current => ({ ...current, path })); void run(() => openFolder(path)); }}>
+                <button type="submit" className={'button compact ' + (form.path.trim() ? 'primary' : 'secondary')} disabled={locked}>{t('Open')}</button>
+              </FolderField>
+            </form>}
         </section>
         {busy && <p className="import-reading" role="status"><span className="spinner"/>{fromLink ? t('Downloading paper source…') : t('Reading paper files…')}</p>}
         {error && <p id={linkId + '-error'} className="inline-error" role="alert">{error}</p>}
@@ -177,7 +172,11 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
         </div>
         <form onSubmit={event => { event.preventDefault(); void build(); }}>
           <label>{t('Paper name')}<input required maxLength={120} value={form.name} disabled={locked} onChange={event => setForm({ ...form, name: event.target.value })}/></label>
-          <div className="import-settings"><label>{t('Main TeX file')}<input aria-label={t('Main TeX file')} list="import-main-files" value={form.main} disabled={locked} onChange={event => setForm({ ...form, main: event.target.value })} placeholder="main.tex" spellCheck={false}/><datalist id="import-main-files">{draft.candidates.map(file => <option key={file} value={file}/>)}</datalist></label>
+          <div className="import-settings"><label>{t('Main TeX file')}{draft.candidates.length
+            // The app's list matches the theme and shows long nested paths as name and folder.
+            ? <ChipSelect className="field-select" label={t('Main TeX file')} value={form.main} disabled={locked} onChange={main => setForm({ ...form, main })} display={form.main.split('/').at(-1) || t('Select')}
+              options={draft.candidates.map(file => ({ value: file, label: file.split('/').at(-1)!, detail: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : undefined }))}/>
+            : <input aria-label={t('Main TeX file')} value={form.main} disabled={locked} onChange={event => setForm({ ...form, main: event.target.value })} placeholder="main.tex" spellCheck={false}/>}</label>
           <label>{t('LaTeX engine')}<ChipSelect className="field-select" label={t('LaTeX engine')} value={form.engine} disabled={locked} onChange={engine => setForm({ ...form, engine })} options={[{ value: 'pdflatex', label: 'pdfLaTeX' }, { value: 'xelatex', label: 'XeLaTeX' }, { value: 'lualatex', label: 'LuaLaTeX' }]}/></label></div>
           {!draft.candidates.length && <p className="import-notice warn" role="alert"><Icon name="alert" size={15}/><span>{t('Could not detect a main file. Enter its path relative to the paper folder.')}</span></p>}
           {draft.candidates.length > 1 && draft.phase === 'choose' && <p className="import-notice"><Icon name="info" size={15}/><span>{t('Several TeX files were found. Check the selected main document before continuing.')}</span></p>}

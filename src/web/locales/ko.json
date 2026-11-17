@@ -1495,6 +1495,7 @@
   "Open this folder": "이 폴더 열기",
   "Use this folder": "이 폴더 사용",
   "Folders on the computer running Papilot": "Papilot을 실행 중인 컴퓨터의 폴더",
-  "Browse here instead": "여기에서 찾아보기",
-  "Choosing…": "선택하는 중…"
+  "Open": "열기",
+  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
+  "Browse…": "찾아보기…"
 }

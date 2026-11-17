@@ -1495,6 +1495,7 @@
   "Open this folder": "Abrir esta carpeta",
   "Use this folder": "Usar esta carpeta",
   "Folders on the computer running Papilot": "Carpetas del equipo que ejecuta Papilot",
-  "Browse here instead": "Explorar aquí",
-  "Choosing…": "Eligiendo…"
+  "Open": "Abrir",
+  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
+  "Browse…": "Explorar…"
 }

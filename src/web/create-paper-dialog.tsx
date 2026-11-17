@@ -1,8 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Project } from '../shared.ts';
 import { Icon } from './icons.tsx';
-import { FolderBrowser, FolderChooser, useFolderPicker } from './folder-browser.tsx';
+import { FolderField } from './folder-browser.tsx';
 import { locale, t } from './i18n.ts';
+import { chooseDirectory, nativeFolders } from './desktop-chrome.tsx';
 import { browserStorage } from './storage.ts';
 import { requestId } from './request-id.ts';
 import './create-paper-dialog.css';
@@ -39,7 +40,7 @@ const uuid = () => crypto.randomUUID?.() || Array.from(crypto.getRandomValues(ne
 export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChange }: { api: <T>(url: string, body?: unknown) => Promise<T>; onDone: (paper: Project) => Promise<void>; preset?: { id: string; version: string }; tab: 'blank' | 'templates'; active: boolean; onBusyChange: (busy: boolean) => void }) {
   const dialog = useRef<HTMLDivElement>(null), pending = useRef(false), id = useId();
   const presetPending = useRef(Boolean(preset));
-  const [form, setForm] = useState(initialForm), [busy, setBusy] = useState(false), [error, setError] = useState(''), [browsing, setBrowsing] = useState(false), picker = useFolderPicker(api);
+  const [form, setForm] = useState(initialForm), [busy, setBusy] = useState(false), [error, setError] = useState('');
   // A saved draft starts at the details. A link from the Universe website waits on
   // the template step until its exact version is found, so Create cannot use another.
   const [step, setStep] = useState<'template' | 'details'>(() => !preset && (initialForm().template || initialForm().example) ? 'details' : 'template');
@@ -89,15 +90,12 @@ export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChang
     } catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
     finally { pending.current = false; setBusy(false); }
   }
-  const focusChange = () => requestAnimationFrame(() => dialog.current?.querySelector<HTMLButtonElement>('.create-paper-location button')?.focus());
-  // The desktop app and a browser on this computer use the system picker; other devices browse in the page.
   async function browse() {
-    if (pending.current || picker.waiting) return;
-    setError('');
-    let parent: string | null | undefined = null;
-    try { parent = await picker.pick(t('Save in'), form.parent); if (parent) setForm(current => ({ ...current, parent: parent! })); }
+    if (pending.current) return;
+    pending.current = true; setBusy(true); setError('');
+    try { const parent = await chooseDirectory(); if (parent) setForm(current => ({ ...current, parent })); }
     catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
-    if (parent === undefined) setBrowsing(true); else focusChange();
+    finally { pending.current = false; setBusy(false); requestAnimationFrame(() => dialog.current?.querySelector<HTMLButtonElement>('.create-paper-location button')?.focus()); }
   }
   const words = query.toLowerCase().split(/\s+/).filter(Boolean);
   const groups = GROUPS.filter(key => templates?.some(item => groupOf(item) === key));
@@ -147,14 +145,15 @@ export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChang
         </div>}
       <form onSubmit={event => { event.preventDefault(); void submit(); }}>
         <label htmlFor={id + '-name'}>{t('Paper name')}</label><input id={id + '-name'} name="name" value={form.name} required maxLength={120} autoComplete="off" disabled={busy} onChange={event => setForm({ ...form, name: event.target.value })}/>
-        <div className="create-paper-save-label" id={id + '-location'}>{t('Save in')}</div>
-        {browsing ? <FolderBrowser api={api} start={form.parent} action={t('Use this folder')} onCancel={() => { setBrowsing(false); focusChange(); }} onChoose={parent => { setForm(current => ({ ...current, parent })); setBrowsing(false); focusChange(); }}/>
-          : <div className="create-paper-location"><Icon name="folder" size={16}/><div className="create-paper-location-copy" role="group" aria-labelledby={id + '-location'}><strong>{form.parent.split(/[\\/]/).filter(Boolean).at(-1) || form.parent}</strong><span>{form.parent}</span></div><FolderChooser picker={picker} label={t('Change…')} icon={false} disabled={busy || !form.parent} onChoose={() => void browse()}/></div>}
+        {nativeFolders ? <>
+          <div className="create-paper-save-label" id={id + '-location'}>{t('Save in')}</div>
+          <div className="create-paper-location"><Icon name="folder" size={16}/><div className="create-paper-location-copy" role="group" aria-labelledby={id + '-location'}><strong>{form.parent.split(/[\\/]/).filter(Boolean).at(-1) || form.parent}</strong><span>{form.parent}</span></div><button type="button" className="button secondary compact" disabled={busy} onClick={() => void browse()}>{t('Change…')}</button></div>
+        </> : <FolderField id={id + '-parent'} name="parent" api={api} label={t('Save in')} value={form.parent} onChange={parent => setForm(current => ({ ...current, parent }))} title={t('Save in')} action={t('Use this folder')} disabled={busy} onError={setError} onPicked={parent => setForm(current => ({ ...current, parent }))}/>}
         {busy && <p className="create-paper-status" role="status"><span className="spinner"/>{t('Creating your paper…')}</p>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         <div className="create-paper-footer">
           <p className="create-paper-target" title={target || undefined} aria-live="polite">{target && <span className="create-paper-target-path"><span className="paper-location-parent">{target.slice(0, -name.length)}</span><span className="paper-location-name">{name}</span></span>}</p>
-          <button type="submit" className="button primary" disabled={busy || picker.waiting || !form.name.trim() || !form.parent.trim()}>{t('Create paper')}</button>
+          <button type="submit" className="button primary" disabled={busy || !form.name.trim() || !form.parent.trim()}>{t('Create paper')}</button>
         </div>
       </form>
       </>}

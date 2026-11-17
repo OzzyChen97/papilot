@@ -67,7 +67,7 @@ try {
     assert.equal(await page.locator('html').getAttribute('lang'), id, 'preference survives reload');
     await page.locator('.home').getByRole('button', { name: label(id, 'Import or open'), exact: true }).click();
     const importDialog = page.getByRole('dialog', { name: label(id, 'New paper'), exact: true });
-    await importDialog.getByRole('button', { name: label(id, 'Choose folder…'), exact: true }).click();
+    await importDialog.getByRole('button', { name: label(id, 'Browse…'), exact: true }).click();
     await importDialog.getByRole('button', { name: 'paper', exact: true }).waitFor();
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
@@ -77,7 +77,8 @@ try {
     }
     // Later steps use the desktop sidebar controls.
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await importDialog.getByRole('button', { name: label(id, 'Open this folder'), exact: true }).click();
+    await page.getByRole('textbox', { name: label(id, 'Folder path'), exact: true }).fill('/tmp/example');
+    await page.getByRole('button', { name: label(id, 'Open'), exact: true }).click();
     const error = id === 'en' ? 'Paper name is too long.' : errorMessages[id]['Paper name is too long.'];
     await page.getByRole('alert').filter({ hasText: error }).waitFor();
     await page.keyboard.press('Escape');

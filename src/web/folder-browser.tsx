@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { FolderListing } from '../shared.ts';
 import { chooseDirectory, nativeFolders } from './desktop-chrome.tsx';
 import { Icon } from './icons.tsx';
@@ -8,9 +8,8 @@ import './folder-browser.css';
 type Api = <T = any>(route: string, body?: unknown, signal?: AbortSignal) => Promise<T>;
 
 // The desktop app and a browser on the computer running Papilot use the system
-// folder picker. `pick` resolves null when cancelled, or undefined when the page
-// should browse instead: on another device, such as a phone connected through
-// Tailscale, or when the person chooses to stop waiting for a picker they cannot see.
+// folder picker. `pick` resolves null when cancelled, or undefined on another
+// device, such as a phone connected through Tailscale, where the page browses instead.
 export function useFolderPicker(api: Api) {
   const [waiting, setWaiting] = useState(false), request = useRef<AbortController | null>(null);
   useEffect(() => () => request.current?.abort(), []);
@@ -20,51 +19,71 @@ export function useFolderPicker(api: Api) {
     try {
       const value = await api<{ path: string | null } | { unavailable: true }>('/folders/choose', { title, path: start }, controller.signal);
       return 'unavailable' in value ? undefined : value.path;
-    } catch (failure) { if (controller.signal.aborted) return undefined; throw failure; }
+    } catch (failure) { if (controller.signal.aborted) return null; throw failure; }
     finally { if (request.current === controller) { request.current = null; setWaiting(false); } }
   }
-  return { waiting, pick, browseInstead: () => request.current?.abort() };
+  return { waiting, pick, cancel: () => request.current?.abort() };
 }
 
-// While the system picker is open, its button reads "Choosing…" and stays
-// focusable so the change is announced. The picker may open behind other windows
-// or on a screen nobody is watching, so browsing in the page stays one click away.
-export function FolderChooser({ picker, label, icon = true, disabled, onChoose, ...props }: { picker: ReturnType<typeof useFolderPicker>; label: string; icon?: boolean; disabled: boolean; onChoose: () => void } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'disabled'>) {
-  return <span className="folder-chooser">
-    <button type="button" {...props} className="button secondary compact" disabled={disabled && !picker.waiting} aria-disabled={picker.waiting || undefined} onClick={() => { if (!picker.waiting) onChoose(); }}>
-      {picker.waiting ? <><span className="spinner"/>{t('Choosing…')}</> : <>{icon && <Icon name="folder" size={15}/>}{label}</>}
-    </button>
-    {picker.waiting && <button type="button" className="button ghost compact" onClick={picker.browseInstead}>{t('Browse here instead')}</button>}
-  </span>;
+// A folder path that can be typed, or chosen with Browse… Choosing a folder calls
+// `onPicked`; typing only changes the value, so the form decides when to use it.
+export function FolderField({ id, name = 'path', api, label, value, onChange, title, action, onPicked, onError, disabled, placeholder, describedBy, children }: {
+  id: string; name?: string; api: Api; label: string; value: string; onChange: (path: string) => void; title: string; action: string;
+  onPicked: (path: string) => void; onError: (message: string) => void; disabled: boolean; placeholder?: string; describedBy?: string; children?: ReactNode;
+}) {
+  const picker = useFolderPicker(api), [browsing, setBrowsing] = useState(false);
+  async function browse() {
+    if (picker.waiting) return;
+    if (browsing) { setBrowsing(false); return; }
+    let path: string | null | undefined = null;
+    try { path = await picker.pick(title, value); }
+    catch (failure) { onError(failure instanceof Error ? failure.message : String(failure)); return; }
+    if (path === undefined) setBrowsing(true);
+    else if (path) onPicked(path);
+  }
+  return <>
+    <label htmlFor={id}>{label}</label>
+    <div className="folder-field-row">
+      <div className="folder-field">
+        <input id={id} name={name} value={value} required disabled={disabled} maxLength={4000} placeholder={placeholder} aria-describedby={describedBy} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
+          onChange={event => { picker.cancel(); onChange(event.target.value); }}/>
+        <button type="button" className="folder-field-browse" disabled={disabled} aria-busy={picker.waiting || undefined} aria-expanded={browsing} aria-controls={id + '-browser'} onClick={() => void browse()}><Icon name="folder" size={15}/>{t('Browse…')}</button>
+      </div>
+      {children}
+    </div>
+    {browsing && <FolderBrowser id={id + '-browser'} api={api} start={value} action={action} onPath={onChange} onChoose={path => { setBrowsing(false); onPicked(path); }} onCancel={() => { setBrowsing(false); document.getElementById(id)?.focus(); }}/>}
+  </>;
 }
 
-// Lists folders on the computer running Papilot. Entering a folder or typing a
-// path moves the browser; the action chooses the folder shown.
-export function FolderBrowser({ api, start, action, onChoose, onCancel }: { api: Api; start: string; action: string; onChoose: (path: string) => void; onCancel: () => void }) {
-  const [listing, setListing] = useState<FolderListing | null>(null), [draft, setDraft] = useState(start), [loading, setLoading] = useState(false), [error, setError] = useState('');
-  const field = useRef<HTMLInputElement>(null), request = useRef<AbortController | null>(null), id = useId();
-  async function load(target: string) {
+// Lists folders on the computer running Papilot. Entering a folder updates the
+// path field; the action chooses the folder shown.
+function FolderBrowser({ id, api, start, action, onPath, onChoose, onCancel }: { id: string; api: Api; start: string; action: string; onPath: (path: string) => void; onChoose: (path: string) => void; onCancel: () => void }) {
+  const [listing, setListing] = useState<FolderListing | null>(null), [loading, setLoading] = useState(false), [error, setError] = useState('');
+  const current = useRef<HTMLDivElement>(null), request = useRef<AbortController | null>(null);
+  async function load(target: string, focus: boolean) {
     request.current?.abort();
     const controller = new AbortController(); request.current = controller;
     setLoading(true); setError('');
-    try { const value = await api<FolderListing>('/folders', { path: target }, controller.signal); setListing(value); setDraft(value.path); }
-    catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : String(failure)); }
+    try {
+      const value = await api<FolderListing>('/folders', { path: target }, controller.signal);
+      setListing(value); onPath(value.path);
+      // The activated folder button is replaced, so focus moves to the new location.
+      if (focus) requestAnimationFrame(() => current.current?.focus());
+    } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : String(failure)); }
     finally { if (request.current === controller) setLoading(false); }
   }
-  // The button that opened the browser, or the folder just entered, is replaced; the path field keeps focus.
-  const enter = (target: string) => { field.current?.focus(); void load(target); };
-  useEffect(() => { field.current?.focus(); void load(start); return () => request.current?.abort(); }, []);
-  return <div className="folder-browser" role="group" aria-labelledby={id + '-where'} onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onCancel(); } }}>
+  useEffect(() => { void load(start, true); return () => request.current?.abort(); }, []);
+  const name = listing ? listing.path.split(/[\\/]/).filter(Boolean).at(-1) || listing.path : '';
+  return <div id={id} className="folder-browser" role="group" aria-labelledby={id + '-where'} onKeyDown={event => { if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); onCancel(); } }}>
     <div className="folder-browser-head">
-      <button type="button" className="icon-button" aria-label={t('Parent folder')} title={t('Parent folder')} disabled={!listing?.parent || loading} onClick={() => enter(listing!.parent!)}><Icon name="arrowUp" size={16}/></button>
-      <input ref={field} aria-label={t('Folder path')} value={draft} maxLength={4000} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} enterKeyHint="go"
-        onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) { event.preventDefault(); void load(draft); } }}/>
+      <button type="button" className="icon-button" aria-label={t('Parent folder')} title={t('Parent folder')} disabled={!listing?.parent || loading} onClick={() => void load(listing!.parent!, true)}><Icon name="arrowUp" size={16}/></button>
+      <div ref={current} className="folder-browser-current" tabIndex={-1}>{listing ? <><strong>{name}</strong><span>{listing.path}</span></> : <span>{t('Loading folders…')}</span>}</div>
     </div>
     <div className="folder-browser-body">
       {error ? <p className="inline-error" role="alert">{error}</p>
-        : !listing ? <p className="folder-browser-note"><span className="spinner"/>{t('Loading folders…')}</p>
+        : !listing ? null
         : listing.folders.length ? <ul role="list" className="folder-browser-list" aria-label={listing.path} aria-busy={loading || undefined}>
-          {listing.folders.map(folder => <li key={folder.path}><button type="button" disabled={loading} onClick={() => enter(folder.path)}><Icon name="folder" size={15}/><span>{folder.name}</span><Icon name="chevronRight" size={14}/></button></li>)}
+          {listing.folders.map(folder => <li key={folder.path}><button type="button" disabled={loading} onClick={() => void load(folder.path, true)}><Icon name="folder" size={15}/><span>{folder.name}</span><Icon name="chevronRight" size={14}/></button></li>)}
         </ul>
         : <p className="folder-browser-note">{t('No folders inside.')}</p>}
     </div>

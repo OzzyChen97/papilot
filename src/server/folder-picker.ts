@@ -8,9 +8,20 @@ export type FolderChoice = { path: string | null } | { unavailable: true };
 export function pickerCommands(platform: NodeJS.Platform, env: NodeJS.ProcessEnv, title: string, start: string): Command[] {
   if (platform === 'darwin') return [{
     command: 'osascript',
-    // `activate` brings the picker in front of the browser that asked for it.
-    args: ['-e', 'on run argv', '-e', 'activate', '-e', 'return POSIX path of (choose folder with prompt (item 1 of argv) default location (POSIX file (item 2 of argv)))', '-e', 'end run', title, start],
-    cancelled: (code, stderr) => code === 1 && /-128/.test(stderr),
+    // AppleScript's `choose folder` stays behind the browser when started by a
+    // background server; an activated accessory app brings its panel to the front.
+    args: ['-l', 'JavaScript', '-e', [
+      "ObjC.import('AppKit');",
+      'function run(argv) {',
+      '  const app = $.NSApplication.sharedApplication;',
+      '  app.setActivationPolicy($.NSApplicationActivationPolicyAccessory); app.activateIgnoringOtherApps(true);',
+      '  const panel = $.NSOpenPanel.openPanel;',
+      '  panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true; panel.allowsMultipleSelection = false;',
+      '  panel.message = argv[0]; panel.directoryURL = $.NSURL.fileURLWithPath(argv[1]);',
+      "  return panel.runModal == $.NSModalResponseOK ? panel.URL.path.js : '';",
+      '}',
+    ].join('\n'), title, start],
+    cancelled: () => false,
   }];
   if (platform === 'win32') return [{
     command: 'powershell.exe',

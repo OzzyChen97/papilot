@@ -1715,7 +1715,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Folder path": {
-    "revision": "b18c2851181653dd3eb679a313568b1f4cf5bdaef546d4a1306238198214b7ed",
+    "revision": "8e5ccfcf0531e50b9c225035511b84e91309c339d67ac9ea42840f00dc4d6e45",
     "textHash": "8cd44ab870e44453ea2cf34c86d72d2492879498f3106b5fc2364f8d66376b52",
     "model": "manual-review"
   },
@@ -3780,9 +3780,9 @@
     "model": "gemini-4-argon-medium"
   },
   "Select": {
-    "revision": "3d0c205f52fac7762fe08e1689dd07a923f45ddd5af2d5440f75e768684c0791",
+    "revision": "76a47fdd78dea2f3071e1bb3d04515bae101c1d492e2aa700b37858fffb0dd0c",
     "textHash": "583a950868b96a5cf80f8a8b304bd70811591461ff43fe7fd3e959b4b95949dc",
-    "model": "gemini-4-argon-medium"
+    "model": "manual-review"
   },
   "Select a skill or create your own.": {
     "revision": "06f5e0541c35200649e729c0c2701df54bca0dd61a4b27a3684cc196409ef37c",
@@ -6049,14 +6049,19 @@
     "textHash": "76179753306f4ce6ed92a166104abeda8a83737e6a8a9d9c29916742b3f57aab",
     "model": "manual"
   },
-  "Browse here instead": {
-    "revision": "4c6b7a844df090ce76cc14777276f64d096c5ed65f557a020a8a0597355889c9",
-    "textHash": "bda1b253174464efa28cfe49d9604156e4a4babbeacdeff4d3b886f0530a3dac",
+  "Open": {
+    "revision": "a8c7f364e7394563ad21b6cc0c5793b9b379811bb0cb6e218c39007bc3c2304b",
+    "textHash": "f290f9167ad0d837ac4987d5a677668fc58df49e0b84eed8e67ff0ad54bf04f0",
     "model": "manual"
   },
-  "Choosing…": {
-    "revision": "4fafccdbf705a522a7cfb3b8d25a8aec019be6f04ba9c307ce1467c5355ce705",
-    "textHash": "fcf54dc58d1b282ced8188fa8bd97c9afb9a48091c0d73be3a3d34b4479345d8",
+  "/Users/you/papers/my-paper": {
+    "revision": "12b8bf136aa5c260125a5efa15ad55c273bd223916751ac62cde1c65eeaafe03",
+    "textHash": "3205f723cebe337adb608bdae635a7a1333285eedb1e558762798b512c517199",
+    "model": "manual"
+  },
+  "Browse…": {
+    "revision": "abce15f10e7fe1ebadab4c14b2932bb70a5d7db646b352470e37a1b2474000c5",
+    "textHash": "e37382f3dec4fa1ceec864c669a67320d3e559905252b14c4173a35afed58279",
     "model": "manual"
   }
 }

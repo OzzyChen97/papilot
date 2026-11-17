@@ -1495,6 +1495,7 @@
   "Open this folder": "開啟此資料夾",
   "Use this folder": "使用此資料夾",
   "Folders on the computer running Papilot": "執行 Papilot 的電腦上的資料夾",
-  "Browse here instead": "改為在此瀏覽",
-  "Choosing…": "正在選擇…"
+  "Open": "開啟",
+  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
+  "Browse…": "瀏覽…"
 }

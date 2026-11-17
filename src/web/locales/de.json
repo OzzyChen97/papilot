@@ -1495,6 +1495,7 @@
   "Open this folder": "Diesen Ordner öffnen",
   "Use this folder": "Diesen Ordner verwenden",
   "Folders on the computer running Papilot": "Ordner auf dem Computer, auf dem Papilot läuft",
-  "Browse here instead": "Stattdessen hier durchsuchen",
-  "Choosing…": "Auswahl läuft…"
+  "Open": "Öffnen",
+  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
+  "Browse…": "Durchsuchen…"
 }
