@@ -1,4 +1,4 @@
-import { WORKFLOW_TOOLS, WORKER_STOPPED, workflowInstructions, workflowItem, workflowNotes, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, workerName, type WorkflowGenerate, type WorkflowStep, type WorkflowWorker } from './collaboration.ts';
+import { WORKFLOW_TOOLS, WORKER_STOPPED, workflowInstructions, workflowItem, workflowNotes, workflowRequests, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, workerName, type WorkflowGenerate, type WorkflowStep, type WorkflowWorker } from './collaboration.ts';
 import type { WorkflowChange } from './collaboration-edits.ts';
 import { aiReviewInstructions, parseAiReview, reviewPrompt, saveReviewText, type ReviewSnapshot } from './ai-review.ts';
 import { createHash, randomUUID } from 'node:crypto';
@@ -183,6 +183,11 @@ export class Workspace extends EventEmitter {
     const items = this.store.items(task.id);
     const index = items.findIndex(item => item.id === run.id);
     return workflowNotes(index < 0 ? items : items.slice(0, index + 1), run.prompt);
+  }
+  private workflowRequestsFor(task: Task, run: Run) {
+    const items = this.store.items(task.id);
+    const index = items.findIndex(item => item.id === run.id);
+    return workflowRequests(index < 0 ? items : items.slice(0, index + 1));
   }
   private stopWorkflow(taskId: string) { this.workflowStops.get(taskId)?.abort(); this.workflowStops.delete(taskId); this.workflowAudits.delete(taskId); this.workflowDelegations.delete(taskId); }
   // Async tools must never answer a request from an earlier connection.
@@ -722,6 +727,7 @@ export class Workspace extends EventEmitter {
     const run: Run = { id: randomUUID(), taskId, requestKey, prompt, ...(noteOptionsRequested ? { noteOptionsRequested } : {}), ...(files.length ? { attachments: files } : {}), feedbackCursor: cursor, status: 'queued', createdAt: Date.now(), finishedAt: null, reviewRound: 0 };
     const meta: MessageMeta = { ...(options.skill ? { skill: { id: options.skill.id, name: options.skill.name, ...(options.skill.icon ? { icon: options.skill.icon } : {}) } } : {}), ...(options.notes?.length ? { notes: summarizeNotes(options.notes) } : options.reviewNotes?.length ? { notes: options.reviewNotes } : {}), ...(summary ? { feedback: summary } : {}), ...(options.feedback ? { sendsFeedback: true } : {}), ...(options.build ? { build: options.build } : {}) };
     if (options.groupInstructions && Object.keys(options.groupInstructions).length) meta.groupInstructions = options.groupInstructions;
+    if (meta.notes && text.trim()) meta.request = text.trim();
     const saved = this.store.transaction(() => {
       // Feedback loading yields to other requests. Recheck identity, queue, and
       // task status together before committing; none of the earlier reads own a lock.
@@ -1132,7 +1138,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         const progress = parent ? { step: (step: WorkflowStep) => { if (live()) this.workerStep(task, parent, step); }, changes: (changes: WorkflowChange[]) => { if (live()) this.workerChanges(task, parent, changes); } } : {};
         const result = tool === 'workflow_delegate'
           ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, signal, () => Boolean(current()), role => this.workflowWorker(task, role), progress)
-          : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, this.coordinator(task));
+          : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, this.coordinator(task), this.workflowRequestsFor(task, run));
         if (!current() || controller.signal.aborted) return;
         if ('fingerprint' in result && result.verified && result.fingerprint) {
           const saved = this.store.runByKey(run.requestKey)!;

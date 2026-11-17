@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow as delegateTo, sourceEvidence, workflowInstructions, workflowItem, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate, type WorkflowWorker } from '../src/server/collaboration.ts';
+import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow as delegateTo, sourceEvidence, workflowInstructions, workflowItem, workflowNotes, workflowRequests, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate, type WorkflowWorker } from '../src/server/collaboration.ts';
 import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts';
 import { AGENT_IDS, collaborationRoutes, validRoutes, type CollaborationRole, type CollaborationRoutes, type RuntimeStatus } from '../src/shared.ts';
 
@@ -49,6 +49,26 @@ test('timeline entries name the role, worker, notes and outcome instead of the r
   const running = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'rigorous', annotationIds: ['message:2'], instruction: 'Check the sum.' } }, role => `Codex (${role})`);
   assert.equal(running.detail, 'Codex (rigorous)\nNotes: 2\nCheck the sum.');
   assert.match(workflowItem({ tool: 'workflow_audit', arguments: { outcomes: [{}, {}] }, contentItems: [{ text: JSON.stringify({ verified: true, report: '{}' }) }] }).detail!, /^Verified\./);
+});
+test('the ledger carries color-group directions and the author\'s own requests to workers and the audit', async () => {
+  const items = [
+    { id: 'm1', type: 'user', text: 'Generated prompt with every note.', meta: { notes: [{ where: 'main.tex', quote: 'First', comment: '', group: 'red' as const }, { where: 'main.tex', quote: 'Second', comment: 'Check second.' }], groupInstructions: { red: 'Translate the red passages into French.' }, request: 'Keep British spelling.' } },
+    { id: 'reply', type: 'assistant', text: 'Done.' },
+    { id: 'm2', type: 'user', text: 'Also shorten the abstract.' },
+  ];
+  const ledger = workflowNotes(items, 'Also shorten the abstract.');
+  assert.equal(ledger[0].instruction, 'Translate the red passages into French.'); assert.equal(ledger[1].instruction, undefined);
+  const requests = workflowRequests(items);
+  assert.deepEqual(requests, [{ message: 'm1', text: 'Keep British spelling.' }, { message: 'm2', text: 'Also shorten the abstract.' }], 'not the generated prompt, and not dropped beside notes');
+  const f = paper();
+  try {
+    let audited: any, delegated: any;
+    await delegateTo(f.root, ledger, { ...delegateArgs, annotationIds: ['m1:1'] }, async (_worker, prompt, _signal, edit) => { delegated = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1)); fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Premier paragraphe.\n\nSecond paragraph.\n'); return 'Translated.'; }, signal(), () => true, role => routes[role]);
+    assert.equal(delegated.annotations[0].instruction, 'Translate the red passages into French.', 'the worker sees its group direction');
+    const outcomes = ledger.map(note => ({ id: note.id, status: 'addressed', explanation: 'Done.', evidence: [{ file: 'main.tex', quote: 'paragraph' }] }));
+    await auditWorkflow(f.root, ledger, { outcomes }, async (worker, prompt, signal) => { audited = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1)); return verified(worker, prompt, signal); }, signal(), auditor, requests);
+    assert.deepEqual(audited.requests, requests); assert.equal(audited.annotations[0].instruction, 'Translate the red passages into French.');
+  } finally { f.close(); }
 });
 test('annotation ledger retains repeated notes separately and provides a request for plain tasks', () => {
   assert.deepEqual(notes.map(note => note.id), ['message:1', 'message:2']);
@@ -292,7 +312,7 @@ test('a worker\'s steps are reported as it works, with paths inside its copy mad
         notify('item/started', { id: 'read', type: 'toolCall', kind: 'read', target: path.join(cwd, 'sections', 'intro.tex'), status: 'inProgress' });
         notify('item/started', { id: 'think', type: 'reasoning' });
         notify('item/completed', { id: 'edit', type: 'fileChange', changes: [{ path: path.join(cwd, 'sections/intro.tex') }], status: 'completed' });
-        notify('item/completed', { id: 'reply', type: 'agentMessage', text: `Fixed note 1 in ${cwd}/sections/intro.tex.` });
+        notify('item/completed', { id: 'reply', type: 'agentMessage', text: `Fixed note 1 in ${cwd}/sections/intro.tex. Used \\ref{tab:memory} in ${cwd}\\sections\\intro.tex, as Windows reports it.` });
         helper.emit('notification', { method: 'turn/completed', params: { threadId: 'helper', turn: { status: 'completed' } } });
       });
       return { turn: { id: 'turn' } };
@@ -301,7 +321,7 @@ test('a worker\'s steps are reported as it works, with paths inside its copy mad
     assert.deepEqual(steps.map(step => [step.item.id, step.completed]), [['read', false], ['edit', true], ['reply', true]], 'reasoning stays private');
     assert.equal(steps[0].item.target, 'sections/intro.tex');
     assert.deepEqual(steps[1].item.changes, [{ path: 'sections/intro.tex' }]);
-    assert.equal(steps[2].item.text, 'Fixed note 1 in sections/intro.tex.');
+    assert.equal(steps[2].item.text, 'Fixed note 1 in sections/intro.tex. Used \\ref{tab:memory} in sections/intro.tex, as Windows reports it.', 'LaTeX backslashes stay; paths use the task\'s slashes');
   } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
 });
 test('a delegation reports what its worker changed before the edit is merged', async () => {

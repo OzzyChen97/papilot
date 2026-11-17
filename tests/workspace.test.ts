@@ -3530,7 +3530,12 @@ test('collaboration cannot publish automatically or manually without a final suc
 test('collaboration publishes a verified result, retaining the audit across the run completion', async () => {
   const f = await collaborationFixture();
   try {
+    // The auditor also sees the author's own request sent with the notes.
+    assert.equal(f.store.item(f.task.id, f.run.id)?.meta?.request, 'Polish.');
+    const audit = f.workspace.workflowGenerate; let requests: unknown;
+    f.workspace.workflowGenerate = async (...params) => { requests = JSON.parse(params[1].slice(params[1].indexOf('\n') + 1)).requests; return audit(...params); };
     await f.audit(); assert.ok(f.store.runByKey(f.run.requestKey)?.workflowAudit);
+    assert.deepEqual(requests, [{ message: f.run.id, text: 'Polish.' }]);
     let published = false; f.workspace.publish = async () => { published = true; };
     await f.complete(); assert.equal(published, true);
     assert.ok(f.store.runByKey(f.run.requestKey)?.workflowAudit);
