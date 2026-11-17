@@ -1483,7 +1483,7 @@
   "Previous anchor": "前のアンカー",
   "Next anchor": "次のアンカー",
   "Anchor shortcuts work while the PDF is focused.": "PDF にフォーカスがあるときにアンカーのショートカットを使用できます。",
-  "Copy folder": "フォルダーをコピー",
+  "Import folder": "フォルダーをインポート",
   "Import ZIP": "ZIP をインポート",
   "Import a copy": "コピーをインポート",
   "Open existing folder": "既存のフォルダーを開く",

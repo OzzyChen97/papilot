@@ -1483,7 +1483,7 @@
   "Previous anchor": "Repère précédent",
   "Next anchor": "Repère suivant",
   "Anchor shortcuts work while the PDF is focused.": "Les raccourcis des repères fonctionnent lorsque le PDF a le focus.",
-  "Copy folder": "Copier un dossier",
+  "Import folder": "Importer un dossier",
   "Import ZIP": "Importer un ZIP",
   "Import a copy": "Importer une copie",
   "Open existing folder": "Ouvrir un dossier existant",

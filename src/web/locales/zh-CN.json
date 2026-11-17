@@ -272,7 +272,7 @@
   "Previous anchor": "上一个锚点",
   "Next anchor": "下一个锚点",
   "Anchor shortcuts work while the PDF is focused.": "PDF 获得焦点时可使用锚点快捷键。",
-  "Copy folder": "复制文件夹",
+  "Import folder": "导入文件夹",
   "Import ZIP": "导入 ZIP",
   "Import a copy": "导入副本",
   "Open existing folder": "打开现有文件夹",

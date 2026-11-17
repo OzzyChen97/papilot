@@ -136,7 +136,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
             <span className="import-drop-hint"><Icon name="folder" size={15}/>{t('Drop a source ZIP or folder')}</span>
             <div className="import-options">
               <button type="button" className="button secondary compact" aria-label={t('Import ZIP')} disabled={locked} onClick={() => zip.current?.click()}><Icon name="archive" size={15}/>{t('Import ZIP')}</button>
-              <button type="button" className="button secondary compact" disabled={locked} onClick={() => folder.current?.click()}><Icon name="folder" size={15}/>{t('Copy folder')}</button>
+              <button type="button" className="button secondary compact" disabled={locked} onClick={() => folder.current?.click()}><Icon name="folder" size={15}/>{t('Import folder')}</button>
             </div>
           </div>
           <input hidden {...{ webkitdirectory: '' }} ref={folder} type="file" multiple aria-label={t('Choose folder')} onChange={event => { void upload(Array.from(event.target.files || []), false); event.target.value = ''; }}/>

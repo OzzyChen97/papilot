@@ -1483,7 +1483,7 @@
   "Previous anchor": "이전 앵커",
   "Next anchor": "다음 앵커",
   "Anchor shortcuts work while the PDF is focused.": "PDF에 포커스가 있을 때 앵커 단축키를 사용할 수 있습니다.",
-  "Copy folder": "폴더 복사",
+  "Import folder": "폴더 가져오기",
   "Import ZIP": "ZIP 가져오기",
   "Import a copy": "사본 가져오기",
   "Open existing folder": "기존 폴더 열기",

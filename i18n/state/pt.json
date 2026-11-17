@@ -5989,9 +5989,9 @@
     "textHash": "e2f7121893d7bbdcd69c646f9a5cf6daaf86e2376feafb73129ff635d548f6bf",
     "model": "manual"
   },
-  "Copy folder": {
-    "revision": "d4ad46cb925c27cda4c81d8af01bd6656ab54b2cbeae2f6c0225b6dbc1d6e639",
-    "textHash": "ac8f15ce0bf953e8145c7e49ab15dd6cbd6e1e83b2f230ef2969010c96084bd8",
+  "Import folder": {
+    "revision": "69881d1aea124e08fc152f1bb687b8f7c4ba2fe00656d0f353f19cf908025031",
+    "textHash": "9bf58c02687fa289e1afbee4d190adafb3e2480299845f18b851625813986fca",
     "model": "manual"
   },
   "Import ZIP": {
