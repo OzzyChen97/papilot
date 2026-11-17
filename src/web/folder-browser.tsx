@@ -31,7 +31,7 @@ export function FolderField({ id, name = 'path', api, label, value, onChange, ti
   id: string; name?: string; api: Api; label: string; value: string; onChange: (path: string) => void; title: string; action: string;
   onPicked: (path: string) => void; onError: (message: string) => void; disabled: boolean; placeholder?: string; describedBy?: string; children?: ReactNode;
 }) {
-  const picker = useFolderPicker(api), [browsing, setBrowsing] = useState(false);
+  const picker = useFolderPicker(api), [browsing, setBrowsing] = useState(false), edits = useRef(0);
   async function browse() {
     if (picker.waiting) return;
     if (browsing) { setBrowsing(false); return; }
@@ -46,27 +46,31 @@ export function FolderField({ id, name = 'path', api, label, value, onChange, ti
     <div className="folder-field-row">
       <div className="folder-field">
         <input id={id} name={name} value={value} required disabled={disabled} maxLength={4000} placeholder={placeholder} aria-describedby={describedBy} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
-          onChange={event => { picker.cancel(); onChange(event.target.value); }}/>
+          onChange={event => { edits.current++; picker.cancel(); onChange(event.target.value); }}/>
         <button type="button" className="folder-field-browse" disabled={disabled} aria-label={t('Browse…')} title={t('Browse…')} aria-busy={picker.waiting || undefined} aria-expanded={browsing} aria-controls={id + '-browser'} onClick={() => void browse()}><Icon name="folder" size={16}/></button>
       </div>
       {children}
     </div>
-    {browsing && <FolderBrowser id={id + '-browser'} api={api} start={value} action={action} onPath={onChange} onChoose={path => { setBrowsing(false); document.getElementById(id)?.focus(); onPicked(path); }} onCancel={() => { setBrowsing(false); document.getElementById(id)?.focus(); }}/>}
+    {browsing && <FolderBrowser id={id + '-browser'} api={api} start={value} edits={edits} action={action} onPath={onChange} onChoose={path => { setBrowsing(false); document.getElementById(id)?.focus(); onPicked(path); }} onCancel={() => { setBrowsing(false); document.getElementById(id)?.focus(); }}/>}
   </>;
 }
 
 // Lists folders on the computer running Papilot. Entering a folder updates the
-// path field; the action chooses the folder shown.
-function FolderBrowser({ id, api, start, action, onPath, onChoose, onCancel }: { id: string; api: Api; start: string; action: string; onPath: (path: string) => void; onChoose: (path: string) => void; onCancel: () => void }) {
+// path field unless it was edited meanwhile; the action chooses the folder shown.
+function FolderBrowser({ id, api, start, edits, action, onPath, onChoose, onCancel }: { id: string; api: Api; start: string; edits: { current: number }; action: string; onPath: (path: string) => void; onChoose: (path: string) => void; onCancel: () => void }) {
   const [listing, setListing] = useState<FolderListing | null>(null), [loading, setLoading] = useState(false), [error, setError] = useState('');
   const current = useRef<HTMLDivElement>(null), request = useRef<AbortController | null>(null);
   async function load(target: string, focus: boolean) {
     request.current?.abort();
     const controller = new AbortController(); request.current = controller;
     setLoading(true); setError('');
+    const edited = edits.current;
     try {
       const value = await api<FolderListing>('/folders', { path: target }, controller.signal);
-      setListing(value); onPath(value.path);
+      setListing(value);
+      // A path typed while the list loaded wins, and typing keeps focus.
+      if (edits.current !== edited) return;
+      onPath(value.path);
       // The activated folder button is replaced, so focus moves to the new location.
       if (focus) requestAnimationFrame(() => current.current?.focus());
     } catch (failure) { if (!controller.signal.aborted) setError(failure instanceof Error ? failure.message : String(failure)); }

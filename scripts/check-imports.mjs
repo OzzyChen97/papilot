@@ -10,7 +10,7 @@ import { selectOption } from './select.mjs';
 const server = Fastify(); await server.register(staticFiles, { root: path.resolve('dist') });
 const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHANNEL || 'chrome', headless: true });
 const state = { version: '0.6.0', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: true, account: 'Owner', error: null, models: [] } };
-const imported = { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'My paper', path: '/papers/copied-paper', copied: true, candidates: ['main.tex', 'Thesis/src/chapters/appendices/supplement.tex'], main: 'main.tex', engine: 'pdflatex', phase: 'choose' };
+const imported = { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'My paper', path: '/papers/copied-paper', copied: true, candidates: ['main.tex', 'Thesis/src/chapters/appendices/supplement.tex', ...Array.from({ length: 14 }, (_, index) => `Thesis/src/chapters/chapter-${index + 1}.tex`)], main: 'main.tex', engine: 'pdflatex', phase: 'choose' };
 const requests = [], errors = []; let draft = structuredClone(imported), result = 'failed', failure = 'fontspec needs XeLaTeX';
 let linkResult = 'error', releaseLink, uploadCandidates = null;
 fs.mkdirSync('test-results', { recursive: true });
@@ -26,7 +26,7 @@ await server.listen({ host: '127.0.0.1', port: 0 });
 try {
   const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 850 } });
   // A browser on this computer gets the system picker; other devices browse in the page.
-  let picker = { unavailable: true }, releasePicker = () => undefined;
+  let picker = { unavailable: true }, releasePicker = () => undefined, holdListing = false, releaseListing = () => undefined;
   const mockApi = async route => {
     const url = new URL(route.request().url()), method = route.request().method();
     if (url.pathname.startsWith('/api/imports')) {
@@ -53,6 +53,7 @@ try {
       // Folders on the computer running Papilot; unknown paths open the nearest listed folder.
       const tree = { '/': ['papers', 'Users'], '/Users': ['you'], '/Users/you': ['Downloads', 'papers'], '/Users/you/papers': ['large-local-paper', 'thesis'], '/Users/you/papers/large-local-paper': [], '/Users/you/papers/thesis': [], '/Users/you/Downloads': [], '/papers': ['large-local-paper'], '/papers/large-local-paper': [] };
       const body = route.request().postDataJSON(); requests.push({ route: url.pathname, body });
+      if (holdListing) await new Promise(resolve => { releaseListing = resolve; });
       let current = body.path?.trim().replace(/(.)\/$/, '$1') || '/Users/you';
       while (!tree[current]) current = current.slice(0, current.lastIndexOf('/')) || '/';
       return route.fulfill({ json: { path: current, parent: current === '/' ? null : current.slice(0, current.lastIndexOf('/')) || '/', folders: tree[current].map(name => ({ name, path: (current === '/' ? '' : current) + '/' + name })) } });
@@ -183,6 +184,8 @@ try {
   assert.deepEqual(requests.filter(request => request.route === '/api/imports').at(-1).body, { path: '/papers/typed-paper' });
   // Main files use the app's themed list, showing nested paths as file name and folder.
   await main.click(); await page.getByRole('option', { name: /supplement\.tex/ }).waitFor();
+  // A long list scrolls without squeezing two-line options together.
+  assert.deepEqual(await page.locator('.select-option').evaluateAll(options => options.filter(option => option.scrollHeight > option.clientHeight + 1).map(option => option.textContent)), []);
   await page.getByRole('dialog', { name: 'New paper' }).screenshot({ animations: 'disabled', path: 'test-results/import-main-file.png' });
   await page.keyboard.press('Escape');
   assert.equal(await page.getByRole('dialog', { name: 'New paper' }).isVisible(), true, 'Escape closes only the file list');
@@ -205,12 +208,22 @@ try {
   await page.getByText('Folders on the computer running Papilot', { exact: true }).waitFor({ state: 'detached' });
   assert.equal(await page.getByRole('dialog', { name: 'New paper' }).isVisible(), true);
   await page.waitForFunction(() => document.activeElement?.getAttribute('name') === 'path');
+  // A path typed while the list loads is kept, and the field keeps focus.
+  holdListing = true; await field.fill(''); await browse.click();
+  await page.getByText('Loading folders…', { exact: true }).waitFor();
+  await field.fill('/papers/typed-during-listing');
+  holdListing = false; releaseListing();
+  await page.getByRole('list', { name: '/Users/you' }).waitFor();
+  assert.equal(await field.inputValue(), '/papers/typed-during-listing');
+  assert.equal(await field.evaluate(element => element === document.activeElement), true);
+  await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await page.getByText('Folders on the computer running Papilot', { exact: true }).waitFor({ state: 'detached' });
   await browse.click();
   await page.getByRole('button', { name: 'large-local-paper', exact: true }).click();
   await page.getByText('No folders inside.', { exact: true }).waitFor();
   await page.getByRole('button', { name: 'Open this folder', exact: true }).click();
   await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
-  assert.deepEqual(requests.filter(request => request.route === '/api/imports').at(-1).body, { path: '/Users/you/papers/large-local-paper' });
+  assert.deepEqual(requests.filter(request => request.route === '/api/imports').at(-1).body, { path: '/papers/large-local-paper' });
   await page.getByRole('button', { name: 'Choose different files', exact: true }).click();
   // A browser on this computer uses the system picker; cancelling it changes nothing.
   picker = { path: null }; let before = opened();
