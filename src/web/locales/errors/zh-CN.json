@@ -377,7 +377,6 @@
   "Send enabled as true or false.": "enabled 必须为 true 或 false。",
   "Provide source evidence as an array.": "请以数组形式提供源文件依据。",
   "Evidence must name a source file inside this task.": "依据必须指向此任务内的源文件。",
-  "Choose deepseek or gemini.": "请选择 deepseek 或 gemini。",
   "Provide unique annotation IDs.": "请提供不重复的批注 ID。",
   "Unknown annotation ID.": "未知的批注 ID。",
   "Read the relevant source before delegating.": "分配任务前请先阅读相关源文件。",
@@ -399,5 +398,7 @@
   "The workflow is no longer active.": "工作流已不再运行。",
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "协作模式需要通过最终源文件检查才能发布。请继续任务，核对所有批注。",
   "Delegated edits must stay within the selected source files.": "委派修改必须限定在所选源文件内。",
-  "The source changed while merging delegated edits. Retry the delegation.": "合并委派修改时源文件已变化。请重新委派。"
+  "The source changed while merging delegated edits. Retry the delegation.": "合并委派修改时源文件已变化。请重新委派。",
+  "Choose deepseek, gemini or codex.": "请选择 DeepSeek、Gemini 或 Codex。",
+  "Codex could not apply isolated workflow permissions.": "Codex 无法应用工作流隔离权限。"
 }

@@ -377,7 +377,6 @@
   "Send enabled as true or false.": "Envíe enabled como true o false.",
   "Provide source evidence as an array.": "Proporcione las pruebas del código fuente como una matriz.",
   "Evidence must name a source file inside this task.": "Las pruebas deben indicar un archivo fuente de esta tarea.",
-  "Choose deepseek or gemini.": "Elija deepseek o gemini.",
   "Provide unique annotation IDs.": "Proporcione identificadores de anotación únicos.",
   "Unknown annotation ID.": "Identificador de anotación desconocido.",
   "Read the relevant source before delegating.": "Lea el código fuente pertinente antes de delegar.",
@@ -399,5 +398,7 @@
   "The workflow is no longer active.": "El flujo de trabajo ya no está activo.",
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "El modo colaborativo requiere una revisión satisfactoria del código fuente final antes de publicar. Continúe la tarea para comprobar todas las anotaciones.",
   "Delegated edits must stay within the selected source files.": "Las modificaciones delegadas deben limitarse a los archivos fuente seleccionados.",
-  "The source changed while merging delegated edits. Retry the delegation.": "El código fuente cambió al combinar las modificaciones delegadas. Vuelva a delegar la tarea."
+  "The source changed while merging delegated edits. Retry the delegation.": "El código fuente cambió al combinar las modificaciones delegadas. Vuelva a delegar la tarea.",
+  "Choose deepseek, gemini or codex.": "Elige DeepSeek, Gemini o Codex.",
+  "Codex could not apply isolated workflow permissions.": "Codex no pudo aplicar los permisos de aislamiento del flujo de trabajo."
 }

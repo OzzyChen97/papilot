@@ -1074,7 +1074,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         const notes = this.workflowNotesFor(task, run);
         this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
         const result = tool === 'workflow_delegate'
-          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()))
+          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()), task.model)
           : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, task.model);
         if (!current() || controller.signal.aborted) return;
         if ('fingerprint' in result && result.verified && result.fingerprint) {

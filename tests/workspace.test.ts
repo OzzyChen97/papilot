@@ -3609,6 +3609,21 @@ test('delegation invalidates prior audit and blocks audit and publication until 
     assert.equal(f.store.runByKey(f.run.requestKey)?.workflowAudit, undefined);
   } finally { gate.resolve(); f.close(); }
 });
+test('the coordinator sends Codex editing to a separate worker with the selected task model', async () => {
+  const f = await collaborationFixture();
+  try {
+    f.store.updateTask(f.task.id, { model: 'selected-codex' });
+    f.workspace.workflowGenerate = async (executor, _prompt, _signal, model, edit) => {
+      assert.equal(executor, 'codex'); assert.equal(model, 'selected-codex'); assert.ok(edit);
+      assert.notEqual(edit.cwd, fs.realpathSync(f.root)); fs.writeFileSync(path.join(edit.cwd, 'main.tex'), 'Checked text.'); return 'Checked.';
+    };
+    await (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'codex-edit', params: { tool: 'workflow_delegate', arguments: { executor: 'codex', annotationIds: [f.run.id + ':1'], instruction: 'Check and edit.', sources: [{ file: 'main.tex', quote: 'Original text.' }] } } }, f.collaboration);
+    const reply = f.collaboration.replies.at(-1)!.result as { success: boolean; contentItems: { text: string }[] };
+    assert.equal(reply.success, true); assert.equal(JSON.parse(reply.contentItems[0].text).executor, 'codex');
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Checked text.');
+    assert.equal(f.store.runByKey(f.run.requestKey)?.workflowAudit, undefined, 'editing is not the final audit');
+  } finally { f.close(); }
+});
 test('an active audit rejects new delegates and old delegate cleanup cannot clear a newer run', async () => {
   const f = await collaborationFixture(), gate = deferred<void>();
   const args = { executor: 'gemini', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] };

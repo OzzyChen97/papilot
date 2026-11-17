@@ -2,7 +2,7 @@
 
 An opt-in experiment for editing many PDF annotations with the existing Codex app-server. It is hidden by default. Open **Settings → About Papilot → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
 
-Codex plans the work by annotation intent and source span. Simple edits go to DeepSeek through **OpenCode Go**; prose polishing goes to Gemini through Antigravity (Gemini 3.8 Flash by default). Codex keeps reasoning, factual checks, references, formatting and ambiguous changes. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
+Codex plans the work by annotation intent and source span. Simple edits go to DeepSeek through **OpenCode Go**; prose polishing goes to Gemini through Antigravity (Gemini 3.8 Flash by default); reasoning, factual checks, references and formatting go to independent Codex workers using the task's selected Codex model. The coordinator handles planning, ambiguous scope and conflicts. The final audit uses another independent, read-only Codex session. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
 
 ![Collaboration mode in the experimental settings](assets/collaboration-desktop.png)
 
@@ -19,6 +19,8 @@ See [OpenCode Go setup](https://opencode.ai/docs/console/go/) and [Antigravity C
 ## Editing and final verification
 
 Each worker receives an isolated copy of the selected source files and edits that copy with its native file tools. The main task directory is never the worker’s workspace. Commands, network tools and MCP operations are denied; edits outside the selected files, symbolic links and file creation/deletion are rejected before integration.
+
+Codex workers use native `apply_patch` with a sandbox limited to their copied workspace. Host writable roots, network access, shell tools, nested agents, hooks, apps and plugins are disabled. Configured MCP servers are disabled individually; if an enabled server name contains a dot, rename or disable that server on the host before using this mode because Codex's native override syntax cannot isolate it safely. An editing worker never replaces the separate final audit.
 
 Papilot compares the worker’s base snapshot, current task source and worker result using the review engine’s existing three-way merge. Its word-level fallback can combine independent edits even on the same line. Workers run concurrently; only the short integration step is serialized. Source files are checked again before atomic replacement, so newer edits are preserved. The program returns which files were applied; Codex does not copy or reapply those changes.
 

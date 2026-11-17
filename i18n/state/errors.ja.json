@@ -1459,11 +1459,6 @@
     "textHash": "e148572d23928034bd7236a0cb5949b0075d418e61dcdff3d5a61004ad7505cc",
     "model": "codex"
   },
-  "Choose deepseek or gemini.": {
-    "revision": "1cb54397a7874ca32cb3fde3a5bff7e4e64d9d48ed62e3e998573e4bfafd44b6",
-    "textHash": "1dc44745afa5b65421352cab72c2834df75598e07591d5f6151487dcf9918a13",
-    "model": "codex"
-  },
   "Provide unique annotation IDs.": {
     "revision": "7d377aa83387a09b366b69ceabd3eb5ae148ca92e09c98a6ca32c590c31c99f4",
     "textHash": "2d5a41f8a57d48b5a81f851fa232fed6888f7fe604041c1cfaf49f63daa90e7f",
@@ -1572,6 +1567,16 @@
   "The source changed while merging delegated edits. Retry the delegation.": {
     "revision": "0b36aa5e7f6e9ae7c377dd4d0414da659b3b9d8cfe373a63a84220402ab18fec",
     "textHash": "900e625fb3ceaa41e7323284acdca60ae98b24f9d36699c07fd6930c88cdb618",
+    "model": "codex"
+  },
+  "Choose deepseek, gemini or codex.": {
+    "revision": "a67175f0defd58e3781469458b51e6a479fe12c98c8dc9361aa5fefbb85d52d6",
+    "textHash": "ae33c3903f2024d607b11e7bc6d93fa560c1bf4c53550ab7fe1a66765ba2b1ec",
+    "model": "codex"
+  },
+  "Codex could not apply isolated workflow permissions.": {
+    "revision": "8015b8817cb31346b08df3695754a84af471413d50473fcc9b75e4747afc2c60",
+    "textHash": "547e90078f388f5e861c6fb8480216c7530c3a921ca9b3ff34543b6dd3030d9c",
     "model": "codex"
   }
 }

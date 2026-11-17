@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { auditWorkflow, delegateWorkflow, sourceEvidence, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate } from '../src/server/collaboration.ts';
+import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow, sourceEvidence, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate } from '../src/server/collaboration.ts';
 import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts';
 import { AGENT_IDS, type RuntimeStatus } from '../src/shared.ts';
 
@@ -57,6 +57,22 @@ test('parallel edits to different words in the same line are merged by the progr
   } finally { f.close(); }
 });
 const delegateArgs = { executor: 'gemini', annotationIds: [notes[0].id], instruction: 'Edit first.', sources: [{ file: 'main.tex', quote: 'First' }] };
+test('Codex edits use the same isolated merge route and inherit only the task Codex model', async () => {
+  assert.deepEqual((WORKFLOW_TOOLS[0].inputSchema.properties as { executor: { enum: string[] } }).executor.enum, ['deepseek', 'gemini', 'codex']);
+  for (const executor of ['codex', 'gemini', 'deepseek']) {
+    const f = paper(); let copy = '';
+    try {
+      const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, executor }, async (worker, _prompt, _signal, model, edit) => {
+        assert.equal(worker, executor); assert.equal(model, executor === 'codex' ? 'task-codex-model' : undefined);
+        assert.ok(edit); copy = edit.cwd; assert.notEqual(copy, fs.realpathSync(f.root));
+        const file = path.join(copy, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Checked'));
+        assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^First/); return 'Checked the annotation.';
+      }, signal(), () => true, 'task-codex-model');
+      assert.equal(result.executor, executor); assert.equal(result.status, 'applied'); assert.deepEqual(result.appliedFiles, ['main.tex']);
+      assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^Checked/); assert.equal(fs.existsSync(copy), false);
+    } finally { f.close(); }
+  }
+});
 test('duplicate source excerpts share one snapshot file and case aliases cannot overwrite it', async () => {
   const f = paper();
   try {
@@ -262,6 +278,29 @@ test('stopping a native helper closes its process and ignores late results', asy
   helper.request = async (method, params) => { if (method === 'model/list') return { data: [] }; if (method === 'thread/start') { helper.cwd = params.cwd; return { thread: { id: 'helper' } }; } if (method === 'turn/start') controller.abort(); return {}; };
   await assert.rejects(runWorkflowHelper('codex', 'Audit', controller.signal, undefined, undefined, () => helper), /stopped/);
   assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
+});
+test('a Codex editor rejects a runtime that keeps host writable roots before starting a turn', async () => {
+  const f = paper(), helper = new Helper(), request = helper.request.bind(helper);
+  helper.request = async (method, params) => {
+    const result = await request(method, params);
+    if (method === 'thread/start') return { ...result, approvalPolicy: 'never', sandbox: { type: 'workspaceWrite', writableRoots: ['/host'], networkAccess: false, excludeTmpdirEnvVar: true, excludeSlashTmp: true } };
+    return result;
+  };
+  try {
+    await assert.rejects(runWorkflowHelper('codex', 'Edit', signal(), 'task-codex-model', { cwd: f.root, files: ['main.tex'] }, () => helper), /isolated workflow permissions/);
+    assert.equal(helper.calls.some(call => call.method === 'turn/start'), false); assert.equal(helper.closed, true);
+    assert.equal(fs.existsSync(f.root), true, 'the delegation owns snapshot cleanup');
+  } finally { f.close(); }
+});
+test('Codex helpers reject enabled MCP names that native overrides cannot address and skip disabled ones', async () => {
+  for (const enabled of [true, false]) {
+    const helper = new Helper(), request = helper.request.bind(helper);
+    helper.request = async (method, params) => method === 'config/read' ? { config: { mcp_servers: { 'dot.name': { enabled } } } } : request(method, params);
+    const work = runWorkflowHelper('codex', 'Audit', signal(), undefined, undefined, () => helper);
+    if (enabled) { await assert.rejects(work, /isolated workflow permissions/); assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); }
+    else { assert.equal(await work, 'Proposal'); assert.equal(helper.calls.find(call => call.method === 'thread/start').params.sandbox, 'read-only'); }
+    assert.equal(helper.closed, true);
+  }
 });
 test('a delayed installation probe cannot start a helper after cancellation', async () => {
   const helper = new Helper(), controller = new AbortController(); let resolve!: (value: boolean) => void, starts = 0;

@@ -377,7 +377,6 @@
   "Send enabled as true or false.": "Invia enabled come true o false.",
   "Provide source evidence as an array.": "Fornisci le evidenze del sorgente come array.",
   "Evidence must name a source file inside this task.": "Le evidenze devono indicare un file sorgente all’interno di questa attività.",
-  "Choose deepseek or gemini.": "Scegli deepseek o gemini.",
   "Provide unique annotation IDs.": "Fornisci ID di annotazione univoci.",
   "Unknown annotation ID.": "ID di annotazione sconosciuto.",
   "Read the relevant source before delegating.": "Leggi il sorgente pertinente prima di delegare.",
@@ -399,5 +398,7 @@
   "The workflow is no longer active.": "Il flusso di lavoro non è più attivo.",
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "La modalità collaborativa richiede una verifica riuscita del sorgente finale prima della pubblicazione. Continua l’attività per controllare tutte le annotazioni.",
   "Delegated edits must stay within the selected source files.": "Le modifiche delegate devono limitarsi ai file sorgente selezionati.",
-  "The source changed while merging delegated edits. Retry the delegation.": "Il sorgente è cambiato durante l’unione delle modifiche delegate. Delega nuovamente l’attività."
+  "The source changed while merging delegated edits. Retry the delegation.": "Il sorgente è cambiato durante l’unione delle modifiche delegate. Delega nuovamente l’attività.",
+  "Choose deepseek, gemini or codex.": "Scegli DeepSeek, Gemini o Codex.",
+  "Codex could not apply isolated workflow permissions.": "Codex non ha potuto applicare le autorizzazioni di isolamento del flusso di lavoro."
 }
