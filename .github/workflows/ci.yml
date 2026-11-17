@@ -231,6 +231,9 @@ jobs:
       - name: pdf-tools
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-pdf-tools.mjs
+      - name: pdf-crop
+        if: ${{ !cancelled() }}
+        run: node --import tsx scripts/check-pdf-crop.mjs
       - name: pdf-floating-links
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-pdf-floating-links.mjs
@@ -269,6 +272,9 @@ jobs:
       - name: writer-setup
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-writer-setup.mjs
+      - name: pi-agent
+        if: ${{ !cancelled() }}
+        run: node --import tsx scripts/check-pi-agent.mjs
       - name: skill-library
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-skill-library.mjs
@@ -318,6 +324,7 @@ jobs:
           name: paper-workflows
           path: |
             test-results/create-paper-*.png
+            test-results/import-*.png
             test-results/task-restart-*.png
             test-results/section-comments-*.png
             test-results/bulk-tasks-*.png

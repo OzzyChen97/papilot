@@ -16,6 +16,8 @@ with a "Based on Pi" subtitle. It differs from the other agents in two ways:
    pages, the build and references. Each action has a safety tier. Reading
    and editing LaTeX run freely. Data, deletions and commands ask first.
 
+The separate **Pi** agent runs an installed Pi CLI with its existing providers, skills and extensions. See the [Pi setup guide](guide.md#agents). Writer keeps the SDK configuration and writing tools described here.
+
 ## Packaging
 
 `@mariozechner/pi-coding-agent` is a pinned regular dependency, so the agent

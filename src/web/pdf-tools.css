@@ -17,6 +17,7 @@
 .rail-tool{position:relative;display:flex;align-items:center;justify-content:center;width:34px;height:34px;flex:none;border-radius:9px;color:var(--text-2);transition:background .12s,color .12s}
 .rail-tool:hover:not(:disabled){background:var(--bg-hover);color:var(--text)}
 .rail-tool[aria-pressed=true]{background:var(--accent-soft);color:var(--accent)}
+.rail-tool.pdf-crop-toggle.active{background:var(--accent-soft);color:var(--accent)}
 .rail-tool:disabled{opacity:.4;cursor:default}
 .rail-tool:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .rail-separator{flex:none;width:20px;height:1px;margin:5px 0;background:var(--line)}
@@ -45,7 +46,6 @@
   .rail-tools{flex-direction:row;flex:none;width:auto;min-width:0;padding:0;gap:1px;overflow:visible}
   .rail-history{flex-direction:row;margin-top:0;padding-top:0;gap:1px}
   .rail-separator{width:1px;height:18px;margin:0 2px}
-  .rail-collapse-separator{order:1}
   .rail-tool{width:35px;height:36px;border-radius:999px}
   .rail-toggle{order:2;color:var(--text-3)}
   .rail-tool.has-menu::after{right:5px;bottom:5px}
