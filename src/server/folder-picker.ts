@@ -50,12 +50,13 @@ function run(command: Command, signal?: AbortSignal) {
   return new Promise<FolderChoice | 'missing'>((resolve, reject) => {
     const child = spawn(command.command, command.args, { env: { ...process.env, ...command.env }, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: false, signal });
     let stdout = '', stderr = '';
+    child.stdout.setEncoding('utf8'); child.stderr.setEncoding('utf8');
     child.stdout.on('data', chunk => { stdout += chunk; });
     child.stderr.on('data', chunk => { stderr += chunk; });
     child.on('error', error => (error as NodeJS.ErrnoException).code === 'ENOENT' ? resolve('missing') : reject(error));
     child.on('close', code => {
       const path = stdout.replace(/\r?\n$/, '');
-      if (code === 0) resolve({ path: path ? path.replace(/(.)[\\/]$/, '$1') : null });
+      if (code === 0) resolve({ path: path ? path.replace(/([^\\/:])[\\/]$/, '$1') : null });
       else if (command.cancelled(code, stderr)) resolve({ path: null });
       else reject(new Error(stderr.trim() || `${command.command} exited with ${code}.`));
     });
@@ -72,7 +73,14 @@ export function chooseFolder(title: string, start: string, signal?: AbortSignal,
     const stop = new AbortController();
     const choice = (async () => {
       for (const command of pickerCommands(platform, env, title, start)) {
-        const result = await run(command, stop.signal);
+        let result: FolderChoice | 'missing';
+        try { result = await run(command, stop.signal); }
+        catch (error) {
+          if (stop.signal.aborted) throw error;
+          // A server without access to the screen, such as one started over SSH, browses in the page.
+          console.warn(`Folder picker failed: ${(error as Error).message}`);
+          return { unavailable: true } as const;
+        }
         if (result !== 'missing') return result;
       }
       return { unavailable: true } as const;

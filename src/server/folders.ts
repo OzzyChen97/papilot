@@ -7,13 +7,12 @@ const isFolder = (target: string) => fs.promises.stat(target).then(stat => stat.
 
 const absolute = 'Enter an absolute folder path on the computer running Papilot.';
 // A partly typed, moved or file path resolves to its nearest existing folder;
-// an empty path or ~ starts in the home folder.
+// an empty, relative or ~ path starts in the home folder.
 export async function nearestFolder(value: unknown) {
   if (value !== undefined && (typeof value !== 'string' || value.length > 4000 || value.includes('\0'))) throw new Error('Invalid file path.');
   const typed = (value as string | undefined)?.trim() || '~';
   const requested = typed === '~' || /^~[\\/]/.test(typed) ? path.join(os.homedir(), typed.slice(1)) : typed;
-  if (!path.isAbsolute(requested)) throw new Error(absolute);
-  let current = path.resolve(requested);
+  let current = path.isAbsolute(requested) ? path.resolve(requested) : os.homedir();
   while (!await isFolder(current) && path.dirname(current) !== current) current = path.dirname(current);
   return current;
 }

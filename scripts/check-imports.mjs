@@ -12,7 +12,7 @@ const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHA
 const state = { version: '0.6.0', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: true, account: 'Owner', error: null, models: [] } };
 const imported = { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', name: 'My paper', path: '/papers/copied-paper', copied: true, candidates: ['main.tex', 'Thesis/src/chapters/appendices/supplement.tex'], main: 'main.tex', engine: 'pdflatex', phase: 'choose' };
 const requests = [], errors = []; let draft = structuredClone(imported), result = 'failed', failure = 'fontspec needs XeLaTeX';
-let linkResult = 'error', releaseLink;
+let linkResult = 'error', releaseLink, uploadCandidates = null;
 fs.mkdirSync('test-results', { recursive: true });
 await server.register(multipart, { limits: { fileSize: Infinity, files: Infinity, parts: Infinity } });
 server.post('/api/imports/upload', async request => {
@@ -20,7 +20,7 @@ server.post('/api/imports/upload', async request => {
   for await (const file of request.files()) files.push({ path: decodeURIComponent(file.filename), data: (await file.toBuffer()).toString('base64') });
   const body = request.query.archive === 'true' ? { zip: files[0].data } : { files };
   requests.push({ route: '/api/imports/upload', body });
-  draft = structuredClone(imported); return draft;
+  draft = structuredClone(imported); if (uploadCandidates) draft.candidates = uploadCandidates; return draft;
 });
 await server.listen({ host: '127.0.0.1', port: 0 });
 try {
@@ -149,8 +149,13 @@ try {
   try {
     for (const name of ['a"b.tex', 'a%22b.tex', '论文.tex']) fs.writeFileSync(path.join(temp, name), 'asset');
     fs.writeFileSync(path.join(temp, 'main.tex'), 'source'); fs.writeFileSync(path.join(temp, 'figure.png'), Buffer.from([0, 255, 32]));
+    // A detected main file is the only candidate the server sends, so it stays editable.
+    uploadCandidates = ['main.tex'];
     await page.locator('input[webkitdirectory]').setInputFiles(temp);
-    await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
+    const detectedMain = page.getByRole('textbox', { name: 'Main TeX file', exact: true }); await detectedMain.waitFor();
+    assert.equal(await detectedMain.inputValue(), 'main.tex');
+    assert.equal(await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).count(), 0);
+    uploadCandidates = null;
     const uploaded = requests.filter(request => request.route === '/api/imports/upload').at(-1).body.files;
     for (const name of ['a"b.tex', 'a%22b.tex', '论文.tex']) assert.ok(uploaded.some(file => file.path.endsWith('/' + name)), name);
     assert.ok(uploaded.some(file => file.path.endsWith('/main.tex'))); assert.ok(uploaded.some(file => file.data === Buffer.from([0, 255, 32]).toString('base64')));

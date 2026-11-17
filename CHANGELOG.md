@@ -19,7 +19,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Changed
 
-- Add **Browse…** beside folder paths in the browser, for opening an existing paper or choosing where to save a new one. On the computer running Papilot it opens the system folder picker; on other devices, such as a phone over Tailscale, it lists that computer's folders. Choose the main TeX file from a themed list showing each file's folder.
+- Add a folder button (**Browse…**) inside folder path fields in the browser, for opening an existing paper or choosing where to save a new one. On the computer running Papilot it opens the system folder picker; on other devices, such as a phone over Tailscale, it lists that computer's folders. When several TeX files are found, choose the main file from a themed list showing each file's folder.
 
 - Clarify **Import or open**: opening an existing folder edits its original files, while **Import a copy** keeps originals unchanged. The original-folder option is visible immediately. Folder and ZIP uploads stream to disk without the former 64 MiB / 5,000-file caps.
 

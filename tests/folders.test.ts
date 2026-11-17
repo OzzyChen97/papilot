@@ -48,7 +48,7 @@ test('an empty path or ~ starts in the home folder; the filesystem root has no p
 });
 
 test('rejects relative, malformed and unreadable paths with product errors', { skip: process.platform === 'win32' && 'POSIX permissions only.' }, async t => {
-  await assert.rejects(listFolders({ path: 'papers/mine' }), { message: 'Enter an absolute folder path on the computer running Papilot.' });
+  assert.equal((await listFolders({ path: 'papers/mine' })).path, os.homedir(), 'A relative path starts browsing at home');
   await assert.rejects(listFolders({ path: 42 }), { message: 'Invalid file path.' });
   await assert.rejects(listFolders({ path: '/tmp/\0' }), { message: 'Invalid file path.' });
   await assert.rejects(listFolders({ path: '/' + 'a'.repeat(4001) }), { message: 'Invalid file path.' });

@@ -172,8 +172,9 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
         </div>
         <form onSubmit={event => { event.preventDefault(); void build(); }}>
           <label>{t('Paper name')}<input required maxLength={120} value={form.name} disabled={locked} onChange={event => setForm({ ...form, name: event.target.value })}/></label>
-          <div className="import-settings"><label>{t('Main TeX file')}{draft.candidates.length
+          <div className="import-settings"><label>{t('Main TeX file')}{draft.candidates.length > 1
             // The app's list matches the theme and shows long nested paths as name and folder.
+            // A detected main file stays editable, since other files are not listed then.
             ? <ChipSelect className="field-select" label={t('Main TeX file')} value={form.main} disabled={locked} onChange={main => setForm({ ...form, main })} display={form.main.split('/').at(-1) || t('Select')}
               options={draft.candidates.map(file => ({ value: file, label: file.split('/').at(-1)!, detail: file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : undefined }))}/>
             : <input aria-label={t('Main TeX file')} value={form.main} disabled={locked} onChange={event => setForm({ ...form, main: event.target.value })} placeholder="main.tex" spellCheck={false}/>}</label>

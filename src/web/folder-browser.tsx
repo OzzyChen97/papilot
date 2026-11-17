@@ -51,7 +51,7 @@ export function FolderField({ id, name = 'path', api, label, value, onChange, ti
       </div>
       {children}
     </div>
-    {browsing && <FolderBrowser id={id + '-browser'} api={api} start={value} action={action} onPath={onChange} onChoose={path => { setBrowsing(false); onPicked(path); }} onCancel={() => { setBrowsing(false); document.getElementById(id)?.focus(); }}/>}
+    {browsing && <FolderBrowser id={id + '-browser'} api={api} start={value} action={action} onPath={onChange} onChoose={path => { setBrowsing(false); document.getElementById(id)?.focus(); onPicked(path); }} onCancel={() => { setBrowsing(false); document.getElementById(id)?.focus(); }}/>}
   </>;
 }
 

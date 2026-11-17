@@ -44,8 +44,12 @@ test('Linux pickers report choices, cancellation and unavailability', { skip: pr
   assert.equal(second, first, 'A second request waits for the open picker instead of showing another');
   write('zenity', 'exit 1');
   assert.deepEqual(await chooseFolder('Choose', '/home/you', undefined, 'linux', env), { path: null });
+  write('zenity', "printf '%s\\n' 'E:\\'");
+  assert.deepEqual(await chooseFolder('Choose', '/home/you', undefined, 'linux', env), { path: 'E:\\' }, 'A drive root keeps its separator');
   write('zenity', 'echo "Gtk-WARNING: cannot open display" >&2; exit 5');
-  await assert.rejects(chooseFolder('Choose', '/home/you', undefined, 'linux', env), /cannot open display/);
+  const warn = t.mock.method(console, 'warn', () => undefined);
+  assert.deepEqual(await chooseFolder('Choose', '/home/you', undefined, 'linux', env), { unavailable: true }, 'A picker that cannot show browses in the page');
+  assert.match(String(warn.mock.calls[0].arguments[0]), /cannot open display/);
 });
 
 test('a shared picker closes only after every waiting request leaves', { skip: process.platform === 'win32' && 'Uses POSIX shell scripts.' }, async t => {
