@@ -6,7 +6,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { Codex } from './codex.ts';
 import { AntigravityAgent, type AgentRuntime } from './agents.ts';
-import { ACP_PROFILES, AcpAgent } from './acp.ts';
+import { ACP_PROFILES, AcpAgent, type AcpProfile } from './acp.ts';
 import { editWorkflowSources, type WorkflowChange, type WorkflowEdit } from './collaboration-edits.ts';
 import { realPath } from './real-path.ts';
 import { canonicalGroup, type GroupInstructions } from '../note-groups.ts';
@@ -202,7 +202,7 @@ export async function runWorkflowHelper(worker: WorkflowWorker, prompt: string, 
   const codex = worker.agent === 'codex';
   const runtime: AgentRuntime = factory?.(cwd) || (codex ? new Codex() : worker.agent === 'antigravity'
     ? new AntigravityAgent(undefined, path.join(cwd, 'conversations.json'), undefined, files ? { files } : 'read-only')
-    : new AcpAgent({ ...ACP_PROFILES.opencode, modelEfforts: false, permissionModes: { 'papilot-default': { label: 'Scoped edits', detail: 'Only delegated source files' } }, env: () => ({ ...process.env, OPENCODE_CONFIG_CONTENT: workflowOpenCodeConfig(edit) }) }));
+    : new AcpAgent(workflowOpenCodeProfile(edit)));
   let rejectStopped!: (error: Error) => void;
   const stopped = new Promise<never>((_, reject) => { rejectStopped = reject; });
   let cancelled = false;
@@ -269,6 +269,11 @@ export async function runWorkflowHelper(worker: WorkflowWorker, prompt: string, 
   }
 }
 
+// An OpenCode worker: scoped permissions, and no catalog-wide effort probing,
+// while its model and effort are still confirmed before it may prompt.
+export function workflowOpenCodeProfile(edit?: WorkflowEdit): AcpProfile {
+  return { ...ACP_PROFILES.opencode, discoverEfforts: false, permissionModes: { 'papilot-default': { label: 'Scoped edits', detail: 'Only delegated source files' } }, env: () => ({ ...process.env, OPENCODE_CONFIG_CONTENT: workflowOpenCodeConfig(edit) }) };
+}
 // Native V2 rules, plus the equivalent V1 configuration for installed older CLIs.
 export function workflowOpenCodeConfig(edit?: WorkflowEdit) {
   const files = edit?.files.flatMap(file => [file, path.join(edit.cwd, file).replaceAll('\\', '/')]) || [];
