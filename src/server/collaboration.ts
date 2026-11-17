@@ -76,33 +76,39 @@ export function sourceEvidence(root: string, value: unknown): { file: string; qu
     return { file, quote, source };
   });
 }
+const listOptions = (cwd: string) => ({ cwd, maxBuffer: 32 * 1024 * 1024, encoding: 'utf8' as const });
+const listFiles = async (root: string) => (await exec('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], listOptions(root))).stdout.split('\0').filter(Boolean);
+// One listed entry's mode and bytes. A submodule is listed as a single folder:
+// its own files stand for it, so any edit inside it changes the fingerprint.
+async function hashEntry(hash: ReturnType<typeof createHash>, resolved: string) {
+  const stat = fs.lstatSync(resolved);
+  hash.update(String(stat.mode));
+  if (!stat.isDirectory()) { hash.update(stat.isSymbolicLink() ? fs.readlinkSync(resolved) : fs.readFileSync(resolved)); return; }
+  // An uninitialized submodule is an empty folder.
+  if (!fs.existsSync(path.join(resolved, '.git'))) { hash.update('directory'); return; }
+  for (const file of (await listFiles(resolved)).sort()) {
+    hash.update(file + '\0');
+    try { await hashEntry(hash, path.join(resolved, file)); }
+    catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT') throw e; hash.update('deleted'); }
+  }
+}
 export async function workflowSnapshot(root: string, evidenceFiles: string[] = []) {
-  const options = { cwd: root, maxBuffer: 32 * 1024 * 1024, encoding: 'utf8' as const };
-  const { stdout: names } = await exec('git', ['ls-files', '-z', '--cached', '--others', '--exclude-standard'], options);
   const hash = createHash('sha256'), sources: Record<string, string> = {};
-  for (const file of [...new Set([...names.split('\0').filter(Boolean), ...evidenceFiles])].sort()) {
+  for (const file of [...new Set([...await listFiles(root), ...evidenceFiles])].sort()) {
     hash.update(file + '\0');
     try {
-      const resolved = path.join(root, file), stat = fs.lstatSync(resolved);
-      hash.update(String(stat.mode));
+      const resolved = path.join(root, file);
       if (evidenceFiles.includes(file)) {
+        hash.update(String(fs.lstatSync(resolved).mode));
         const real = fs.realpathSync(resolved), relative = path.relative(fs.realpathSync(root), real);
         if (path.isAbsolute(relative) || relative.startsWith('..' + path.sep)) throw new Error('Evidence must name a source file inside this task.');
         const bytes = fs.readFileSync(real);
         hash.update(relative + '\0'); hash.update(bytes);
         sources[file] = bytes.toString('utf8');
-      } else if (stat.isDirectory()) {
-        // A submodule is listed as one entry: its commit and uncommitted changes
-        // stand for its files. An uninitialized one is an empty folder.
-        if (fs.existsSync(path.join(resolved, '.git'))) {
-          const sub = { ...options, cwd: resolved };
-          hash.update((await exec('git', ['rev-parse', 'HEAD'], sub)).stdout);
-          hash.update((await exec('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], sub)).stdout);
-        } else hash.update('directory');
-      } else hash.update(stat.isSymbolicLink() ? fs.readlinkSync(resolved) : fs.readFileSync(resolved));
+      } else await hashEntry(hash, resolved);
     } catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT' || evidenceFiles.includes(file)) throw e; hash.update('deleted'); }
   }
-  const { stdout: diff } = await exec('git', ['diff', '--no-ext-diff', '--no-textconv', 'HEAD', '--'], options);
+  const { stdout: diff } = await exec('git', ['diff', '--no-ext-diff', '--no-textconv', 'HEAD', '--'], listOptions(root));
   return { fingerprint: hash.digest('hex'), diff, sources };
 }
 export async function delegateWorkflow(root: string, notes: WorkflowNote[], args: any, generate: WorkflowGenerate, signal: AbortSignal, current: () => boolean, worker: (role: CollaborationRole) => WorkflowWorker) {

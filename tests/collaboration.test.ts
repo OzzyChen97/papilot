@@ -351,8 +351,12 @@ test('a submodule is fingerprinted by its commit and changes instead of being re
     git(f.root, 'submodule', 'add', library, 'lib'); git(f.root, 'commit', '-m', 'Add macros');
     const before = await workflowSnapshot(f.root);
     assert.equal((await workflowSnapshot(f.root)).fingerprint, before.fingerprint);
-    fs.appendFileSync(path.join(f.root, 'lib', 'macros.tex'), '% edited\n');
-    assert.notEqual((await workflowSnapshot(f.root)).fingerprint, before.fingerprint);
+    // Each further edit counts, including in an already dirty submodule and its untracked files.
+    const prints = [before.fingerprint];
+    for (const change of [() => fs.appendFileSync(path.join(f.root, 'lib', 'macros.tex'), '% edited\n'), () => fs.appendFileSync(path.join(f.root, 'lib', 'macros.tex'), '% again\n'), () => fs.writeFileSync(path.join(f.root, 'lib', 'extra.tex'), 'New'), () => fs.writeFileSync(path.join(f.root, 'lib', 'extra.tex'), 'Newer')]) {
+      change(); const next = (await workflowSnapshot(f.root, ['main.tex'])).fingerprint;
+      assert.ok(!prints.includes(next)); prints.push(next);
+    }
   } finally { f.close(); fs.rmSync(library, { recursive: true, force: true }); }
 });
 test('audit binds the quoted source bytes to the fingerprint before asking the verifier', async () => {
