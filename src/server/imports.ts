@@ -245,7 +245,13 @@ export class PaperImports {
   constructor(private manuscripts: Manuscripts, private directory = DATA, private registered: (root: string) => boolean = () => false, private source = downloadPaperSource) {
     // Staged ZIPs belong to requests that ended with a previous server process.
     if (fs.existsSync(directory)) for (const name of fs.readdirSync(directory)) if (name.startsWith('upload-')) fs.rmSync(path.join(directory, name), { recursive: true, force: true });
-    const folder = path.join(directory, 'imports');
+    const folder = path.join(directory, 'imports'), papers = path.join(directory, 'papers');
+    // A copy is saved with its receipt only once complete and is never added to the workspace without one,
+    // so a copy without a receipt was interrupted by a previous server process.
+    if (fs.existsSync(papers)) for (const id of fs.readdirSync(papers)) {
+      const root = path.join(papers, id);
+      if (/^[a-f0-9-]{36}$/.test(id) && !fs.existsSync(path.join(folder, id + '.json')) && !registered(root)) fs.rmSync(root, { recursive: true, force: true });
+    }
     if (fs.existsSync(folder)) for (const file of fs.readdirSync(folder)) {
       if (/^[a-f0-9-]{36}\.json$/.test(file)) try { this.get(file.slice(0, -5)); } catch { /* An unreadable receipt must not prevent other papers from opening. */ }
     }

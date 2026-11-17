@@ -165,13 +165,16 @@ test('malformed filename escapes report an invalid path instead of a decoder err
   assert.deepEqual(fs.readdirSync(path.join(f.directory, 'papers')), []);
 });
 
-test('staged ZIPs left by an earlier server process are removed on startup', () => {
+test('staging and incomplete copies left by an earlier server process are removed on startup', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-upload-restart-'));
   try {
+    const ids = { interrupted: '00000000-0000-4000-8000-000000000001', imported: '00000000-0000-4000-8000-000000000002', registered: '00000000-0000-4000-8000-000000000003' };
     fs.mkdirSync(path.join(directory, 'upload-stale')); fs.writeFileSync(path.join(directory, 'upload-stale', 'source.zip'), 'partial');
-    fs.mkdirSync(path.join(directory, 'papers', 'kept'), { recursive: true });
-    new PaperImports(new Manuscripts(), directory);
-    assert.deepEqual(fs.readdirSync(directory), ['papers']);
-    assert.ok(fs.existsSync(path.join(directory, 'papers', 'kept')));
+    for (const id of [...Object.values(ids), 'not-an-import']) { fs.mkdirSync(path.join(directory, 'papers', id), { recursive: true }); fs.writeFileSync(path.join(directory, 'papers', id, 'main.tex'), source); }
+    fs.mkdirSync(path.join(directory, 'imports'));
+    fs.writeFileSync(path.join(directory, 'imports', ids.imported + '.json'), JSON.stringify({ id: ids.imported, path: path.join(directory, 'papers', ids.imported), copied: true, name: 'Imported', phase: 'ready' }));
+    new PaperImports(new Manuscripts(), directory, root => root === path.join(directory, 'papers', ids.registered));
+    assert.deepEqual(fs.readdirSync(directory).sort(), ['imports', 'papers']);
+    assert.deepEqual(fs.readdirSync(path.join(directory, 'papers')).sort(), [ids.imported, ids.registered, 'not-an-import'].sort());
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
