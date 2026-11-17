@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "enabled 必須為 true 或 false。",
   "Provide source evidence as an array.": "請以陣列形式提供原始碼依據。",
   "Evidence must name a source file inside this task.": "依據必須指向此任務內的原始碼檔案。",
-  "Choose deepseek or argon.": "請選擇 deepseek 或 argon。",
+  "Choose deepseek or gemini.": "請選擇 deepseek 或 gemini。",
   "Provide unique annotation IDs.": "請提供不重複的註解 ID。",
   "Unknown annotation ID.": "未知的註解 ID。",
   "Read the relevant source before delegating.": "分派任務前請先閱讀相關原始碼。",

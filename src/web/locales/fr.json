@@ -1481,5 +1481,5 @@
   "Collaboration mode": "Mode collaboratif",
   "Experiments": "Fonctions expérimentales",
   "Enable collaboration mode": "Activer le mode collaboratif",
-  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex répartit les tâches entre DeepSeek via OpenCode Go et Argon via Antigravity, puis vérifie chaque annotation. Une connexion à ces services sur l’hôte est requise. Désactivé par défaut."
+  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex coordonne DeepSeek via OpenCode Go et Gemini via Antigravity, puis vérifie chaque annotation. La connexion à ces services est requise sur l’hôte. Désactivé par défaut."
 }

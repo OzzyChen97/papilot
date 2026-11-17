@@ -5979,9 +5979,9 @@
     "textHash": "2ba0239aefb47019b3cf199f6e9bc7ab794e2b4de486b5bc9954ad473de23923",
     "model": "codex"
   },
-  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": {
-    "revision": "48daaf0d549853031fc86dc3752b3f7b9d3ef53d97153692918a38f3300a1df0",
-    "textHash": "5e3c645c7fd2bb0cdf05fb7272fdba3aa08ed181e605eda2f00cded493d03bd4",
+  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": {
+    "revision": "8980609906b92d308d80685f23e98bba403999336f41140d32199b1dd353700a",
+    "textHash": "7bfbbf60f09c9d27e1171f9e428d0cc006bb6f67744228a9d7ca5f30f1a7f466",
     "model": "codex"
   }
 }

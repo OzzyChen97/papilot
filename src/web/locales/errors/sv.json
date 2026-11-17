@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "Skicka enabled som true eller false.",
   "Provide source evidence as an array.": "Ange källbelägg som en array.",
   "Evidence must name a source file inside this task.": "Beläggen måste ange en källfil inom den här uppgiften.",
-  "Choose deepseek or argon.": "Välj deepseek eller argon.",
+  "Choose deepseek or gemini.": "Välj deepseek eller gemini.",
   "Provide unique annotation IDs.": "Ange unika antecknings-ID:n.",
   "Unknown annotation ID.": "Okänt antecknings-ID.",
   "Read the relevant source before delegating.": "Läs relevant källtext innan du delegerar.",

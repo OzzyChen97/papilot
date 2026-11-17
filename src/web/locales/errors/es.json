@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "Envíe enabled como true o false.",
   "Provide source evidence as an array.": "Proporcione las pruebas del código fuente como una matriz.",
   "Evidence must name a source file inside this task.": "Las pruebas deben indicar un archivo fuente de esta tarea.",
-  "Choose deepseek or argon.": "Elija deepseek o argon.",
+  "Choose deepseek or gemini.": "Elija deepseek o gemini.",
   "Provide unique annotation IDs.": "Proporcione identificadores de anotación únicos.",
   "Unknown annotation ID.": "Identificador de anotación desconocido.",
   "Read the relevant source before delegating.": "Lea el código fuente pertinente antes de delegar.",

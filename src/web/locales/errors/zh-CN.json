@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "enabled 必须为 true 或 false。",
   "Provide source evidence as an array.": "请以数组形式提供源文件依据。",
   "Evidence must name a source file inside this task.": "依据必须指向此任务内的源文件。",
-  "Choose deepseek or argon.": "请选择 deepseek 或 argon。",
+  "Choose deepseek or gemini.": "请选择 deepseek 或 gemini。",
   "Provide unique annotation IDs.": "请提供不重复的批注 ID。",
   "Unknown annotation ID.": "未知的批注 ID。",
   "Read the relevant source before delegating.": "分配任务前请先阅读相关源文件。",

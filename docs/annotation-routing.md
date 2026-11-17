@@ -2,7 +2,7 @@
 
 An opt-in experiment for editing many PDF annotations with the existing Codex app-server. It is hidden by default. Open **Settings → About Papilot → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
 
-Codex plans the work by annotation intent and source span. Simple edits go to DeepSeek through **OpenCode Go**; prose polishing goes to Gemini Argon through Antigravity. Codex keeps reasoning, factual checks, references, formatting and ambiguous changes. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
+Codex plans the work by annotation intent and source span. Simple edits go to DeepSeek through **OpenCode Go**; prose polishing goes to Gemini through Antigravity (Gemini 3.8 Flash by default). Codex keeps reasoning, factual checks, references, formatting and ambiguous changes. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
 
 ![Collaboration mode in the experimental settings](assets/collaboration-desktop.png)
 
@@ -12,7 +12,7 @@ Codex plans the work by annotation intent and source span. Simple edits go to De
 
 Sign in to Codex as usual. Install OpenCode on the machine running Papilot, open its TUI, and use `/connect` to select **OpenCode Go** and enter your Go key. Check `/models` for a DeepSeek model. This experiment defaults to `opencode-go/deepseek-v4.1-flash`. `PAPILOT_COLLABORATION_DEEPSEEK_MODEL` can select another available `opencode-go/deepseek-*` model; other providers are rejected. OpenCode owns the credentials. Papilot does not read or copy its key. Go account billing settings, including optional extra usage, still apply.
 
-Install and sign in to `agy` for Argon. Papilot discovers an Argon model from the native catalog. `PAPILOT_COLLABORATION_ARGON_MODEL` can select another Argon catalog ID. `PAPILOT_OPENCODE_BIN` and `PAPILOT_AGY_BIN` override CLI paths. `PAPILOT_AGY_PROXY` applies the configured HTTP proxy only to Antigravity. Restart the Papilot host after changing environment variables.
+Install and sign in to `agy` for Gemini. The default is `gemini-3.8-flash`. `PAPILOT_COLLABORATION_GEMINI_MODEL` can select another available `gemini-*` catalog ID, including Argon when the account offers it. Use Papilot’s grouped model ID (for example `gemini-4-argon`, without an effort suffix). An unavailable selection fails explicitly; it does not switch models. `PAPILOT_OPENCODE_BIN` and `PAPILOT_AGY_BIN` override CLI paths. `PAPILOT_AGY_PROXY` applies the configured HTTP proxy only to Antigravity. Restart the Papilot host after changing environment variables.
 
 See [OpenCode Go setup](https://opencode.ai/docs/console/go/) and [Antigravity CLI](https://antigravity.google/docs/cli/headless). No Pi installation is needed.
 

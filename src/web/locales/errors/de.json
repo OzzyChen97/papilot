@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "Senden Sie enabled als true oder false.",
   "Provide source evidence as an array.": "Geben Sie Quellbelege als Array an.",
   "Evidence must name a source file inside this task.": "Belege müssen eine Quelldatei innerhalb dieser Aufgabe benennen.",
-  "Choose deepseek or argon.": "Wählen Sie deepseek oder argon.",
+  "Choose deepseek or gemini.": "Wählen Sie deepseek oder gemini.",
   "Provide unique annotation IDs.": "Geben Sie eindeutige Anmerkungs-IDs an.",
   "Unknown annotation ID.": "Unbekannte Anmerkungs-ID.",
   "Read the relevant source before delegating.": "Lesen Sie vor dem Delegieren die relevante Quelle.",

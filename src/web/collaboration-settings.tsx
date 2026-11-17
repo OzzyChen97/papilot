@@ -14,7 +14,7 @@ export function CollaborationSettings({ enabled, online, save }: CollaborationSe
     <div className="settings-row settings-toggle">
       <div className="settings-text">
         <label className="settings-name" htmlFor={id}>{t('Enable collaboration mode')}</label>
-        <p id={id + '-detail'}>{t('Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.')}</p>
+        <p id={id + '-detail'}>{t('Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.')}</p>
       </div>
       <input id={id} type="checkbox" className="switch" role="switch" aria-describedby={id + '-detail'} checked={enabled} disabled={!online || saving} onChange={event => void change(event.target.checked)}/>
     </div>

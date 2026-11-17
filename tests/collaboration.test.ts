@@ -39,7 +39,7 @@ test('parallel proposals for two spans in one file never change the source', asy
   const generate: WorkflowGenerate = async (executor, prompt) => { assert.match(prompt, /Do not use tools/); await new Promise<void>(resolve => releases.push(resolve)); return executor + ' proposal'; };
   try {
     const before = await workflowSnapshot(f.root);
-    const jobs = notes.map((note, i) => delegateWorkflow(f.root, notes, { executor: i ? 'argon' : 'deepseek', annotationIds: [note.id], instruction: note.comment, sources: [{ file: 'main.tex', quote: note.quote }] }, generate, signal()));
+    const jobs = notes.map((note, i) => delegateWorkflow(f.root, notes, { executor: i ? 'gemini' : 'deepseek', annotationIds: [note.id], instruction: note.comment, sources: [{ file: 'main.tex', quote: note.quote }] }, generate, signal()));
     assert.equal(releases.length, 2); releases.forEach(release => release());
     const replies = await Promise.all(jobs); assert.equal(replies.length, 2);
     assert.deepEqual(await workflowSnapshot(f.root), before);
@@ -72,10 +72,11 @@ test('audit enforces exact coverage and independent verification, including unre
 });
 class Helper extends EventEmitter {
   ready = false; cwd = ''; closed = false; calls: any[] = [];
+  models = ['opencode-go/deepseek-v4.1-flash', 'gemini-3.8-flash', 'gemini-4-argon', 'claude-sonnet-4-6'];
   async start() { this.ready = true; }
   async request(method: string, params: any): Promise<any> {
     this.calls.push({ method, params });
-    if (method === 'model/list') return { data: [{ model: 'opencode-go/deepseek-v4.1-flash' }, { model: 'gemini-4-argon' }] };
+    if (method === 'model/list') return { data: this.models.map(model => ({ model })) };
     if (method === 'thread/start') { this.cwd = params.cwd; return { thread: { id: 'helper' } }; }
     if (method === 'turn/start') setImmediate(() => { this.emit('notification', { method: 'item/completed', params: { threadId: 'helper', item: { type: 'agentMessage', text: 'Proposal' } } }); this.emit('notification', { method: 'turn/completed', params: { threadId: 'helper', turn: { status: 'completed' } } }); });
     return { turn: { id: 'turn' } };
@@ -90,6 +91,31 @@ test('native helper pins Go, uses disposable read-only cwd, closes it, and rejec
   const previous = process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL;
   try { process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = 'deepseek/deepseek-v4'; await assert.rejects(runWorkflowHelper('deepseek', 'Fix', signal(), undefined, () => new Helper()), /must use an opencode-go/); }
   finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL; else process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = previous; }
+});
+test('Gemini proposals default to Flash and allow an explicit available Gemini model', async () => {
+  const previous = process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
+  try {
+    delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
+    for (const model of ['gemini-3.8-flash', 'gemini-4-argon']) {
+      if (model !== 'gemini-3.8-flash') process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model;
+      const helper = new Helper();
+      assert.equal(await runWorkflowHelper('gemini', 'Polish', signal(), undefined, () => helper), 'Proposal');
+      const start = helper.calls.find(call => call.method === 'thread/start').params;
+      assert.equal(start.model, model); assert.equal(start.sandbox, 'read-only');
+      assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
+    }
+  } finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL; else process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = previous; }
+});
+test('missing or non-Gemini polishing models fail without a fallback or model turn', async () => {
+  const previous = process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
+  try {
+    for (const model of [undefined, 'gemini-missing', 'claude-sonnet-4-6']) {
+      if (model) process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model; else delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
+      const helper = new Helper(); helper.models = ['gemini-4-argon', 'claude-sonnet-4-6'];
+      await assert.rejects(runWorkflowHelper('gemini', 'Polish', signal(), undefined, () => helper), /model is unavailable/);
+      assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); assert.equal(helper.closed, true);
+    }
+  } finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL; else process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = previous; }
 });
 test('stopping a native helper closes its process and ignores late results', async () => {
   const helper = new Helper(), controller = new AbortController();

@@ -377,7 +377,7 @@
   "Send enabled as true or false.": "enabled는 true 또는 false여야 합니다.",
   "Provide source evidence as an array.": "소스 근거를 배열로 제공하세요.",
   "Evidence must name a source file inside this task.": "근거는 이 작업 안의 소스 파일을 가리켜야 합니다.",
-  "Choose deepseek or argon.": "deepseek 또는 argon을 선택하세요.",
+  "Choose deepseek or gemini.": "deepseek 또는 gemini을 선택하세요.",
   "Provide unique annotation IDs.": "중복되지 않는 주석 ID를 제공하세요.",
   "Unknown annotation ID.": "알 수 없는 주석 ID입니다.",
   "Read the relevant source before delegating.": "작업을 위임하기 전에 관련 소스를 읽으세요.",

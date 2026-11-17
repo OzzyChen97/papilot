@@ -1459,9 +1459,9 @@
     "textHash": "70e9072fc446c6507b13850a7621f47b3d4b3ae34e81cda0174e0ef5f33cb762",
     "model": "codex"
   },
-  "Choose deepseek or argon.": {
-    "revision": "0a51aafeed634b177ef5b481fa15d4633f76d8471234107e68c824dc81de5edf",
-    "textHash": "c7bbc67c7fc52181182a838d6f8bc3d65b23b7276eebe77860b22c3b56df0865",
+  "Choose deepseek or gemini.": {
+    "revision": "c3aa9068bc2f4d29e59d3556812290fa124984232986b1272becd5fac58cdfa1",
+    "textHash": "adb6f4ad10c253f2fcf9b00e44336f380e771f4a063171f407b69efc2731f6d3",
     "model": "codex"
   },
   "Provide unique annotation IDs.": {
