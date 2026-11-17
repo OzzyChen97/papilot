@@ -22,14 +22,15 @@ try {
     const opencode = { ...runtime, models: [{ id: 'provider/flash-test', name: 'Flash Test', isDefault: false, efforts: ['low', 'high', 'max'], defaultEffort: null }] };
     const state = { version: 'test', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime, runtimes: { codex: runtime, collaboration: { ...runtime, hidden: true }, antigravity: gemini, opencode } };
     const codexRoute = { agent: 'codex', model: null, effort: null };
-    let fail = false, saves = 0, routes = { quick: codexRoute, polish: codexRoute, rigorous: codexRoute };
+    let fail = false, saves = 0, hold = null, routes = { quick: codexRoute, polish: codexRoute, rigorous: codexRoute };
     await context.addInitScript(language => { localStorage.setItem('papilot:language', language); localStorage.setItem('papilot:setup-seen', '1'); }, language);
-    await context.route('**/api/**', route => {
+    await context.route('**/api/**', async route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/state') return route.fulfill({ json: state });
       if (url.pathname === '/api/collaboration') {
         if (route.request().method() === 'GET') return route.fulfill({ json: { enabled: !state.runtimes.collaboration.hidden, routes } });
         saves++;
+        if (hold) await hold;
         if (fail) return route.fulfill({ status: 503, json: { error: 'Fixture save failed' } });
         const change = route.request().postDataJSON();
         if (change.enabled !== undefined) state.runtimes.collaboration.hidden = !change.enabled;
@@ -70,6 +71,17 @@ try {
     const effort = polish.getByRole('slider');
     await effort.focus(); await page.keyboard.press('ArrowRight');
     await expect.poll(() => routes.polish.effort).toBe('high');
+    // Saves go one at a time, so a slow answer for an earlier level cannot undo a later one.
+    let release; hold = new Promise(resolve => { release = resolve; });
+    const before = saves;
+    await page.keyboard.press('ArrowLeft'); await page.keyboard.press('ArrowLeft');
+    await expect.poll(() => saves).toBe(before + 1);
+    await page.waitForTimeout(300); assert.equal(saves, before + 1, 'the second save waits for the first');
+    await expect(effort).toHaveValue('0');
+    hold = null; release();
+    await expect.poll(() => saves).toBe(before + 2);
+    await expect.poll(() => routes.polish.effort).toBe('low');
+    await page.waitForTimeout(300); await expect(effort).toHaveValue('0');
     await selectOption(quick.locator('[role="combobox"]'), JSON.stringify(['opencode', 'provider/flash-test']));
     await quick.getByRole('slider').focus(); await page.keyboard.press('End');
     await expect.poll(() => routes.quick).toEqual({ agent: 'opencode', model: 'provider/flash-test', effort: 'max' });
@@ -93,7 +105,7 @@ try {
     if (width < 600) await page.locator('.settings-mobile-back').click();
     await page.locator('[data-settings-page="general"]').click();
     await expect(model).toContainText('Codex');
-    assert.equal(saves, language === 'en' ? 7 : 6);
+    assert.equal(saves, language === 'en' ? 9 : 8);
     routes = { quick: codexRoute, polish: codexRoute, rigorous: codexRoute };
     await context.close();
   }
