@@ -227,7 +227,7 @@ const taskPath = (file: string, root: string) => root && file.startsWith(root + 
 // Items are named task:turn:item; a user message starts the next turn.
 const turnOf = (item: TimelineItem) => item.type === 'user' ? null : item.id.split(':')[1] || null;
 const editedFiles = (item: TimelineItem, root: string) => item.text.split('\n').filter(Boolean).map(file => taskPath(file, root));
-const toolState = (item: TimelineItem) => item.status === 'inProgress' ? 'running' : item.status && item.status !== 'completed' ? 'failed' : '';
+const toolState = (item: TimelineItem) => item.status === 'inProgress' ? 'running' : item.status === 'interrupted' ? 'stopped' : item.status && item.status !== 'completed' ? 'failed' : '';
 
 // Preserve names on historical messages from formerly shared workspaces.
 const senderOf = (author: Author | undefined) => ({ mine: !author, name: author?.name || '' });
@@ -301,29 +301,51 @@ function PageStrip({ items }: { items: TimelineItem[] }) {
   })}</div>;
 }
 
-const TimelineEntry = memo(function TimelineEntry({ item, agent, root, pages = true }: { item: TimelineItem; agent: string; root: string; pages?: boolean }) {
+function toolLabel(item: TimelineItem, root: string) {
+  const files = item.type === 'files' ? editedFiles(item, root) : [];
+  return item.type === 'command' ? shellCommand(item.text) || t('Run command') : item.type === 'files' ? (files.length === 1 ? t('Edited {file}', { file: files[0] }) : t('Edited {n} files', { n: files.length })) : item.type === 'pdf' ? (item.text ? t('Viewed the PDF: {places}', { places: item.text }) : t('Viewed the PDF')) : toolSentence(item) || item.text || t('Run tool');
+}
+
+// One worker in Collaboration mode can be stopped; the coordinator does its work instead.
+function StopWorker({ item }: { item: TimelineItem }) {
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  async function stop() { setBusy(true); setError(''); try { await api(`/tasks/${encodeURIComponent(item.taskId)}/workers/stop`, { item: item.id }); } catch (e) { setError((e as Error).message); setBusy(false); } }
+  return <div className="worker-stop"><button type="button" className="button secondary compact" disabled={busy} onClick={() => void stop()}>{t('Stop worker')}</button>{error && <p className="inline-error" role="alert">{error}</p>}</div>;
+}
+
+const TimelineEntry = memo(function TimelineEntry({ item, agent, root, pages = true, steps }: { item: TimelineItem; agent: string; root: string; pages?: boolean; steps?: TimelineItem[] }) {
   // Memoized, so it follows a language change itself rather than through App.
   useLanguage();
   if (PlaygroundProgress && item.type === 'demo-progress') return <Suspense fallback={null}><PlaygroundProgress item={item}/></Suspense>;
   if (item.type === 'user') return <UserMessage item={item} agent={agent}/>;
   if (item.type === 'assistant') return <article className="message assistant" aria-label={`${agent}, ${time(item.createdAt)}`}><div className="message-body markdown"><Markdown text={item.text}/></div><div className="message-actions"><CopyButton text={item.text}/><time dateTime={new Date(item.createdAt).toISOString()}>{time(item.createdAt)}</time></div></article>;
   const files = item.type === 'files' ? editedFiles(item, root) : [];
-  const label = item.type === 'command' ? shellCommand(item.text) || t('Run command') : item.type === 'files' ? (files.length === 1 ? t('Edited {file}', { file: files[0] }) : t('Edited {n} files', { n: files.length })) : item.type === 'pdf' ? (item.text ? t('Viewed the PDF: {places}', { places: item.text }) : t('Viewed the PDF')) : toolSentence(item) || item.text || t('Run tool');
+  const label = toolLabel(item, root);
   const detail = item.type === 'files' ? null : item.detail;
-  const note = toolNote(item);
   const state = toolState(item);
-  const row = <details className={'tool-item ' + state} data-kind={item.type === 'tool' ? item.tool?.kind || 'tool' : item.type}><summary><Icon name={toolIcon(item)} size={14}/><span className="tool-label">{label}{note && <span className="tool-note">{note}</span>}</span>{state === 'running' ? <span className="spinner" aria-label={t('Running')}/> : state && <span className="tool-status">{item.status === 'declined' ? t('Declined') : t('Failed')}</span>}</summary>{item.type === 'files' ? <FileDiffs changes={item.changes} files={files}/> : detail && <pre>{detail}</pre>}</details>;
+  // A running worker's latest step shows on its delegation line, as with a subagent.
+  const latest = state === 'running' ? steps?.findLast(step => step.type !== 'assistant') : undefined;
+  const note = latest ? toolLabel(latest, root) : toolNote(item);
+  const delegation = item.type === 'tool' && item.text.startsWith('workflow_delegate');
+  const row = <details className={'tool-item ' + state} data-kind={item.type === 'tool' ? item.tool?.kind || 'tool' : item.type}><summary><Icon name={toolIcon(item)} size={14}/><span className="tool-label">{label}{note && <span className="tool-note">{note}</span>}</span>{state === 'running' ? <span className="spinner" aria-label={t('Running')}/> : state && <span className="tool-status">{item.status === 'declined' ? t('Declined') : state === 'stopped' ? t('Stopped') : t('Failed')}</span>}</summary>
+    {item.type === 'files' ? <FileDiffs changes={item.changes} files={files}/> : detail && <pre>{detail}</pre>}
+    {steps?.length ? <div className="tool-group-items worker-steps">{steps.map(step => step.type === 'assistant'
+      ? <div key={step.id} className="worker-message markdown"><Markdown text={step.text}/></div>
+      : <TimelineEntry key={step.id} item={step} agent={agent} root={root} pages={false}/>)}</div> : null}
+    {delegation && item.changes?.length ? <FileDiffs changes={item.changes} files={item.changes.map(change => change.path)}/> : null}
+    {delegation && state === 'running' && <StopWorker item={item}/>}
+  </details>;
   return pages && item.pages?.length ? <>{row}<PageStrip items={[item]}/></> : row;
 });
 
 // Consecutive commands, edits and tool calls fold into one line that opens to the list.
-function ToolGroup({ items, agent, root }: { items: TimelineItem[]; agent: string; root: string }) {
+function ToolGroup({ items, agent, root, steps }: { items: TimelineItem[]; agent: string; root: string; steps: Map<string, TimelineItem[]> }) {
   // The thread reuses its elements, so the summary follows a language change itself.
   useLanguage();
   const summary = toolSummary(items, item => editedFiles(item, root));
   const running = items.some(item => toolState(item) === 'running'), failed = items.filter(item => toolState(item) === 'failed').length;
   return <><details className="tool-group"><summary><Icon name={summary.icon} size={14}/><span className="tool-group-label">{summary.text}</span>{running ? <span className="spinner" aria-label={t('Running')}/> : failed ? <span className="tool-status">{t('{n} failed', { n: failed })}</span> : null}<Icon name="chevronDown" size={13}/></summary>
-    <div className="tool-group-items">{items.map(item => <TimelineEntry key={item.id} item={item} agent={agent} root={root} pages={false}/>)}</div>
+    <div className="tool-group-items">{items.map(item => <TimelineEntry key={item.id} item={item} agent={agent} root={root} pages={false} steps={steps.get(item.id)}/>)}</div>
   </details><PageStrip items={items}/></>;
 }
 
@@ -399,15 +421,21 @@ function Activity({ runtimes, relatedTasks, onOpenTask, onRestarted, source, onR
   // The draft re-renders this panel on every keystroke; the same elements let
   // React skip the conversation until its items change.
   const agent = agentName(task), review = task.mode === 'review', root = task.worktree;
-  const thread = useMemo(() => timelineEntries(visibleTimeline(items).filter(item => item.type !== 'reviewOutput').map(item => review && item.type === 'assistant' ? { ...item, text: aiReviewSummary(item.text) } : item))
+  const thread = useMemo(() => {
+    // Collaboration workers' steps belong under their delegation, not in the thread.
+    const steps = new Map<string, TimelineItem[]>(), lines = new Set(items.map(item => item.id));
+    const nested = (item: TimelineItem) => Boolean(item.parent && lines.has(item.parent));
+    for (const item of items) if (nested(item)) { const list = steps.get(item.parent!); if (list) list.push(item); else steps.set(item.parent!, [item]); }
+    return timelineEntries(visibleTimeline(items).filter(item => item.type !== 'reviewOutput' && !nested(item)).map(item => review && item.type === 'assistant' ? { ...item, text: aiReviewSummary(item.text) } : item))
     .flatMap((entry, index, all) => {
-      const shown = entry.length > 1 ? <ToolGroup key={entry[0].id} items={entry} agent={agent} root={root}/> : <TimelineEntry key={entry[0].id} item={entry[0]} agent={agent} root={root}/>;
+      const shown = entry.length > 1 ? <ToolGroup key={entry[0].id} items={entry} agent={agent} root={root} steps={steps}/> : <TimelineEntry key={entry[0].id} item={entry[0]} agent={agent} root={root} steps={steps.get(entry[0].id)}/>;
       // A finished turn that changed files ends with where it changed the paper.
       const turn = turnOf(entry[0]), next = all[index + 1];
       if (!turn || (next && (next[0].type !== 'user' && turnOf(next[0]) === turn)) || (!next && active)) return [shown];
       const edits = all.filter(other => turnOf(other[0]) === turn).flat().filter(item => item.type === 'files' && item.changes?.length);
       return edits.length ? [shown, <ChangeSummary key={turn + ':changes'} items={edits}/>] : [shown];
-    }), [items, review, agent, root, active]);
+    });
+  }, [items, review, agent, root, active]);
   const hint = task.status === 'deleting' ? t('This task is being deleted') : task.status === 'uncertain' ? t('Check task status before sending') : task.preparation ? t('Send more instructions once the task has started.') : sending ? t('Sending…')
     : emptyNotes ? canSend ? tn(emptyNotes, '{n} empty comment will stay in drafts', '{n} empty comments will stay in drafts') : t('Write a comment or message to send.') : active ? t('{agent} is working · new instructions run next', { agent: agentName(task) }) : '';
   // A source tab beside the chat hides the chat while it is selected; both stay as they were.

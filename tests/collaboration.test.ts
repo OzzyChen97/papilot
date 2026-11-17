@@ -42,9 +42,12 @@ test('timeline entries name the role, worker, notes and outcome instead of the r
   const reply = { role: 'quick', worker: 'OpenCode (flash, max reasoning effort)', status: 'applied', appliedFiles: ['main.tex'], conflicts: [], summary: 'Fixed the typo.' };
   const delegate = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'quick', annotationIds: ['message:1', 'message:3'] }, contentItems: [{ text: JSON.stringify(reply) }] });
   assert.equal(delegate.text, 'workflow_delegate · quick');
-  assert.equal(delegate.detail, 'OpenCode (flash, max reasoning effort)\nNotes: 1, 3\nResult: applied (main.tex)\nFixed the typo.');
+  assert.equal(delegate.detail, 'OpenCode (flash, max reasoning effort)\nNotes: 1, 3\nResult: applied (main.tex)', 'the worker\'s own report is among its steps');
   const failed = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'polish', annotationIds: ['message:2'], instruction: 'Polish.' }, contentItems: [{ text: 'Antigravity does not offer gemini-x on the Papilot host.' }] });
   assert.equal(failed.detail, 'Notes: 2\nPolish.\nAntigravity does not offer gemini-x on the Papilot host.');
+  // While it runs, the line already names the configured worker and what it was asked.
+  const running = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'rigorous', annotationIds: ['message:2'], instruction: 'Check the sum.' } }, role => `Codex (${role})`);
+  assert.equal(running.detail, 'Codex (rigorous)\nNotes: 2\nCheck the sum.');
   assert.match(workflowItem({ tool: 'workflow_audit', arguments: { outcomes: [{}, {}] }, contentItems: [{ text: JSON.stringify({ verified: true, report: '{}' }) }] }).detail!, /^Verified\./);
 });
 test('annotation ledger retains repeated notes separately and provides a request for plain tasks', () => {
@@ -266,19 +269,57 @@ const call = (helper: Helper, method: string) => helper.calls.find(entry => entr
 test('native helpers use the configured model and effort in a disposable read-only cwd', async () => {
   for (const worker of [routes.quick, routes.polish]) {
     const helper = new Helper();
-    assert.equal(await runWorkflowHelper(worker, 'Fix text', signal(), undefined, () => helper), 'Proposal');
+    assert.equal(await runWorkflowHelper(worker, 'Fix text', signal(), undefined, undefined, () => helper), 'Proposal');
     assert.equal(call(helper, 'thread/start').model, worker.model); assert.equal(call(helper, 'thread/start').sandbox, 'read-only');
     assert.equal(call(helper, 'turn/start').effort, worker.effort);
     assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
   }
   const helper = new Helper();
-  await runWorkflowHelper({ agent: 'antigravity', model: null, effort: null }, 'Polish', signal(), undefined, () => helper);
+  await runWorkflowHelper({ agent: 'antigravity', model: null, effort: null }, 'Polish', signal(), undefined, undefined, () => helper);
   assert.equal(call(helper, 'thread/start').model, undefined, 'no model uses the runtime default'); assert.equal(call(helper, 'turn/start').effort, undefined);
+});
+test('a worker\'s steps are reported as it works, with paths inside its copy made relative', async () => {
+  const helper = new Helper(), steps: { item: any; completed: boolean }[] = [];
+  const cwd = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-steps-')));
+  try {
+    fs.mkdirSync(path.join(cwd, 'sections')); fs.writeFileSync(path.join(cwd, 'sections', 'intro.tex'), 'Text.\n');
+    helper.request = async (method, params) => {
+      helper.calls.push({ method, params });
+      if (method === 'model/list') return { data: helper.models };
+      if (method === 'thread/start') return { thread: { id: 'helper' } };
+      if (method === 'turn/start') setImmediate(() => {
+        const notify = (method: string, item: object) => helper.emit('notification', { method, params: { threadId: 'helper', item } });
+        notify('item/started', { id: 'read', type: 'toolCall', kind: 'read', target: path.join(cwd, 'sections', 'intro.tex'), status: 'inProgress' });
+        notify('item/started', { id: 'think', type: 'reasoning' });
+        notify('item/completed', { id: 'edit', type: 'fileChange', changes: [{ path: path.join(cwd, 'sections/intro.tex') }], status: 'completed' });
+        notify('item/completed', { id: 'reply', type: 'agentMessage', text: `Fixed note 1 in ${cwd}/sections/intro.tex.` });
+        helper.emit('notification', { method: 'turn/completed', params: { threadId: 'helper', turn: { status: 'completed' } } });
+      });
+      return { turn: { id: 'turn' } };
+    };
+    await runWorkflowHelper(routes.quick, 'Edit', signal(), { cwd, files: ['sections/intro.tex'] }, step => steps.push(step), () => helper);
+    assert.deepEqual(steps.map(step => [step.item.id, step.completed]), [['read', false], ['edit', true], ['reply', true]], 'reasoning stays private');
+    assert.equal(steps[0].item.target, 'sections/intro.tex');
+    assert.deepEqual(steps[1].item.changes, [{ path: 'sections/intro.tex' }]);
+    assert.equal(steps[2].item.text, 'Fixed note 1 in sections/intro.tex.');
+  } finally { fs.rmSync(cwd, { recursive: true, force: true }); }
+});
+test('a delegation reports what its worker changed before the edit is merged', async () => {
+  const f = paper();
+  try {
+    const reported: { file: string; diff: string }[][] = [];
+    const result = await delegateTo(f.root, notes, { ...delegateArgs, role: 'polish' }, async (_worker, _prompt, _signal, edit) => {
+      fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'First paragraph, polished.\n\nSecond paragraph.\n'); return 'Polished.';
+    }, signal(), () => true, role => routes[role], { changes: changes => reported.push(changes) });
+    assert.equal(result.status, 'applied');
+    assert.equal(reported.length, 1); assert.equal(reported[0][0].file, 'main.tex');
+    assert.match(reported[0][0].diff, /^--- main\.tex/); assert.match(reported[0][0].diff, /\n-First paragraph\.\n\+First paragraph, polished\.\n/);
+  } finally { f.close(); }
 });
 test('unavailable models and efforts fail without a fallback or model turn', async () => {
   for (const [worker, error] of [[{ agent: 'antigravity', model: 'gemini-missing', effort: null }, /does not offer gemini-missing/], [{ agent: 'antigravity', model: 'gemini-4-argon', effort: 'max' }, /does not support max/]] as const) {
     const helper = new Helper();
-    await assert.rejects(runWorkflowHelper(worker, 'Polish', signal(), undefined, () => helper), error);
+    await assert.rejects(runWorkflowHelper(worker, 'Polish', signal(), undefined, undefined, () => helper), error);
     assert.equal(helper.calls.some(entry => entry.method === 'thread/start'), false); assert.equal(helper.closed, true);
   }
 });
@@ -298,7 +339,7 @@ test('saved routes default to Codex with the task model and reject unknown worke
 test('stopping a native helper closes its process and ignores late results', async () => {
   const helper = new Helper(), controller = new AbortController();
   helper.request = async (method, params) => { if (method === 'model/list') return { data: [] }; if (method === 'thread/start') { helper.cwd = params.cwd; return { thread: { id: 'helper' } }; } if (method === 'turn/start') controller.abort(); return {}; };
-  await assert.rejects(runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, () => helper), /stopped/);
+  await assert.rejects(runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, undefined, () => helper), /stopped/);
   assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
 });
 test('a Codex editor rejects a runtime that keeps host writable roots before starting a turn', async () => {
@@ -309,7 +350,7 @@ test('a Codex editor rejects a runtime that keeps host writable roots before sta
     return result;
   };
   try {
-    await assert.rejects(runWorkflowHelper(routes.rigorous, 'Edit', signal(), { cwd: f.root, files: ['main.tex'] }, () => helper), /isolated workflow permissions/);
+    await assert.rejects(runWorkflowHelper(routes.rigorous, 'Edit', signal(), { cwd: f.root, files: ['main.tex'] }, undefined, () => helper), /isolated workflow permissions/);
     assert.equal(helper.calls.some(call => call.method === 'turn/start'), false); assert.equal(helper.closed, true);
     assert.equal(fs.existsSync(f.root), true, 'the delegation owns snapshot cleanup');
   } finally { f.close(); }
@@ -318,7 +359,7 @@ test('Codex helpers reject enabled MCP names that native overrides cannot addres
   for (const enabled of [true, false]) {
     const helper = new Helper(), request = helper.request.bind(helper);
     helper.request = async (method, params) => method === 'config/read' ? { config: { mcp_servers: { 'dot.name': { enabled } } } } : request(method, params);
-    const work = runWorkflowHelper(auditor, 'Audit', signal(), undefined, () => helper);
+    const work = runWorkflowHelper(auditor, 'Audit', signal(), undefined, undefined, () => helper);
     if (enabled) { await assert.rejects(work, /isolated workflow permissions/); assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); }
     else { assert.equal(await work, 'Proposal'); assert.equal(helper.calls.find(call => call.method === 'thread/start').params.sandbox, 'read-only'); }
     assert.equal(helper.closed, true);
@@ -328,7 +369,7 @@ test('a delayed installation probe cannot start a helper after cancellation', as
   const helper = new Helper(), controller = new AbortController(); let resolve!: (value: boolean) => void, starts = 0;
   const runtime = Object.assign(helper, { detect: () => new Promise<boolean>(done => { resolve = done; }) });
   runtime.start = async () => { starts++; helper.ready = true; };
-  const work = runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, () => runtime);
+  const work = runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, undefined, () => runtime);
   controller.abort(); await assert.rejects(work, /stopped/); resolve(true); await new Promise(done => setImmediate(done));
   assert.equal(starts, 0); assert.equal(helper.ready, false);
 });

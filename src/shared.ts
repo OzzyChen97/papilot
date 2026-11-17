@@ -92,7 +92,8 @@ export interface ContextUsage { tokens: number; window: number; breakdown?: Cont
 export interface ToolCallInfo { kind: string; target?: string; lines?: string; place?: ToolPlace }
 /** Where a read was in the paper: the sections it covered and the PDF pages they print on. */
 export interface ToolPlace { sections: { number: string; title: string }[]; more?: number; partial?: boolean; pages?: number[] }
-export interface TimelineItem { id: string; taskId: string; type: string; text: string; rawText?: string; detail?: string; status?: string; createdAt: number; meta?: MessageMeta; tool?: ToolCallInfo; pages?: PageView[]; changes?: FileEdit[] }
+// parent: in Collaboration mode, the delegation whose worker took this step.
+export interface TimelineItem { id: string; taskId: string; type: string; text: string; rawText?: string; detail?: string; status?: string; createdAt: number; meta?: MessageMeta; tool?: ToolCallInfo; pages?: PageView[]; changes?: FileEdit[]; parent?: string }
 /** A file an agent changed: its diff, and where in the paper the changes are. */
 export interface FileEdit { path: string; diff?: string; added: number; removed: number; places?: EditPlace[] }
 /** Changes within one part of the paper: its sections (innermost last), the page it starts on, and the lines changed. */

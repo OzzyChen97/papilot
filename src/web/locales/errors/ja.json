@@ -400,5 +400,6 @@
   "Codex could not apply isolated workflow permissions.": "Codex でワークフローの隔離権限を適用できませんでした。",
   "Choose a supported worker for each collaboration role.": "各コラボレーションロールに対してサポートされているワーカーを選択してください。",
   "Choose the quick, polish or rigorous role.": "quick、polish、または rigorous のいずれかのロールを選択してください。",
-  "Send enabled or routes.": "enabled または routes を送信してください。"
+  "Send enabled or routes.": "enabled または routes を送信してください。",
+  "This worker has already finished.": "このワーカーはすでに終了しています。"
 }

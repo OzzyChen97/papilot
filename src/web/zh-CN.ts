@@ -721,4 +721,6 @@ export const zhCN: Record<string, string> = {
   "Math, facts, references and formatting": "数学、事实、引用和格式",
   "Same as coordinator": "与协调者相同",
   "Codex assigns annotations to the workers below and checks every one before publishing.": "Codex 把批注分给下面各角色的模型修改，发布前逐条检查。",
+  "Stop worker": "停止这次委派",
+  "Stopped": "已停止",
 };

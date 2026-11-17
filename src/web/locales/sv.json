@@ -1508,5 +1508,7 @@
   "Polishing": "Finputsning",
   "Quick edits": "Snabba ändringar",
   "Same as coordinator": "Samma som koordinator",
-  "Typos, word choice and small LaTeX fixes": "Stavfel, ordval och mindre LaTeX-korrigeringar"
+  "Typos, word choice and small LaTeX fixes": "Stavfel, ordval och mindre LaTeX-korrigeringar",
+  "Stop worker": "Stoppa arbetare",
+  "Stopped": "Stoppad"
 }

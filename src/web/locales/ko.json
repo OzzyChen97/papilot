@@ -1508,5 +1508,7 @@
   "Polishing": "다듬기",
   "Quick edits": "빠른 수정",
   "Same as coordinator": "코디네이터와 동일",
-  "Typos, word choice and small LaTeX fixes": "오타, 어휘 선택 및 간단한 LaTeX 수정"
+  "Typos, word choice and small LaTeX fixes": "오타, 어휘 선택 및 간단한 LaTeX 수정",
+  "Stop worker": "워커 중지",
+  "Stopped": "중지됨"
 }

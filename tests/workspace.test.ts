@@ -3632,6 +3632,45 @@ test('collaboration workers follow the configured routes, defaulting to the task
     assert.deepEqual(workers.slice(1), [quick, { agent: 'codex', model: 'astra', effort: 'xhigh' }]);
   } finally { f.close(); }
 });
+test('a worker\'s steps and changes appear under its delegation, and the author can stop one worker', async () => {
+  const f = await collaborationFixture();
+  try {
+    const turn = f.store.task(f.task.id).turnId!, line = (callId: string) => `${f.task.id}:${turn}:${callId}`;
+    const args = (instruction: string) => ({ role: 'polish', annotationIds: [f.run.id + ':1'], instruction, sources: [{ file: 'main.tex', quote: fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8') }] });
+    let waiting = false;
+    f.workspace.workflowGenerate = async (_worker, prompt, signal, edit, step) => {
+      if (prompt.includes('Hang.')) {
+        step?.({ item: { id: 'read', type: 'toolCall', text: 'read main.tex', kind: 'read', target: 'main.tex', status: 'inProgress' }, completed: false });
+        waiting = true;
+        await new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(new Error('The workflow helper was stopped.'))));
+      }
+      step?.({ item: { id: 'edit', type: 'fileChange', changes: [{ path: 'main.tex' }], status: 'completed' }, completed: true });
+      step?.({ item: { id: 'reply', type: 'agentMessage', text: 'Polished note 1.' }, completed: true });
+      fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Polished text.'); return 'Polished note 1.';
+    };
+    const call = (callId: string, instruction: string) => (f.workspace as any).toolCall(f.store.task(f.task.id), { id: callId, params: { tool: 'workflow_delegate', turnId: turn, callId, arguments: args(instruction) } }, f.collaboration);
+    await call('call-polish', 'Polish.');
+    assert.deepEqual(f.store.items(f.task.id).filter(item => item.parent === line('call-polish')).map(item => [item.type, item.text]), [['files', 'main.tex'], ['assistant', 'Polished note 1.']]);
+    const changes = () => f.store.item(f.task.id, line('call-polish'))!.changes!;
+    assert.deepEqual(changes().map(change => [change.path, change.added, change.removed]), [['main.tex', 1, 1]]);
+    // Codex completes the call afterwards; the line keeps what the worker changed.
+    await (f.workspace as any).notification({ method: 'item/completed', params: { threadId: 'thread', turnId: turn, item: { id: 'call-polish', type: 'dynamicToolCall', tool: 'workflow_delegate', arguments: args('Polish.'), success: true, contentItems: [{ type: 'inputText', text: JSON.stringify({ worker: 'Antigravity (gemini-4-argon)', status: 'applied', appliedFiles: ['main.tex'], conflicts: [] }) }] } } }, 'collaboration');
+    assert.equal(changes().length, 1); assert.match(f.store.item(f.task.id, line('call-polish'))!.detail!, /^Antigravity \(gemini-4-argon\)\nNotes: 1\nPolish\.\nResult: applied/);
+
+    const work = call('call-hang', 'Hang.');
+    while (!waiting) await tick();
+    assert.throws(() => f.workspace.stopWorker('another-task', line('call-hang')), /already finished/);
+    f.workspace.stopWorker(f.task.id, line('call-hang')); await work;
+    const reply = f.collaboration.replies.at(-1)!.result as { success: boolean; contentItems: { text: string }[] };
+    assert.equal(reply.success, false); assert.match(reply.contentItems[0].text, /author stopped this worker/);
+    assert.deepEqual(f.store.items(f.task.id).filter(item => item.parent === line('call-hang')).map(item => [item.text, item.status]), [['read main.tex', 'interrupted']], 'only the step before the stop is kept, and it is not left running');
+    await (f.workspace as any).notification({ method: 'item/completed', params: { threadId: 'thread', turnId: turn, item: { id: 'call-hang', type: 'dynamicToolCall', tool: 'workflow_delegate', arguments: args('Hang.'), success: false, contentItems: [{ type: 'inputText', text: reply.contentItems[0].text }] } } }, 'collaboration');
+    assert.equal(f.store.item(f.task.id, line('call-hang'))!.status, 'interrupted', 'a stopped worker reads as stopped, not failed');
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Polished text.');
+    assert.equal((f.workspace as any).workflowStops.get(f.task.id).signal.aborted, false, 'the task keeps running');
+    assert.throws(() => f.workspace.stopWorker(f.task.id, line('call-hang')), /already finished/);
+  } finally { f.close(); }
+});
 test('an active audit rejects new delegates and old delegate cleanup cannot clear a newer run', async () => {
   const f = await collaborationFixture(), gate = deferred<void>();
   const args = { role: 'polish', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] };

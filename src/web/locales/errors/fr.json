@@ -400,5 +400,6 @@
   "Codex could not apply isolated workflow permissions.": "Codex n’a pas pu appliquer les autorisations d’isolation du flux de travail.",
   "Choose a supported worker for each collaboration role.": "Choisissez un agent pris en charge pour chaque rôle de collaboration.",
   "Choose the quick, polish or rigorous role.": "Choisissez le rôle quick, polish ou rigorous.",
-  "Send enabled or routes.": "Envoyez enabled ou routes."
+  "Send enabled or routes.": "Envoyez enabled ou routes.",
+  "This worker has already finished.": "Ce processus a déjà terminé."
 }

@@ -48,8 +48,16 @@ A successful audit is saved with a fingerprint of tracked and untracked files pl
 
 Pausing, disconnecting or closing Papilot cancels outstanding workers and discards late results. If a worker is missing, signed out or unavailable, the tool reports the error and the coordinator may handle that work itself after explaining the fallback. The audit is model-assisted review, not a proof of mathematical correctness.
 
+## Following the workers
+
+Each delegation is a line in the task's chat, named by its role. While a worker runs, the line shows its latest step; open it to see the worker, the notes and instructions it received, and its steps as they happen: files it read and edited and its own messages. Its model's reasoning is not shown. When it finishes, the line shows the result and what that worker changed in its copy, before merging. If edits overlapped, the merged task file may differ; the coordinator resolves that.
+
+![Delegations with a running, a finished and a stopped worker](assets/collaboration-workers.png)
+
+**Stop worker** stops only that worker. None of its edits are merged; the coordinator is told and does that work itself. Other workers and edits that were already merged are unaffected. Nothing stops a worker automatically, so use this when one seems stuck.
+
 ## Development checks
 
-`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, role routing and saved settings, isolated edits, automatic same-line merging, conflicts, unavailable models and efforts, source evidence, cancellation, complete annotation accounting, failed/stale audits and publication. `tests/collaboration-codex.test.ts` runs the installed native Codex runtime against a local canned endpoint. The UI check exercises enable/disable, worker and effort selection, persistence, errors and keyboard interaction on desktop and mobile layouts.
+`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, role routing and saved settings, isolated edits, automatic same-line merging, conflicts, unavailable models and efforts, source evidence, cancellation, complete annotation accounting, failed/stale audits, publication, worker steps and changes in the timeline, and stopping one worker. `tests/collaboration-codex.test.ts` runs the installed native Codex runtime against a local canned endpoint. The UI checks exercise enable/disable, worker and effort selection, persistence, errors and keyboard interaction, and the nested worker steps, changes and stop control, on desktop and mobile layouts.
 
 The settings disclosure follows Modern Web Guidance `accordion` and `html` using native `details`/`summary`; `checkbox` and `forms` preserve native input behavior, visible labels and error feedback.

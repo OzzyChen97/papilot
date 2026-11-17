@@ -1,4 +1,5 @@
-import { WORKFLOW_TOOLS, workflowInstructions, workflowItem, workflowNotes, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, type WorkflowGenerate, type WorkflowWorker } from './collaboration.ts';
+import { WORKFLOW_TOOLS, WORKER_STOPPED, workflowInstructions, workflowItem, workflowNotes, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, workerName, type WorkflowGenerate, type WorkflowStep, type WorkflowWorker } from './collaboration.ts';
+import type { WorkflowChange } from './collaboration-edits.ts';
 import { aiReviewInstructions, parseAiReview, reviewPrompt, saveReviewText, type ReviewSnapshot } from './ai-review.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -130,6 +131,8 @@ export class Workspace extends EventEmitter {
   private workflowAudits = new Map<string, string>();
   private workflowDelegations = new Map<string, { count: number }>();
   private workflowStops = new Map<string, AbortController>();
+  // Running delegations by timeline item, so the author can stop one worker.
+  private workflowWorkers = new Map<string, { taskId: string; controller: AbortController }>();
   get collaborationEnabled() { return this.store.preference<boolean>('collaboration') === true; }
   setCollaborationEnabled(enabled: boolean) {
     this.store.savePreference('collaboration', enabled);
@@ -151,6 +154,30 @@ export class Workspace extends EventEmitter {
   private workflowWorker(task: Task, role: CollaborationRole): WorkflowWorker {
     const route = this.collaborationRoutes[role];
     return route.agent === 'codex' && !route.model ? this.coordinator(task) : route;
+  }
+  // A worker's step, nested under its delegation. Its paths are the task's.
+  private workerStep(task: Task, parent: string, { item, completed }: WorkflowStep) {
+    if (typeof item.id !== 'string' && typeof item.id !== 'number') return;
+    const id = `${parent}/${item.id}`;
+    const entry = { ...this.timelineEntry(task, id, item, completed, this.store.item(task.id, id), this.agentOf(task), true), parent };
+    if (entry.text || entry.detail) this.store.saveItem(entry);
+  }
+  // What the worker changed in its copy, shown on the delegation once it finishes.
+  private workerChanges(task: Task, parent: string, changes: WorkflowChange[]) {
+    const outline = paperOutline(task.worktree, this.writerBuilds.get(task.id) || this.paperBuild(task));
+    const previous = this.store.item(task.id, parent) || { id: parent, taskId: task.id, createdAt: Date.now(), type: 'tool', text: 'workflow_delegate', status: 'inProgress' };
+    this.store.saveItem({ ...previous, changes: changes.map(change => fileEdit(change.file, change.diff, outline)) });
+  }
+  // A worker that ended early leaves no step running, nor its line when the whole run stopped.
+  private settleWorker(taskId: string, parent: string, runStopped: boolean) {
+    if (this.closing) return;
+    for (const item of this.store.items(taskId)) if (item.status === 'inProgress' && (item.parent === parent || (runStopped && item.id === parent))) this.store.saveItem({ ...item, status: 'interrupted' });
+  }
+  // Stops one worker; the coordinator is told and does that work itself.
+  stopWorker(taskId: string, itemId: string) {
+    const worker = this.workflowWorkers.get(itemId);
+    if (!worker || worker.taskId !== taskId) throw new Error('This worker has already finished.');
+    worker.controller.abort();
   }
   private workflowNotesFor(task: Task, run: Run) {
     const items = this.store.items(task.id);
@@ -913,6 +940,45 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
     catch { this.runtimes[id].usage = null; }
     this.emit('change');
   }
+  // One agent item as a timeline row. A collaboration worker's steps use the
+  // same rows, nested under the delegation that started it.
+  private timelineEntry(task: Task, id: string, item: any, completed: boolean, previous: TimelineItem | undefined, agent: AgentId, worker = false): TimelineItem {
+    const entry: TimelineItem = { id, taskId: task.id, createdAt: previous?.createdAt || Date.now(), type: item.type, text: item.text || item.command || '', status: item.status || (completed ? 'completed' : 'inProgress') };
+    if (item.type === 'agentMessage') entry.type = task.mode === 'review' && !worker ? 'reviewOutput' : 'assistant';
+    if (item.type === 'agentMessage' && !worker && this.active.get(task.id)?.noteOptionsRequested) {
+      entry.rawText = item.text || previous?.rawText || '';
+      entry.text = noteOptionsSummary(entry.rawText || '');
+    }
+    if (item.type === 'commandExecution') { entry.type = 'command'; entry.detail = String(item.aggregatedOutput || previous?.detail || '').slice(-40000); }
+    if (item.type === 'fileChange') {
+      entry.type = 'files'; entry.text = (item.changes || []).map((change: any) => change.path).join('\n');
+      // Each change with its diff and where it is in the paper.
+      const changes = (item.changes || []).filter((change: any) => typeof change?.path === 'string');
+      if (changes.some((change: any) => typeof change.diff === 'string')) {
+        const outline = paperOutline(task.worktree, this.writerBuilds.get(task.id) || this.paperBuild(task));
+        entry.changes = changes.map((change: any) => {
+          const rel = path.isAbsolute(change.path) ? path.relative(task.worktree, change.path).split(path.sep).join('/') : change.path;
+          return fileEdit(rel, typeof change.diff === 'string' ? change.diff : undefined, outline, typeof change.kind === 'string' ? change.kind : change.kind?.type);
+        });
+      } else if (previous?.changes) entry.changes = previous.changes;
+    }
+    if (item.type === 'mcpToolCall') { entry.type = 'tool'; entry.text = `${item.server} / ${item.tool}`; }
+    if (item.type === 'toolCall') {
+      entry.type = 'tool';
+      if (typeof item.kind === 'string') entry.tool = { kind: item.kind, ...(item.target ? { target: String(item.target) } : {}), ...(item.lines ? { lines: String(item.lines) } : {}), ...(item.place && typeof item.place === 'object' ? { place: item.place as ToolPlace } : {}) };
+    }
+    if (item.type === 'dynamicToolCall') {
+      if (agent === 'collaboration' && !worker && (item.tool === 'workflow_delegate' || item.tool === 'workflow_audit')) {
+        Object.assign(entry, { type: 'tool' }, workflowItem(item, role => workerName(this.workflowWorker(task, role))));
+        // What the worker changed arrives before Codex completes the call.
+        if (previous?.changes) entry.changes = previous.changes;
+      }
+      else if (item.tool !== VIEW_PDF) { entry.type = 'tool'; entry.text = item.tool || ''; }
+      else { entry.type = 'pdf'; entry.text = viewedPlaces(item.arguments); }
+      if (item.success === false) entry.status = item.contentItems?.[0]?.text === WORKER_STOPPED ? 'interrupted' : 'failed';
+    }
+    return entry;
+  }
   private async notification(message: any, agent: AgentId = 'codex') {
     if (this.closing) return;
     const p = message.params || {}, method = message.method;
@@ -945,36 +1011,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       if (['userMessage', 'reasoning'].includes(item.type)) return;
       this.flush();
       const previous = this.store.item(task.id, id);
-      const entry: TimelineItem = { id, taskId: task.id, createdAt: previous?.createdAt || Date.now(), type: item.type, text: item.text || item.command || '', status: item.status || (method === 'item/completed' ? 'completed' : 'inProgress') };
-      if (item.type === 'agentMessage') entry.type = task.mode === 'review' ? 'reviewOutput' : 'assistant';
-      if (item.type === 'agentMessage' && this.active.get(task.id)?.noteOptionsRequested) {
-        entry.rawText = item.text || previous?.rawText || '';
-        entry.text = noteOptionsSummary(entry.rawText || '');
-      }
-      if (item.type === 'commandExecution') { entry.type = 'command'; entry.detail = String(item.aggregatedOutput || previous?.detail || '').slice(-40000); }
-      if (item.type === 'fileChange') {
-        entry.type = 'files'; entry.text = (item.changes || []).map((change: any) => change.path).join('\n');
-        // Each change with its diff and where it is in the paper.
-        const changes = (item.changes || []).filter((change: any) => typeof change?.path === 'string');
-        if (changes.some((change: any) => typeof change.diff === 'string')) {
-          const outline = paperOutline(task.worktree, this.writerBuilds.get(task.id) || this.paperBuild(task));
-          entry.changes = changes.map((change: any) => {
-            const rel = path.isAbsolute(change.path) ? path.relative(task.worktree, change.path).split(path.sep).join('/') : change.path;
-            return fileEdit(rel, typeof change.diff === 'string' ? change.diff : undefined, outline, typeof change.kind === 'string' ? change.kind : change.kind?.type);
-          });
-        } else if (previous?.changes) entry.changes = previous.changes;
-      }
-      if (item.type === 'mcpToolCall') { entry.type = 'tool'; entry.text = `${item.server} / ${item.tool}`; }
-      if (item.type === 'toolCall') {
-        entry.type = 'tool';
-        if (typeof item.kind === 'string') entry.tool = { kind: item.kind, ...(item.target ? { target: String(item.target) } : {}), ...(item.lines ? { lines: String(item.lines) } : {}), ...(item.place && typeof item.place === 'object' ? { place: item.place as ToolPlace } : {}) };
-      }
-      if (item.type === 'dynamicToolCall') {
-        if (agent === 'collaboration' && (item.tool === 'workflow_delegate' || item.tool === 'workflow_audit')) Object.assign(entry, { type: 'tool' }, workflowItem(item));
-        else if (item.tool !== VIEW_PDF) { entry.type = 'tool'; entry.text = item.tool || ''; }
-        else { entry.type = 'pdf'; entry.text = viewedPlaces(item.arguments); }
-        if (item.success === false) entry.status = 'failed';
-      }
+      const entry = this.timelineEntry(task, id, item, method === 'item/completed', previous, agent);
       const pages = previous?.pages || this.pendingPages.get(id);
       if (pages) { entry.pages = pages; this.pendingPages.delete(id); }
       if (entry.text || entry.detail || entry.rawText) this.store.saveItem(entry);
@@ -1079,6 +1116,10 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       if (tool === 'workflow_audit' && run) this.workflowAudits.set(task.id, run.id);
       const controller = this.workflowStops.get(task.id);
       let delegation: { count: number } | undefined;
+      // The delegation's own line in the timeline: its worker's steps go under it.
+      const callId = String(message.params?.callId || ''), parent = tool === 'workflow_delegate' && /^[\w-]{1,100}$/.test(callId) ? `${task.id}:${String(message.params?.turnId || task.turnId || '')}:${callId}` : '';
+      const own = new AbortController();
+      if (parent) this.workflowWorkers.set(parent, { taskId: task.id, controller: own });
       try {
         if (!controller || !run) throw new Error('The workflow is no longer active.');
         if (tool === 'workflow_delegate') {
@@ -1087,8 +1128,10 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         }
         const notes = this.workflowNotesFor(task, run);
         this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
+        const signal = AbortSignal.any([controller.signal, own.signal]), live = () => Boolean(current()) && !signal.aborted;
+        const progress = parent ? { step: (step: WorkflowStep) => { if (live()) this.workerStep(task, parent, step); }, changes: (changes: WorkflowChange[]) => { if (live()) this.workerChanges(task, parent, changes); } } : {};
         const result = tool === 'workflow_delegate'
-          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()), role => this.workflowWorker(task, role))
+          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, signal, () => Boolean(current()), role => this.workflowWorker(task, role), progress)
           : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, this.coordinator(task));
         if (!current() || controller.signal.aborted) return;
         if ('fingerprint' in result && result.verified && result.fingerprint) {
@@ -1096,8 +1139,10 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
           this.store.saveRun({ ...saved, workflowAudit: { fingerprint: result.fingerprint, report: result.report, files: result.files } });
         }
         reply(true, JSON.stringify(result));
-      } catch (error) { if (!controller?.signal.aborted && this.workflowStops.get(task.id) === controller) reply(false, errorText(error)); }
+      } catch (error) { if (!controller?.signal.aborted && this.workflowStops.get(task.id) === controller) reply(false, own.signal.aborted ? WORKER_STOPPED : errorText(error)); }
       finally {
+        if (parent && this.workflowWorkers.get(parent)?.controller === own) this.workflowWorkers.delete(parent);
+        if (parent) this.settleWorker(task.id, parent, Boolean(controller?.signal.aborted));
         if (tool === 'workflow_audit' && this.workflowAudits.get(task.id) === run?.id) this.workflowAudits.delete(task.id);
         if (delegation && this.workflowDelegations.get(task.id) === delegation && --delegation.count === 0) this.workflowDelegations.delete(task.id);
       }

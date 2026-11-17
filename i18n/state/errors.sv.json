@@ -1578,5 +1578,10 @@
     "revision": "cf3efb2f56adc1f9d8ca63847a3a6bb4287b16057db5a0a2f9b28559b41f0e02",
     "textHash": "604a105f8ac23590309c32e836d5803ebb863605aab734282c90f2f6919a78e8",
     "model": "gemini-4-argon-medium"
+  },
+  "This worker has already finished.": {
+    "revision": "a136b17261aae19bdec7301da988ec09bfb1a2e53ff38a94df99c5b8899b733d",
+    "textHash": "819a59015b917140edf495a1ad1f5518223f91b9130f26c7e619dd8322634146",
+    "model": "gemini-4-argon-medium"
   }
 }

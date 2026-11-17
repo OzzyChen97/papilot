@@ -1508,5 +1508,7 @@
   "Polishing": "Pulido",
   "Quick edits": "Ediciones rápidas",
   "Same as coordinator": "Igual que el coordinador",
-  "Typos, word choice and small LaTeX fixes": "Erratas, elección de palabras y pequeñas correcciones de LaTeX"
+  "Typos, word choice and small LaTeX fixes": "Erratas, elección de palabras y pequeñas correcciones de LaTeX",
+  "Stop worker": "Detener trabajador",
+  "Stopped": "Detenido"
 }

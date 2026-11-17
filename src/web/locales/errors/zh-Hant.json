@@ -400,5 +400,6 @@
   "Codex could not apply isolated workflow permissions.": "Codex 無法套用工作流程隔離權限。",
   "Choose a supported worker for each collaboration role.": "請為每個協作角色選擇支援的工作程式。",
   "Choose the quick, polish or rigorous role.": "請選擇 quick、polish 或 rigorous 角色。",
-  "Send enabled or routes.": "請傳送 enabled 或 routes。"
+  "Send enabled or routes.": "請傳送 enabled 或 routes。",
+  "This worker has already finished.": "此工作程序已完成。"
 }

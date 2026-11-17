@@ -400,5 +400,6 @@
   "Codex could not apply isolated workflow permissions.": "Codex가 워크플로 격리 권한을 적용하지 못했습니다.",
   "Choose a supported worker for each collaboration role.": "각 협업 역할에 대해 지원되는 워커를 선택하세요.",
   "Choose the quick, polish or rigorous role.": "quick, polish 또는 rigorous 역할을 선택하세요.",
-  "Send enabled or routes.": "enabled 또는 routes를 전송하세요."
+  "Send enabled or routes.": "enabled 또는 routes를 전송하세요.",
+  "This worker has already finished.": "이 작업자는 이미 완료되었습니다."
 }

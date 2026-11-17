@@ -1508,5 +1508,7 @@
   "Polishing": "推敲",
   "Quick edits": "軽微な修正",
   "Same as coordinator": "コーディネーターと同じ",
-  "Typos, word choice and small LaTeX fixes": "誤字、表現の選択、LaTeX の軽微な修正"
+  "Typos, word choice and small LaTeX fixes": "誤字、表現の選択、LaTeX の軽微な修正",
+  "Stop worker": "ワーカーを停止",
+  "Stopped": "停止"
 }

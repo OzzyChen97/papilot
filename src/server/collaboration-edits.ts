@@ -1,11 +1,14 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { createTwoFilesPatch } from 'diff';
 import { merge3Async } from '../../engine/src/core/git.ts';
 import { atomicWrite } from '../../engine/src/core/files.ts';
 import { realPath } from './real-path.ts';
 
 export type WorkflowEdit = { cwd: string; files: string[] };
+/** What one worker changed in its copy, before it is merged into the task. */
+export type WorkflowChange = { file: string; diff: string };
 type Source = { file: string; source: string };
 const integrations = new Map<string, Promise<void>>();
 const invalid = () => new Error('Delegated edits must stay within the selected source files.');
@@ -42,7 +45,7 @@ async function integrate<T>(root: string, work: () => Promise<T>) {
   finally { release(); if (integrations.get(root) === tail) integrations.delete(root); }
 }
 
-export async function editWorkflowSources(root: string, sources: Source[], run: (edit: WorkflowEdit) => Promise<string>, signal: AbortSignal, current: () => boolean) {
+export async function editWorkflowSources(root: string, sources: Source[], run: (edit: WorkflowEdit) => Promise<string>, signal: AbortSignal, current: () => boolean, changed?: (changes: WorkflowChange[]) => void) {
   const baseRoot = realPath(root);
   const active = () => { signal.throwIfAborted(); if (!current() || realPath(root) !== baseRoot) throw new Error('The workflow is no longer active.'); };
   active();
@@ -79,6 +82,7 @@ export async function editWorkflowSources(root: string, sources: Source[], run: 
     };
     inspect(cwd);
     const changes = [...base].map(([file, before]) => ({ file, before, after: sourceFile(cwd, file)!.bytes })).filter(change => !change.before.equals(change.after));
+    changed?.(changes.map(({ file, before, after }) => ({ file, diff: createTwoFilesPatch(file, file, before.toString('utf8'), after.toString('utf8'), '', '', { context: 2 }).split('\n').slice(2).join('\n') })));
     return await integrate(baseRoot, async () => {
       active();
       const conflicts: { file: string; base: string; current: string | null; incoming: string; candidate: string | null }[] = [];

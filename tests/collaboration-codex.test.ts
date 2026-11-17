@@ -62,7 +62,7 @@ test('native Codex workers edit snapshots without inherited tools, network or wr
   const generate: WorkflowGenerate = async (worker, prompt, signal, edit) => {
     copy = edit!.cwd;
     assert.equal(copy, fs.realpathSync.native(copy), 'the native sandbox must see expanded Windows paths');
-    const summary = await runWorkflowHelper(worker, prompt, signal, edit, factory);
+    const summary = await runWorkflowHelper(worker, prompt, signal, edit, undefined, factory);
     assert.equal(fs.readFileSync(path.join(paper, 'main.tex'), 'utf8'), original, 'the worker has not edited the task');
     assert.equal(fs.readFileSync(path.join(copy, 'main.tex'), 'utf8'), 'Checked text.\n');
     return summary;

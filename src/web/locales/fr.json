@@ -1508,5 +1508,7 @@
   "Polishing": "Peaufinage",
   "Quick edits": "Modifications rapides",
   "Same as coordinator": "Identique au coordinateur",
-  "Typos, word choice and small LaTeX fixes": "Coquilles, choix des mots et petites corrections LaTeX"
+  "Typos, word choice and small LaTeX fixes": "Coquilles, choix des mots et petites corrections LaTeX",
+  "Stop worker": "Arrêter le worker",
+  "Stopped": "Arrêté"
 }

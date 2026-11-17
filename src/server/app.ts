@@ -667,6 +667,7 @@ export async function buildApp(options: AppOptions) {
   app.post<{ Params: { id: string } }>('/api/tasks/:id/title', task, request => workspace.requestTaskTitle(request.params.id));
   app.post<{ Params: { id: string } }>('/api/tasks/:id/archive', task, request => workspace.archiveTask(request.params.id, (request.body as any)?.archived, (request.body as any)?.finished === true));
   app.post<{ Params: { id: string } }>('/api/tasks/:id/interrupt', task, request => workspace.interrupt(request.params.id).then(() => ({ ok: true })));
+  app.post<{ Params: { id: string } }>('/api/tasks/:id/workers/stop', task, request => { workspace.stopWorker(request.params.id, string((request.body as any)?.item, 'Worker')); return { ok: true }; });
   // Deleting a task that is already gone succeeds, so a lost response can be retried; a hidden one answers the same.
   // A page an agent looked at, as the chat shows it with that tool call.
   app.get<{ Params: { id: string; file: string } }>('/api/tasks/:id/pages/:file', task, (request, reply) => {

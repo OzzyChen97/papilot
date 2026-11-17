@@ -6118,5 +6118,15 @@
     "revision": "cd0770e4974086839bb280db67943a360fc45dc6aac2e6287b63ff3c92c0ea43",
     "textHash": "8f7358f14ed9c0a8dd30adc66536995f9b4ba3990ec3f73671ce19713afccabe",
     "model": "gemini-4-argon-medium"
+  },
+  "Stop worker": {
+    "revision": "5331a2109dbb616dce608d7f073e628c5412344c9d11ec16b41e4b593630561c",
+    "textHash": "3dd16435492a8b349b7b2404f37d43309e04a9276774cfab20ad47ec0dd979f5",
+    "model": "gemini-4-argon-medium"
+  },
+  "Stopped": {
+    "revision": "1a63d63f875ad868fc80f9080690a101e5e080bbb30adb738d5334a83c3cd60b",
+    "textHash": "a2afbd244ed797997996151bc30215d764bf48042c5b976efe8cc80731b6ef66",
+    "model": "gemini-4-argon-medium"
   }
 }
