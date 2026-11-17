@@ -397,5 +397,7 @@
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "AI レビューには Codex を選択してください。協調モードは注釈に基づく編集用です。",
   "Enable collaboration mode before selecting it.": "選択する前に協調モードを有効にしてください。",
   "The workflow is no longer active.": "ワークフローは実行されていません。",
-  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "協調モードでは公開前に最終ソースのチェックに合格する必要があります。タスクを続行して、すべての注釈を確認してください。"
+  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "協調モードでは公開前に最終ソースのチェックに合格する必要があります。タスクを続行して、すべての注釈を確認してください。",
+  "Delegated edits must stay within the selected source files.": "委任した編集は選択したソースファイル内に限定してください。",
+  "The source changed while merging delegated edits. Retry the delegation.": "委任した編集のマージ中にソースが変更されました。委任をやり直してください。"
 }

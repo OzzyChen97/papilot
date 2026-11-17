@@ -397,5 +397,7 @@
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "AI 审阅请选择 Codex。协作模式用于处理批注修改。",
   "Enable collaboration mode before selecting it.": "请先启用协作模式再选择它。",
   "The workflow is no longer active.": "工作流已不再运行。",
-  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "协作模式需要通过最终源文件检查才能发布。请继续任务，核对所有批注。"
+  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "协作模式需要通过最终源文件检查才能发布。请继续任务，核对所有批注。",
+  "Delegated edits must stay within the selected source files.": "委派修改必须限定在所选源文件内。",
+  "The source changed while merging delegated edits. Retry the delegation.": "合并委派修改时源文件已变化。请重新委派。"
 }

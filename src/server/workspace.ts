@@ -128,6 +128,7 @@ export class Workspace extends EventEmitter {
   private active = new Map<string, Run>();
   workflowGenerate: WorkflowGenerate = runWorkflowHelper;
   private workflowAudits = new Map<string, string>();
+  private workflowDelegations = new Map<string, { count: number }>();
   private workflowStops = new Map<string, AbortController>();
   get collaborationEnabled() { return this.store.preference<boolean>('collaboration') === true; }
   setCollaborationEnabled(enabled: boolean) {
@@ -143,7 +144,7 @@ export class Workspace extends EventEmitter {
     const index = items.findIndex(item => item.id === run.id);
     return workflowNotes(index < 0 ? items : items.slice(0, index + 1), run.prompt);
   }
-  private stopWorkflow(taskId: string) { this.workflowStops.get(taskId)?.abort(); this.workflowStops.delete(taskId); this.workflowAudits.delete(taskId); }
+  private stopWorkflow(taskId: string) { this.workflowStops.get(taskId)?.abort(); this.workflowStops.delete(taskId); this.workflowAudits.delete(taskId); this.workflowDelegations.delete(taskId); }
   // Async tools must never answer a request from an earlier connection.
   private connectionEpochs = new Map<AgentId, number>();
   private loaded = new Set<string>();
@@ -1059,15 +1060,21 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       catch (error) { console.error(`${AGENT_NAMES[agent]} tool reply:`, errorText(error)); }
     };
     if (agent === 'collaboration' && (tool === 'workflow_delegate' || tool === 'workflow_audit')) {
-      if (tool === 'workflow_audit' && this.workflowAudits.has(task.id)) { reply(false, 'An audit is already running. Wait for its result.'); return; }
+      if (this.workflowAudits.has(task.id)) { reply(false, 'An audit is already running. Wait for its result.'); return; }
+      if (tool === 'workflow_audit' && this.workflowDelegations.has(task.id)) { reply(false, 'Wait for delegated edits to finish before auditing.'); return; }
       if (tool === 'workflow_audit' && run) this.workflowAudits.set(task.id, run.id);
       const controller = this.workflowStops.get(task.id);
+      let delegation: { count: number } | undefined;
       try {
         if (!controller || !run) throw new Error('The workflow is no longer active.');
+        if (tool === 'workflow_delegate') {
+          delegation = this.workflowDelegations.get(task.id) || { count: 0 };
+          delegation.count++; this.workflowDelegations.set(task.id, delegation);
+        }
         const notes = this.workflowNotesFor(task, run);
-        if (tool === 'workflow_audit') this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
+        this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
         const result = tool === 'workflow_delegate'
-          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal)
+          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()))
           : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, task.model);
         if (!current() || controller.signal.aborted) return;
         if ('fingerprint' in result && result.verified && result.fingerprint) {
@@ -1076,7 +1083,10 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         }
         reply(true, JSON.stringify(result));
       } catch (error) { if (!controller?.signal.aborted && this.workflowStops.get(task.id) === controller) reply(false, errorText(error)); }
-      finally { if (tool === 'workflow_audit' && this.workflowAudits.get(task.id) === run?.id) this.workflowAudits.delete(task.id); }
+      finally {
+        if (tool === 'workflow_audit' && this.workflowAudits.get(task.id) === run?.id) this.workflowAudits.delete(task.id);
+        if (delegation && this.workflowDelegations.get(task.id) === delegation && --delegation.count === 0) this.workflowDelegations.delete(task.id);
+      }
       return;
     }
     if (tool === CHECK_BUILD && agent === 'papilot') {
@@ -1328,7 +1338,8 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
     if (this.agentOf(task) !== 'collaboration') return;
     const latest = run || this.store.runs().filter(item => item.taskId === task.id && item.status !== 'queued').at(-1);
     const audit = latest && this.store.runByKey(latest.requestKey)?.workflowAudit;
-    if (this.workflowAudits.has(task.id) || !audit || audit.fingerprint !== (await workflowSnapshot(task.worktree, audit.files)).fingerprint)
+    const current = () => !this.workflowAudits.has(task.id) && !this.workflowDelegations.has(task.id) && latest && this.store.runByKey(latest.requestKey)?.workflowAudit?.fingerprint === audit?.fingerprint;
+    if (!audit || !current() || audit.fingerprint !== (await workflowSnapshot(task.worktree, audit.files)).fingerprint || !current())
       throw new Error('Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.');
   }
   publish(taskId: string, after?: Run): Promise<void> {

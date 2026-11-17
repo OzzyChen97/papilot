@@ -38,6 +38,22 @@ function fakeAgy(lines: string[][]) {
   return { launches, launch };
 }
 
+test('isolated Gemini editors allow snapshot files, deny commands and do not persist conversations', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-agy-editor-')), file = path.join(dir, 'main.tex'), conversations = path.join(dir, 'conversations.json');
+  const fake = fakeAgy([[JSON.stringify({ event: 'init', conversation_id: 'ephemeral-edit' }), JSON.stringify({ event: 'result', result: { status: 'SUCCESS', response: 'Edited.' } })]]);
+  const agent = new AntigravityAgent('agy', conversations, fake.launch as any, { files: [file] }); agent.ready = true;
+  try {
+    const seen = events(agent), { thread } = await agent.request('thread/start', { cwd: dir, sandbox: 'workspace-write' });
+    await agent.request('turn/start', { threadId: thread.id, input: [{ type: 'text', text: 'Edit main.tex.' }], cwd: dir });
+    assert.equal((await completed(seen)).status, 'completed');
+    const args = fake.launches[0].args, settings = JSON.parse(args[args.indexOf('--settings') + 1]);
+    assert.equal(args[args.indexOf('--mode') + 1], 'accept-edits'); assert.equal(settings.allowNonWorkspaceAccess, false);
+    assert.deepEqual(settings.permissions.allow, [`write_file(${file})`]);
+    for (const action of ['command(*)', 'read_url(*)', 'execute_url(*)', 'mcp(*)']) assert.ok(settings.permissions.deny.includes(action));
+    assert.equal(settings.permissions.deny.includes('write_file(*)'), false); assert.equal(fs.existsSync(conversations), false);
+  } finally { agent.close(); fs.rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('Antigravity turns run agy in accept-edits mode, stream into items, and resume their conversation', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-agy-'));
   const first = [

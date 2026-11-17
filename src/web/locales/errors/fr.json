@@ -397,5 +397,7 @@
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Choisissez Codex pour une relecture par IA. Le mode collaboratif traite les modifications demandées par les annotations.",
   "Enable collaboration mode before selecting it.": "Activez le mode collaboratif avant de le sélectionner.",
   "The workflow is no longer active.": "Le workflow n’est plus actif.",
-  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "Le mode collaboratif exige une vérification réussie des sources finales avant publication. Poursuivez la tâche pour vérifier toutes les annotations."
+  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "Le mode collaboratif exige une vérification réussie des sources finales avant publication. Poursuivez la tâche pour vérifier toutes les annotations.",
+  "Delegated edits must stay within the selected source files.": "Les modifications déléguées doivent rester limitées aux fichiers source sélectionnés.",
+  "The source changed while merging delegated edits. Retry the delegation.": "Les sources ont changé pendant la fusion des modifications déléguées. Relancez la délégation."
 }

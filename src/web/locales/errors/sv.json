@@ -397,5 +397,7 @@
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Välj Codex för AI-granskning. samarbetsläget redigerar utifrån anteckningar.",
   "Enable collaboration mode before selecting it.": "Aktivera samarbetsläget innan du väljer det.",
   "The workflow is no longer active.": "Arbetsflödet är inte längre aktivt.",
-  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "Samarbetsläget kräver en godkänd kontroll av den slutliga källtexten före publicering. Fortsätt uppgiften för att kontrollera alla anteckningar."
+  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "Samarbetsläget kräver en godkänd kontroll av den slutliga källtexten före publicering. Fortsätt uppgiften för att kontrollera alla anteckningar.",
+  "Delegated edits must stay within the selected source files.": "Delegerade ändringar måste begränsas till de valda källfilerna.",
+  "The source changed while merging delegated edits. Retry the delegation.": "Källtexten ändrades medan de delegerade ändringarna slogs samman. Delegera uppgiften igen."
 }

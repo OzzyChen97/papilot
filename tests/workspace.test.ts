@@ -3511,7 +3511,7 @@ test('collaboration is hidden by default and its coordinator receives tools and 
     assert.equal(f.workspace.snapshot().runtimes?.collaboration?.hidden, true);
     const start = f.collaboration.calls.find(call => call.method === 'thread/start')!.params;
     assert.deepEqual(start.dynamicTools.map((tool: any) => tool.name), ['workflow_delegate', 'workflow_audit', 'view_pdf']);
-    assert.match(start.developerInstructions, /sole editor/);
+    assert.match(start.developerInstructions, /automatically three-way merges/);
     assert.match(f.collaboration.calls.find(call => call.method === 'turn/start')!.params.input[0].text, new RegExp(f.run.id + ':1'));
     await assert.rejects(f.workspace.createTask({ id: 'another-task-12345', projectId: 'paper', title: 'Test', instructions: 'Edit', agent: 'collaboration' }), /Enable collaboration/);
   } finally { f.close(); }
@@ -3592,6 +3592,42 @@ test('an unconfirmed starting pause leaves the collaboration coordinator able to
     assert.equal(controller.signal.aborted, false);
     assert.equal((f.workspace as any).workflowStops.get(f.task.id), controller);
   } finally { f.close(); }
+});
+test('delegation invalidates prior audit and blocks audit and publication until edits are integrated', async () => {
+  const f = await collaborationFixture(), gate = deferred<void>();
+  const args = { executor: 'gemini', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] };
+  try {
+    await f.audit(); assert.ok(f.store.runByKey(f.run.requestKey)?.workflowAudit);
+    f.workspace.workflowGenerate = async (_e, _p, _s, _m, edit) => { await gate.promise; fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Improved text.'); return 'Edited'; };
+    const work = (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'edit', params: { tool: 'workflow_delegate', arguments: args } }, f.collaboration);
+    assert.equal(f.store.runByKey(f.run.requestKey)?.workflowAudit, undefined);
+    await f.audit(); assert.match(JSON.stringify(f.collaboration.replies.at(-1)), /Wait for delegated edits/);
+    await assert.rejects((f.workspace as any).checkWorkflowAudit(f.store.task(f.task.id), f.run), /successful audit/);
+    gate.resolve(); await work;
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Improved text.');
+    assert.equal((f.workspace as any).workflowDelegations.has(f.task.id), false);
+    assert.equal(f.store.runByKey(f.run.requestKey)?.workflowAudit, undefined);
+  } finally { gate.resolve(); f.close(); }
+});
+test('an active audit rejects new delegates and old delegate cleanup cannot clear a newer run', async () => {
+  const f = await collaborationFixture(), gate = deferred<void>();
+  const args = { executor: 'gemini', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] };
+  try {
+    const auditGenerate = f.workspace.workflowGenerate;
+    f.workspace.workflowGenerate = async (...params) => { await gate.promise; return auditGenerate(...params); };
+    const audit = f.audit(); await tick();
+    await (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'blocked', params: { tool: 'workflow_delegate', arguments: args } }, f.collaboration);
+    assert.match(JSON.stringify(f.collaboration.replies.at(-1)), /audit is already running/);
+    gate.resolve(); await audit;
+    const worker = deferred<void>();
+    f.workspace.workflowGenerate = async (_e, _p, _s, _m, edit) => { await worker.promise; fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Late edit.'); return 'Edited'; };
+    const work = (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'late', params: { tool: 'workflow_delegate', arguments: args } }, f.collaboration);
+    await f.workspace.interrupt(f.task.id);
+    const newer = { count: 1 }; (f.workspace as any).workflowDelegations.set(f.task.id, newer);
+    worker.resolve(); await work;
+    assert.equal((f.workspace as any).workflowDelegations.get(f.task.id), newer);
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Original text.');
+  } finally { gate.resolve(); f.close(); }
 });
 test('late collaboration helper failures after pause do not answer the stopped turn', async () => {
   const f = await collaborationFixture(); let fail!: (error: Error) => void;

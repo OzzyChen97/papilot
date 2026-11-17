@@ -1563,5 +1563,15 @@
     "revision": "5ae1ac1e8c91e43d3c7808fac68f060ba0849886c249ed2d53e82c6041391e62",
     "textHash": "84a4c25e3ddcc3cc93f3ca4d1d5bbf2172c0ce485c123da82b1a932df9ee7041",
     "model": "codex"
+  },
+  "Delegated edits must stay within the selected source files.": {
+    "revision": "16fa72fb3484ed7b1ea171c6d18232472ec54d0b32e592944140085b0ff587eb",
+    "textHash": "32a76ccae05d5b74f2fb6ac226dfc4adef53fbc874c46d2d702497b9a723cd44",
+    "model": "codex"
+  },
+  "The source changed while merging delegated edits. Retry the delegation.": {
+    "revision": "1d8ac684a409c307f7cbe61d48e25facd160b057cc0e01b212766545f9bb4a11",
+    "textHash": "3a722ba82dc02bd286ba15433302b7c62f200f56a1eaf3136daea052047b747c",
+    "model": "codex"
   }
 }

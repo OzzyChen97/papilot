@@ -18,7 +18,13 @@ See [OpenCode Go setup](https://opencode.ai/docs/console/go/) and [Antigravity C
 
 ## Editing and final verification
 
-Workers receive the selected annotations and source text in a fresh temporary directory. Their native permissions deny file, command and external-tool operations. They return proposals containing original and replacement text; they do not edit the task worktree. Codex is the sole editor and must check each original excerpt before integrating its proposal. Independent spans of the same file can therefore receive proposals concurrently without a file-wide lock. Overlapping proposals are reconciled by Codex.
+Each worker receives an isolated copy of the selected source files and edits that copy with its native file tools. The main task directory is never the worker’s workspace. Commands, network tools and MCP operations are denied; edits outside the selected files, symbolic links and file creation/deletion are rejected before integration.
+
+Papilot compares the worker’s base snapshot, current task source and worker result using the review engine’s existing three-way merge. Its word-level fallback can combine independent edits even on the same line. Workers run concurrently; only the short integration step is serialized. Source files are checked again before atomic replacement, so newer edits are preserved. The program returns which files were applied; Codex does not copy or reapply those changes.
+
+If edits overlap, the conflicted task file stays unchanged. The tool returns the current version, worker version and merge candidate for Codex to reconcile against the latest source. Other clean files are still integrated. Delegation is limited to existing text files; broader file creation, deletion or restructuring stays with Codex.
+
+Audit and publication wait for all delegated edits to finish. Starting another delegation invalidates the previous audit; no new delegate can start while an audit is running. Paused, disconnected or superseded runs cannot integrate late worker results.
 
 Every note in the conversation up to the current turn has a stable message/index ID. The `workflow_audit` tool requires exactly one outcome per ID: addressed, unchanged with evidence, or blocked with an explanation. It verifies that quoted evidence exists, then opens a fresh Codex session to check the claims against the integrated sources and diff. Shared source files are included only once. Blocked notes remain unresolved and must be reported to the author.
 
@@ -28,6 +34,6 @@ Pausing, disconnecting or closing Papilot cancels outstanding helpers and discar
 
 ## Development checks
 
-`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, proposal isolation, provider restrictions, source evidence, cancellation, complete annotation accounting, failed/stale audits and publication. The UI check exercises enable/disable, persistence, errors and keyboard interaction on desktop and mobile layouts.
+`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, isolated edits, automatic same-line merging, conflicts, provider restrictions, source evidence, cancellation, complete annotation accounting, failed/stale audits and publication. The UI check exercises enable/disable, persistence, errors and keyboard interaction on desktop and mobile layouts.
 
 The settings disclosure follows Modern Web Guidance `accordion` and `html` using native `details`/`summary`; `checkbox` and `forms` preserve native input behavior, visible labels and error feedback.

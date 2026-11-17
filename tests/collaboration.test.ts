@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { auditWorkflow, delegateWorkflow, sourceEvidence, workflowNotes, workflowSnapshot, runWorkflowHelper, type WorkflowGenerate } from '../src/server/collaboration.ts';
+import { auditWorkflow, delegateWorkflow, sourceEvidence, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate } from '../src/server/collaboration.ts';
 import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts';
 import { AGENT_IDS, type RuntimeStatus } from '../src/shared.ts';
 
@@ -34,18 +34,158 @@ test('annotation ledger retains repeated notes separately and provides a request
   assert.deepEqual(notes.map(note => note.id), ['message:1', 'message:2']);
   assert.equal(workflowNotes([], 'Explain')[0].comment, 'Explain');
 });
-test('parallel proposals for two spans in one file never change the source', async () => {
-  const f = paper(); const releases: (() => void)[] = [];
-  const generate: WorkflowGenerate = async (executor, prompt) => { assert.match(prompt, /Do not use tools/); await new Promise<void>(resolve => releases.push(resolve)); return executor + ' proposal'; };
+test('parallel edits to different words in the same line are merged by the program', async () => {
+  const f = paper(), releases: (() => void)[] = [], copies: string[] = [];
+  const original = 'First paragraph. Second paragraph. Existing uncommitted text.\n';
+  fs.writeFileSync(path.join(f.root, 'main.tex'), original);
+  const generate: WorkflowGenerate = async (executor, _prompt, _signal, _model, edit) => {
+    assert.ok(edit); copies.push(edit.cwd); assert.deepEqual(edit.files, ['main.tex']);
+    const file = path.join(edit.cwd, 'main.tex');
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(executor === 'deepseek' ? 'First' : 'Second', executor === 'deepseek' ? 'Updated first' : 'Updated second'));
+    await new Promise<void>(resolve => releases.push(resolve)); return 'Edited the assigned annotation.';
+  };
   try {
-    const before = await workflowSnapshot(f.root);
     const jobs = notes.map((note, i) => delegateWorkflow(f.root, notes, { executor: i ? 'gemini' : 'deepseek', annotationIds: [note.id], instruction: note.comment, sources: [{ file: 'main.tex', quote: note.quote }] }, generate, signal()));
-    assert.equal(releases.length, 2); releases.forEach(release => release());
-    const replies = await Promise.all(jobs); assert.equal(replies.length, 2);
-    assert.deepEqual(await workflowSnapshot(f.root), before);
+    assert.equal(releases.length, 2); assert.notEqual(copies[0], copies[1]);
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), original);
+    releases.forEach(release => release());
+    const replies = await Promise.all(jobs); assert.ok(replies.every(reply => reply.status === 'applied'));
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Updated first paragraph. Updated second paragraph. Existing uncommitted text.\n');
+    assert.ok(copies.every(copy => !fs.existsSync(copy)));
     await assert.rejects(delegateWorkflow(f.root, notes, { executor: 'deepseek', annotationIds: ['unknown'] }, generate, signal()), /Unknown/);
     await assert.rejects(delegateWorkflow(f.root, notes, { executor: 'deepseek', annotationIds: [notes[0].id], instruction: 'Edit', sources: [{ file: 'main.tex', quote: 'stale source' }] }, generate, signal()), /no longer matches/);
   } finally { f.close(); }
+});
+const delegateArgs = { executor: 'gemini', annotationIds: [notes[0].id], instruction: 'Edit first.', sources: [{ file: 'main.tex', quote: 'First' }] };
+test('duplicate source excerpts share one snapshot file and case aliases cannot overwrite it', async () => {
+  const f = paper();
+  try {
+    let called = false;
+    const generate: WorkflowGenerate = async (_e, _p, _s, _m, edit) => { called = true; assert.deepEqual(edit!.files, ['main.tex']); return 'Unchanged'; };
+    await delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [{ file: 'main.tex', quote: 'First' }, { file: './main.tex', quote: 'Second' }] }, generate, signal());
+    assert.equal(called, true); called = false;
+    if (fs.existsSync(path.join(f.root, 'MAIN.TEX'))) {
+      await assert.rejects(delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [{ file: 'main.tex', quote: 'First' }, { file: 'MAIN.TEX', quote: 'First' }] }, generate, signal()), /selected source files/);
+      assert.equal(called, false);
+    }
+  } finally { f.close(); }
+});
+test('overlapping edits return a conflict without overwriting the first integrated edit', async () => {
+  const f = paper(), releases: (() => void)[] = [];
+  let calls = 0;
+  const generate: WorkflowGenerate = async (_executor, _prompt, _signal, _model, edit) => {
+    const file = path.join(edit!.cwd, 'main.tex');
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', calls++ ? 'Overlapping' : 'Integrated'));
+    await new Promise<void>(resolve => releases.push(resolve)); return 'Done';
+  };
+  try {
+    const first = delegateWorkflow(f.root, notes, delegateArgs, generate, signal()), second = delegateWorkflow(f.root, notes, delegateArgs, generate, signal());
+    releases[0](); assert.equal((await first).status, 'applied');
+    releases[1](); const result = await second;
+    assert.equal(result.status, 'conflict'); assert.deepEqual(result.appliedFiles, []);
+    assert.match(result.conflicts[0].incoming, /Overlapping/); assert.match(result.conflicts[0].current!, /Integrated/);
+    assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^Integrated/);
+    assert.doesNotMatch(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /<<<<<<|Overlapping/);
+  } finally { f.close(); }
+});
+test('coordinator edits made while a worker runs are retained by three-way merge', async () => {
+  const f = paper();
+  try {
+    const result = await delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+      const file = path.join(edit!.cwd, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Improved'));
+      fs.appendFileSync(path.join(f.root, 'main.tex'), 'New coordinator text.\n'); return 'Edited';
+    }, signal());
+    assert.equal(result.status, 'applied'); assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^Improved[\s\S]*New coordinator text/);
+  } finally { f.close(); }
+});
+test('source changes and cancellation during asynchronous merging prevent stale writes', async () => {
+  for (const operation of ['edit', 'cancel']) {
+    const f = paper(), controller = new AbortController(), mkdtemp = fs.promises.mkdtemp;
+    const current = 'First paragraph.\n\nUpdated coordinator paragraph.\n', latest = current + 'Newer edit.\n';
+    try {
+      fs.promises.mkdtemp = (async (...args: Parameters<typeof mkdtemp>) => {
+        if (String(args[0]).includes('papilot-merge-')) {
+          if (operation === 'edit') fs.writeFileSync(path.join(f.root, 'main.tex'), latest); else controller.abort();
+        }
+        return mkdtemp(...args);
+      }) as typeof mkdtemp;
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+        const file = path.join(edit!.cwd, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Improved'));
+        fs.writeFileSync(path.join(f.root, 'main.tex'), current); return 'Edited';
+      }, controller.signal));
+      assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), operation === 'edit' ? latest : current);
+    } finally { fs.promises.mkdtemp = mkdtemp; f.close(); }
+  }
+});
+test('clean files are applied while conflicted files and deleted targets are retained', async () => {
+  const f = paper(); fs.writeFileSync(path.join(f.root, 'other.tex'), 'Other text.');
+  try {
+    const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_e, _p, _s, _m, edit) => {
+      fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Worker version.'); fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Improved other text.');
+      fs.unlinkSync(path.join(f.root, 'main.tex')); return 'Edited both.';
+    }, signal());
+    assert.equal(result.status, 'conflict'); assert.deepEqual(result.appliedFiles, ['other.tex']); assert.equal(result.conflicts[0].current, null);
+    assert.equal(fs.existsSync(path.join(f.root, 'main.tex')), false); assert.equal(fs.readFileSync(path.join(f.root, 'other.tex'), 'utf8'), 'Improved other text.');
+  } finally { f.close(); }
+});
+test('a failed atomic replacement rolls back files already integrated by the same delegate', async () => {
+  const f = paper(); fs.writeFileSync(path.join(f.root, 'other.tex'), 'Other text.');
+  const before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), rename = fs.renameSync;
+  try {
+    fs.renameSync = (from, to) => { if (String(to) === path.join(fs.realpathSync(f.root), 'other.tex')) throw new Error('Simulated write failure'); return rename(from, to); };
+    await assert.rejects(delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_e, _p, _s, _m, edit) => {
+      fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Improved.'); fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Improved other.'); return 'Edited both.';
+    }, signal()), /Simulated write failure/);
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), before); assert.equal(fs.readFileSync(path.join(f.root, 'other.tex'), 'utf8'), 'Other text.');
+  } finally { fs.renameSync = rename; f.close(); }
+});
+test('OpenCode editing rules allow only selected files and keep unrelated native actions denied', () => {
+  const config = JSON.parse(workflowOpenCodeConfig({ cwd: '/isolated', files: ['main.tex'] }));
+  const rules = config.agents['papilot-default'].permissions;
+  const effect = (action: string, resource: string) => rules.filter((rule: any) => (rule.action === '*' || rule.action === action) && (rule.resource === '*' || rule.resource === resource)).at(-1)?.effect;
+  for (const file of ['main.tex', '/isolated/main.tex']) for (const action of ['read', 'edit']) assert.equal(effect(action, file), 'allow');
+  for (const [action, resource] of [['edit', '../other.tex'], ['edit', 'new.tex'], ['shell', 'git status'], ['subagent', 'helper'], ['webfetch', 'https://example.com']]) assert.equal(effect(action, resource), 'deny');
+  assert.equal(config.agent['papilot-default'].permission.edit['*'], 'deny');
+  assert.equal(config.agent['papilot-default'].permission.edit['main.tex'], 'allow');
+});
+test('cancelled and stale runs never integrate late edits', async () => {
+  for (const mode of ['cancel', 'stale']) {
+    const f = paper(), controller = new AbortController(); let current = true, copy = '';
+    const before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8');
+    try {
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+        copy = edit!.cwd; fs.writeFileSync(path.join(copy, 'main.tex'), 'Late edit.');
+        if (mode === 'cancel') controller.abort(); else current = false;
+        return 'Edited';
+      }, controller.signal, () => current));
+      assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), before); assert.equal(fs.existsSync(copy), false);
+    } finally { f.close(); }
+  }
+});
+test('workers cannot integrate extra files, deleted files or symlink outputs', async () => {
+  for (const mode of ['extra', 'deleted', 'symlink']) {
+    const f = paper(), before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8');
+    try {
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+        const file = path.join(edit!.cwd, 'main.tex');
+        if (mode === 'extra') fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Out of scope');
+        else { fs.unlinkSync(file); if (mode === 'symlink') fs.symlinkSync(path.join(f.root, 'main.tex'), file); }
+        return 'Edited';
+      }, signal()));
+      assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), before); assert.equal(fs.existsSync(path.join(f.root, 'other.tex')), false);
+    } finally { f.close(); }
+  }
+});
+test('a task source replaced by a symlink during delegation cannot be overwritten', async () => {
+  const f = paper(), outside = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-worker-outside-'));
+  fs.writeFileSync(path.join(outside, 'other.tex'), 'Protected');
+  try {
+    await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+      fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Worker edit');
+      fs.unlinkSync(path.join(f.root, 'main.tex')); fs.symlinkSync(path.join(outside, 'other.tex'), path.join(f.root, 'main.tex')); return 'Edited';
+    }, signal()), /selected source files/);
+    assert.equal(fs.readFileSync(path.join(outside, 'other.tex'), 'utf8'), 'Protected');
+  } finally { f.close(); fs.rmSync(outside, { recursive: true, force: true }); }
 });
 test('evidence rejects path escapes, symlinks and stale text', () => {
   const f = paper(), outside = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-outside-'));
@@ -85,21 +225,21 @@ class Helper extends EventEmitter {
 }
 test('native helper pins Go, uses disposable read-only cwd, closes it, and rejects other providers', async () => {
   const helper = new Helper();
-  assert.equal(await runWorkflowHelper('deepseek', 'Fix text', signal(), undefined, () => helper), 'Proposal');
+  assert.equal(await runWorkflowHelper('deepseek', 'Fix text', signal(), undefined, undefined, () => helper), 'Proposal');
   const start = helper.calls.find(call => call.method === 'thread/start').params;
   assert.equal(start.model, 'opencode-go/deepseek-v4.1-flash'); assert.equal(start.sandbox, 'read-only'); assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
   const previous = process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL;
-  try { process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = 'deepseek/deepseek-v4'; await assert.rejects(runWorkflowHelper('deepseek', 'Fix', signal(), undefined, () => new Helper()), /must use an opencode-go/); }
+  try { process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = 'deepseek/deepseek-v4'; await assert.rejects(runWorkflowHelper('deepseek', 'Fix', signal(), undefined, undefined, () => new Helper()), /must use an opencode-go/); }
   finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL; else process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = previous; }
 });
-test('Gemini proposals default to Flash and allow an explicit available Gemini model', async () => {
+test('Gemini helpers default to Flash and allow an explicit available Gemini model', async () => {
   const previous = process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
   try {
     delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
     for (const model of ['gemini-3.8-flash', 'gemini-4-argon']) {
       if (model !== 'gemini-3.8-flash') process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model;
       const helper = new Helper();
-      assert.equal(await runWorkflowHelper('gemini', 'Polish', signal(), undefined, () => helper), 'Proposal');
+      assert.equal(await runWorkflowHelper('gemini', 'Polish', signal(), undefined, undefined, () => helper), 'Proposal');
       const start = helper.calls.find(call => call.method === 'thread/start').params;
       assert.equal(start.model, model); assert.equal(start.sandbox, 'read-only');
       assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
@@ -112,7 +252,7 @@ test('missing or non-Gemini polishing models fail without a fallback or model tu
     for (const model of [undefined, 'gemini-missing', 'claude-sonnet-4-6']) {
       if (model) process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model; else delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
       const helper = new Helper(); helper.models = ['gemini-4-argon', 'claude-sonnet-4-6'];
-      await assert.rejects(runWorkflowHelper('gemini', 'Polish', signal(), undefined, () => helper), /model is unavailable/);
+      await assert.rejects(runWorkflowHelper('gemini', 'Polish', signal(), undefined, undefined, () => helper), /model is unavailable/);
       assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); assert.equal(helper.closed, true);
     }
   } finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL; else process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = previous; }
@@ -120,14 +260,14 @@ test('missing or non-Gemini polishing models fail without a fallback or model tu
 test('stopping a native helper closes its process and ignores late results', async () => {
   const helper = new Helper(), controller = new AbortController();
   helper.request = async (method, params) => { if (method === 'model/list') return { data: [] }; if (method === 'thread/start') { helper.cwd = params.cwd; return { thread: { id: 'helper' } }; } if (method === 'turn/start') controller.abort(); return {}; };
-  await assert.rejects(runWorkflowHelper('codex', 'Audit', controller.signal, undefined, () => helper), /stopped/);
+  await assert.rejects(runWorkflowHelper('codex', 'Audit', controller.signal, undefined, undefined, () => helper), /stopped/);
   assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
 });
 test('a delayed installation probe cannot start a helper after cancellation', async () => {
   const helper = new Helper(), controller = new AbortController(); let resolve!: (value: boolean) => void, starts = 0;
   const runtime = Object.assign(helper, { detect: () => new Promise<boolean>(done => { resolve = done; }) });
   runtime.start = async () => { starts++; helper.ready = true; };
-  const work = runWorkflowHelper('codex', 'Audit', controller.signal, undefined, () => runtime);
+  const work = runWorkflowHelper('codex', 'Audit', controller.signal, undefined, undefined, () => runtime);
   controller.abort(); await assert.rejects(work, /stopped/); resolve(true); await new Promise(done => setImmediate(done));
   assert.equal(starts, 0); assert.equal(helper.ready, false);
 });
