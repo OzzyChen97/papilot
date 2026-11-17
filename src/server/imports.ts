@@ -166,7 +166,9 @@ async function zipEntries(buffer: Buffer | string, visit: (name: string, stream:
     if (typeof buffer === 'string') yauzl.open(buffer, options, ready);
     else yauzl.fromBuffer(buffer, options, ready);
   });
-  await new Promise<void>((resolve, reject) => {
+  // A file-backed ZIP releases its descriptor asynchronously; callers may delete it next.
+  const closed = typeof buffer === 'string' ? new Promise<void>(resolve => zip.once('close', resolve)) : undefined;
+  try { await new Promise<void>((resolve, reject) => {
     let count = 0, total = 0;
     const fail = (error: unknown) => { zip.close(); reject(error); };
     zip.on('error', fail); zip.on('end', resolve);
@@ -181,7 +183,7 @@ async function zipEntries(buffer: Buffer | string, visit: (name: string, stream:
       await visit(name, stream); zip.readEntry();
     })().catch(fail); });
     zip.readEntry();
-  });
+  }); } finally { zip.close(); await closed; }
 }
 export function extractZip(buffer: Buffer | string, root: string, bounded = false, signal?: AbortSignal) {
   return zipEntries(buffer, async (name, stream) => {
@@ -241,6 +243,8 @@ export class PaperImports {
   private active = new Set<string>();
   get busy() { return this.active.size > 0; }
   constructor(private manuscripts: Manuscripts, private directory = DATA, private registered: (root: string) => boolean = () => false, private source = downloadPaperSource) {
+    // Staged ZIPs belong to requests that ended with a previous server process.
+    if (fs.existsSync(directory)) for (const name of fs.readdirSync(directory)) if (name.startsWith('upload-')) fs.rmSync(path.join(directory, name), { recursive: true, force: true });
     const folder = path.join(directory, 'imports');
     if (fs.existsSync(folder)) for (const file of fs.readdirSync(folder)) {
       if (/^[a-f0-9-]{36}\.json$/.test(file)) try { this.get(file.slice(0, -5)); } catch { /* An unreadable receipt must not prevent other papers from opening. */ }
@@ -279,7 +283,8 @@ export class PaperImports {
             await extractZip(file, root, false, signal);
           } finally { await fs.promises.rm(temporary, { recursive: true, force: true }); }
         } else {
-          const file = safeName(decodeURIComponent(part.filename));
+          let file: string;
+          try { file = safeName(decodeURIComponent(part.filename)); } catch { throw new Error('Invalid file path in upload.'); }
           if (file.split('/').some(skip)) { for await (const _chunk of part.file) { /* Drain ignored files without buffering. */ } continue; }
           const target = path.join(root, file);
           await fs.promises.mkdir(path.dirname(target), { recursive: true });

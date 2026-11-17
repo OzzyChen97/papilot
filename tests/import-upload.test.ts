@@ -157,3 +157,21 @@ test('streaming uploads inherit the workspace CSRF guard before accepting files'
   assert.equal(allowed.statusCode, 200, allowed.body);
   assert.equal(allowed.json().main, 'main.tex');
 });
+
+test('malformed filename escapes report an invalid path instead of a decoder error', async t => {
+  const f = await fixture(t);
+  async function* files() { yield { filename: 'paper%E0%A4%A.tex', file: Readable.from([source]) }; }
+  await assert.rejects(f.imports.upload(files(), 'Malformed', false), { message: 'Invalid file path in upload.' });
+  assert.deepEqual(fs.readdirSync(path.join(f.directory, 'papers')), []);
+});
+
+test('staged ZIPs left by an earlier server process are removed on startup', () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-upload-restart-'));
+  try {
+    fs.mkdirSync(path.join(directory, 'upload-stale')); fs.writeFileSync(path.join(directory, 'upload-stale', 'source.zip'), 'partial');
+    fs.mkdirSync(path.join(directory, 'papers', 'kept'), { recursive: true });
+    new PaperImports(new Manuscripts(), directory);
+    assert.deepEqual(fs.readdirSync(directory), ['papers']);
+    assert.ok(fs.existsSync(path.join(directory, 'papers', 'kept')));
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});

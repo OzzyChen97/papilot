@@ -127,5 +127,5 @@
 
 @media (pointer: coarse) {
   .import-dialog .import-path-row input { font-size: 16px; height: 48px; }
-  .import-dialog .button { height: auto; min-height: 48px; }
+  :is(.import-copy, .import-original) .button { height: auto; min-height: 48px; }
 }

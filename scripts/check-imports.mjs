@@ -195,6 +195,9 @@ try {
     const dimensions = await input.evaluate(el => ({ size: parseFloat(getComputedStyle(el).fontSize), height: el.getBoundingClientRect().height, coarse: matchMedia('(pointer: coarse)').matches }));
     assert.equal(dimensions.coarse, true); assert.ok(dimensions.size >= 16); assert.ok(dimensions.height >= 48, JSON.stringify(dimensions));
     assert.ok((await phoneDialog.getByRole('button', { name: '导入链接', exact: true }).boundingBox()).height >= 48);
+    // Every source choice is a touch-sized target; later import phases keep their compact layout.
+    const choices = await phoneDialog.locator(':is(.import-copy, .import-original) .button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
+    assert.ok(choices.length >= 4 && choices.every(height => height >= 44), JSON.stringify(choices));
     assert.equal(await phoneDialog.evaluate(el => el.scrollWidth <= el.clientWidth), true);
   } finally { await touchContext.close(); }
   assert.deepEqual(errors, []);
