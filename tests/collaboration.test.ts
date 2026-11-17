@@ -343,6 +343,18 @@ test('an ignored evidence file is included in the audit fingerprint and sources 
     assert.notEqual((await workflowSnapshot(f.root, result.files)).fingerprint, result.fingerprint);
   } finally { f.close(); }
 });
+test('a submodule is fingerprinted by its commit and changes instead of being read as a file', async () => {
+  const f = paper(), library = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-submodule-')));
+  const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-c', 'protocol.file.allow=always', '-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], { cwd, stdio: 'pipe', env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' } });
+  try {
+    git(library, 'init'); fs.writeFileSync(path.join(library, 'macros.tex'), '\\newcommand{\\R}{\\mathbb{R}}\n'); git(library, 'add', '.'); git(library, 'commit', '-m', 'Macros');
+    git(f.root, 'submodule', 'add', library, 'lib'); git(f.root, 'commit', '-m', 'Add macros');
+    const before = await workflowSnapshot(f.root);
+    assert.equal((await workflowSnapshot(f.root)).fingerprint, before.fingerprint);
+    fs.appendFileSync(path.join(f.root, 'lib', 'macros.tex'), '% edited\n');
+    assert.notEqual((await workflowSnapshot(f.root)).fingerprint, before.fingerprint);
+  } finally { f.close(); fs.rmSync(library, { recursive: true, force: true }); }
+});
 test('audit binds the quoted source bytes to the fingerprint before asking the verifier', async () => {
   const f = paper();
   try {

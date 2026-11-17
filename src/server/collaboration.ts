@@ -91,6 +91,14 @@ export async function workflowSnapshot(root: string, evidenceFiles: string[] = [
         const bytes = fs.readFileSync(real);
         hash.update(relative + '\0'); hash.update(bytes);
         sources[file] = bytes.toString('utf8');
+      } else if (stat.isDirectory()) {
+        // A submodule is listed as one entry: its commit and uncommitted changes
+        // stand for its files. An uninitialized one is an empty folder.
+        if (fs.existsSync(path.join(resolved, '.git'))) {
+          const sub = { ...options, cwd: resolved };
+          hash.update((await exec('git', ['rev-parse', 'HEAD'], sub)).stdout);
+          hash.update((await exec('git', ['status', '--porcelain=v1', '-z', '--untracked-files=all'], sub)).stdout);
+        } else hash.update('directory');
       } else hash.update(stat.isSymbolicLink() ? fs.readlinkSync(resolved) : fs.readFileSync(resolved));
     } catch (e) { if ((e as NodeJS.ErrnoException).code !== 'ENOENT' || evidenceFiles.includes(file)) throw e; hash.update('deleted'); }
   }
