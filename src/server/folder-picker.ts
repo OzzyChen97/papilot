@@ -67,10 +67,15 @@ let open: { choice: Promise<FolderChoice>; waiting: number; stop: AbortControlle
 // Shows the system folder picker on the computer running Papilot. One picker is
 // shown at a time: a repeated request waits for the same choice, and the picker
 // closes only when every waiting request has gone.
+// Closes an open picker so it does not outlive the server.
+export function closeFolderPicker() { open?.stop.abort(); }
+
 export function chooseFolder(title: string, start: string, signal?: AbortSignal, platform = process.platform, env = process.env): Promise<FolderChoice> {
   if (signal?.aborted) return Promise.reject(signal.reason);
   if (!open) {
     const stop = new AbortController();
+    // A picker process is not ended with the server, so close it on any exit.
+    process.once('exit', closeFolderPicker);
     const choice = (async () => {
       for (const command of pickerCommands(platform, env, title, start)) {
         let result: FolderChoice | 'missing';
@@ -84,7 +89,7 @@ export function chooseFolder(title: string, start: string, signal?: AbortSignal,
         if (result !== 'missing') return result;
       }
       return { unavailable: true } as const;
-    })().finally(() => { if (open?.stop === stop) open = null; });
+    })().finally(() => { process.off('exit', closeFolderPicker); if (open?.stop === stop) open = null; });
     open = { choice, waiting: 0, stop };
   }
   const current = open;

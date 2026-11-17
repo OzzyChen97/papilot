@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { chooseFolder, pickerCommands } from '../src/server/folder-picker.ts';
+import { spawnSync } from 'node:child_process';
+import { chooseFolder, closeFolderPicker, pickerCommands } from '../src/server/folder-picker.ts';
 import { isLocalRequest } from '../src/server/security.ts';
 
 const title = 'Choose "paper" `$(touch hacked)`', start = '/Users/you/papers & "notes"';
@@ -70,4 +71,28 @@ test('a shared picker closes only after every waiting request leaves', { skip: p
   await new Promise(resolve => setTimeout(resolve, 100));
   assert.equal(fs.existsSync(marker), true, 'The picker stops when nobody is waiting');
   assert.deepEqual(await chooseFolder('Choose', '/home/you', undefined, 'linux', env), { path: '/home/you/kept' }, 'A new request opens a new picker');
+});
+
+test('an open picker closes when the server shuts down or exits', { skip: process.platform === 'win32' && 'Uses POSIX shell scripts.' }, async t => {
+  const bin = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-picker-')), PATH = process.env.PATH;
+  const ready = path.join(bin, 'ready'), stopped = path.join(bin, 'stopped');
+  t.after(() => { process.env.PATH = PATH; fs.rmSync(bin, { recursive: true, force: true }); });
+  process.env.PATH = bin + path.delimiter + PATH;
+  // The fake picker stays open until it is stopped, and reports when it can be.
+  fs.writeFileSync(path.join(bin, 'zenity'), `#!/bin/sh\ntrap 'touch "${stopped}"; exit 143' TERM\ntouch "${ready}"\nsleep 30 & wait $!\n`); fs.chmodSync(path.join(bin, 'zenity'), 0o755);
+  const until = async (file: string) => { for (let i = 0; i < 200 && !fs.existsSync(file); i++) await new Promise(resolve => setTimeout(resolve, 25)); return fs.existsSync(file); };
+  const waiting = chooseFolder('Choose', '/home/you', undefined, 'linux', { DISPLAY: ':0' });
+  assert.ok(await until(ready));
+  closeFolderPicker();
+  await assert.rejects(waiting, { name: 'AbortError' });
+  assert.ok(await until(stopped), 'Shutdown closes the picker');
+  fs.rmSync(ready); fs.rmSync(stopped);
+  // A server that exits without shutting down, such as after its shutdown timeout, still closes the picker.
+  const exiting = `import fs from 'node:fs';
+import { chooseFolder } from ${JSON.stringify(new URL('../src/server/folder-picker.ts', import.meta.url).href)};
+void chooseFolder('Choose', '/home/you', undefined, 'linux', { DISPLAY: ':0' }).catch(() => undefined);
+const timer = setInterval(() => { if (fs.existsSync(${JSON.stringify(ready)})) { clearInterval(timer); process.exit(0); } }, 25);`;
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', exiting], { env: process.env, encoding: 'utf8', timeout: 10_000 });
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(await until(stopped), 'Exiting closes the picker');
 });

@@ -5,7 +5,7 @@ import compress from '@fastify/compress';
 import { registerImportUpload } from './import-upload.ts';
 import { listFolders, nearestFolder } from './folders.ts';
 import { isLocalRequest } from './security.ts';
-import { chooseFolder } from './folder-picker.ts';
+import { chooseFolder, closeFolderPicker } from './folder-picker.ts';
 import rateLimit from '@fastify/rate-limit';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -378,6 +378,8 @@ export async function buildApp(options: AppOptions) {
     try { return await chooseFolder(title, start, controller.signal); }
     finally { reply.raw.off('close', closed); }
   });
+  // A waiting picker request would otherwise hold shutdown open.
+  app.addHook('preClose', async () => closeFolderPicker());
   // Legacy base64 clients still buffer JSON; browser file uploads use the streaming route above.
   app.post('/api/imports', { bodyLimit: 90 * 1024 * 1024 }, request => imports!.create((request.body || {}) as any));
   app.get<{ Params: { id: string } }>('/api/imports/:id', request => imports!.get(request.params.id));
