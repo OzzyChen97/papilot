@@ -1,12 +1,12 @@
-/* A path field with Browse… attached, so typing and choosing read as one control. */
-.folder-field-row { display: flex; align-items: stretch; gap: 8px; margin-top: 6px; }
-.folder-field-row > .button.compact { flex: none; height: auto; }
-.folder-field { display: flex; flex: 1; min-width: 0; height: 38px; border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--bg); box-shadow: var(--shadow-xs); transition: border-color .15s, box-shadow .15s; }
+/* A path field with a folder button inside it, as in IDE path fields. */
+.folder-field-row { --folder-field-height: 38px; display: flex; align-items: stretch; gap: 8px; margin-top: 6px; }
+/* The field and the button beside it share one height at every size. */
+.folder-field-row > .button.compact { flex: none; height: var(--folder-field-height); min-height: 0; margin: 0; padding-block: 0; }
+.folder-field { display: flex; flex: 1; min-width: 0; height: var(--folder-field-height); border: 1px solid var(--line-strong); border-radius: var(--r); background: var(--bg); box-shadow: var(--shadow-xs); transition: border-color .15s, box-shadow .15s; }
 .folder-field:focus-within { border-color: var(--accent); box-shadow: var(--ring); }
-.modal .folder-field input { flex: 1; min-width: 0; height: 100%; margin: 0; border: 0; border-radius: var(--r) 0 0 var(--r); background: transparent; box-shadow: none; }
+.modal .folder-field input { flex: 1; min-width: 0; height: 100%; margin: 0; border: 0; background: transparent; box-shadow: none; }
 .modal .folder-field input:focus { box-shadow: none; outline: none; }
-.folder-field-browse { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 0 12px; border-inline-start: 1px solid var(--line); border-radius: 0 var(--r) var(--r) 0; color: var(--text-2); font-size: 13px; white-space: nowrap; }
-.folder-field-browse svg { color: var(--text-3); }
+.folder-field-browse { display: inline-flex; align-items: center; justify-content: center; flex: none; align-self: center; width: 30px; height: 30px; margin-inline-end: 3px; border-radius: var(--r-sm); color: var(--text-3); }
 .folder-field-browse[aria-expanded=true] { background: var(--bg-hover); color: var(--text); }
 .folder-field-browse:disabled { cursor: default; opacity: .6; }
 .folder-field-browse[aria-busy=true] { cursor: progress; }
@@ -31,8 +31,10 @@
 .folder-browser-actions span { flex: 1 1 140px; min-width: 0; font-size: 12px; color: var(--text-3); }
 .folder-browser-buttons { display: flex; gap: 8px; margin-inline-start: auto; }
 
+@media (max-width: 680px) { .folder-field-row { --folder-field-height: 44px; } }
 @media (pointer: coarse) {
-  .folder-field { height: 48px; }
+  .folder-field-row { --folder-field-height: 48px; }
+  .folder-field-browse { width: 44px; height: 44px; margin-inline-end: 1px; }
   .modal .folder-field input { font-size: 16px; }
   .folder-browser-head .icon-button { width: 44px; height: 44px; }
   .folder-browser-list button, .folder-browser-actions .button { min-height: 44px; }

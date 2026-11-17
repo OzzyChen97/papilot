@@ -47,7 +47,7 @@ export function FolderField({ id, name = 'path', api, label, value, onChange, ti
       <div className="folder-field">
         <input id={id} name={name} value={value} required disabled={disabled} maxLength={4000} placeholder={placeholder} aria-describedby={describedBy} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false}
           onChange={event => { picker.cancel(); onChange(event.target.value); }}/>
-        <button type="button" className="folder-field-browse" disabled={disabled} aria-busy={picker.waiting || undefined} aria-expanded={browsing} aria-controls={id + '-browser'} onClick={() => void browse()}><Icon name="folder" size={15}/>{t('Browse…')}</button>
+        <button type="button" className="folder-field-browse" disabled={disabled} aria-label={t('Browse…')} title={t('Browse…')} aria-busy={picker.waiting || undefined} aria-expanded={browsing} aria-controls={id + '-browser'} onClick={() => void browse()}><Icon name="folder" size={16}/></button>
       </div>
       {children}
     </div>
