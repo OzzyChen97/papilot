@@ -70,6 +70,8 @@ try {
       assert.ok(await importDialog.evaluate(element => element.scrollWidth <= element.clientWidth + 1), `${id} import content overflows at ${width}px`);
       await importDialog.screenshot({ path: `test-results/locales/import-${id}-${width}.png`, animations: 'disabled' });
     }
+    // Later steps use the desktop sidebar controls.
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await page.getByRole('textbox', { name: label(id, 'Folder path'), exact: true }).fill('/tmp/example');
     await page.getByRole('button', { name: label(id, 'Open'), exact: true }).click();
     const error = id === 'en' ? 'Paper name is too long.' : errorMessages[id]['Paper name is too long.'];
