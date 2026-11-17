@@ -180,7 +180,9 @@ async function zipEntries(buffer: Buffer | string, visit: (name: string, stream:
       if (mode && mode !== 0o100000 && mode !== 0o040000) throw new Error('ZIP links and special files are not supported.');
       if (name.split('/').some(skip) || entry.fileName.endsWith('/')) { zip.readEntry(); return; }
       const stream = await new Promise<NodeJS.ReadableStream>((resolve, reject) => zip.openReadStream(entry, (error, stream) => error ? reject(error) : resolve(stream)));
-      await visit(name, stream); zip.readEntry();
+      // An unconsumed entry stream keeps the ZIP open, so release it if the visitor fails before piping it.
+      try { await visit(name, stream); } catch (error) { (stream as NodeJS.ReadableStream & { destroy(): void }).destroy(); throw error; }
+      zip.readEntry();
     })().catch(fail); });
     zip.readEntry();
   }); } finally { zip.close(); await closed; }

@@ -178,3 +178,29 @@ test('staging and incomplete copies left by an earlier server process are remove
     assert.deepEqual(fs.readdirSync(path.join(directory, 'papers')).sort(), [ids.imported, ids.registered, 'not-an-import'].sort());
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });
+
+test('ZIP path conflicts fail promptly and remove staged files', async t => {
+  const f = await fixture(t);
+  // "asset" is extracted as a file, so creating the parent of "asset/child.bin" fails before its stream is read.
+  function* zip() {
+    const entries = [['main.tex', source], ['asset', 'file'], ['asset/child.bin', 'child']], central: Buffer[] = [];
+    let offset = 0;
+    for (const [entryName, content] of entries) {
+      const name = Buffer.from(entryName), body = Buffer.from(content), local = Buffer.alloc(30), header = Buffer.alloc(46);
+      local.writeUInt32LE(0x04034b50); local.writeUInt16LE(20, 4); local.writeUInt32LE(body.length, 18); local.writeUInt32LE(body.length, 22); local.writeUInt16LE(name.length, 26);
+      header.writeUInt32LE(0x02014b50); header.writeUInt16LE(20, 6); header.writeUInt32LE(body.length, 20); header.writeUInt32LE(body.length, 24); header.writeUInt16LE(name.length, 28); header.writeUInt32LE(offset, 42);
+      yield local; yield name; yield body;
+      offset += local.length + name.length + body.length; central.push(header, name);
+    }
+    const directory = Buffer.concat(central), end = Buffer.alloc(22);
+    end.writeUInt32LE(0x06054b50); end.writeUInt16LE(entries.length, 8); end.writeUInt16LE(entries.length, 10); end.writeUInt32LE(directory.length, 12); end.writeUInt32LE(offset, 16);
+    yield directory; yield end;
+  }
+  function* body() { yield part('source.zip'); yield* zip(); yield end; }
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const response = await Promise.race([f.upload(body(), true), new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('ZIP extraction did not finish')), 5000); })]).finally(() => clearTimeout(timer));
+  assert.ok(response.statusCode >= 400, response.body);
+  assert.deepEqual(fs.readdirSync(path.join(f.directory, 'papers')), []);
+  assert.ok(!fs.readdirSync(f.directory).some(name => name.startsWith('upload-')));
+  assert.equal(f.imports.busy, false);
+});
