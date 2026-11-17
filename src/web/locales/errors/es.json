@@ -373,5 +373,6 @@
   "Use an arXiv abstract, PDF, HTML or source link for one paper.": "Usa un enlace de arXiv al resumen, PDF, HTML o código fuente de un solo artículo.",
   "Use an enabled Overleaf read-only sharing link. Private project links require an Overleaf login; you can also upload the source ZIP.": "Usa un enlace compartido de solo lectura de Overleaf habilitado. Los enlaces a proyectos privados requieren iniciar sesión en Overleaf; también puedes subir el ZIP del código fuente.",
   "Drop one folder or LaTeX ZIP file.": "Suelta una carpeta o un archivo ZIP de LaTeX.",
-  "No files found in this folder.": "No se encontraron archivos en esta carpeta."
+  "No files found in this folder.": "No se encontraron archivos en esta carpeta.",
+  "Papilot cannot read this folder.": "Papilot no puede leer esta carpeta."
 }

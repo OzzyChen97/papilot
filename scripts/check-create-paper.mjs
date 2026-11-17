@@ -20,6 +20,8 @@ try {
     const requests = [], state = { version: '0.10.4', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: false, account: null, error: null, models: [] } };
     if (desktop) await context.addInitScript(picked => { window.papilotDesktop = { platform: 'win32', minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => picked }; }, picked);
     let fail = !desktop;
+    // A browser on another device cannot show the system picker and browses in the page instead.
+    let picker = { unavailable: true };
     await context.route('**/api/**', route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/projects/create-defaults') return route.fulfill({ json: { parent } });
@@ -28,6 +30,12 @@ try {
         if (fail) return route.fulfill({ status: 400, json: { error: 'Could not create the paper folder. Check the save location and its permissions.' } });
         const project = { id: 'created-' + mode, name: body.name, path: body.parent + (mode === 'windows' ? '\\' : '/') + body.name, createdAt: 1 };
         state.projects = [project]; return route.fulfill({ json: project });
+      }
+      if (url.pathname === '/api/folders/choose') { assert.equal(desktop, false, 'Desktop uses its own folder picker'); return route.fulfill({ json: picker }); }
+      if (url.pathname === '/api/folders') {
+        assert.equal(desktop, false, 'Desktop uses the native folder picker');
+        const current = route.request().postDataJSON().path.replace(/\/$/, '') || '/';
+        return route.fulfill({ json: { path: current, parent: current === '/' ? null : current.slice(0, current.lastIndexOf('/')) || '/', folders: current === '/home/author' ? [{ name: 'papers', path: '/home/author/papers' }] : [] } });
       }
       if (url.pathname === '/api/runtime/requirements') return route.fulfill({ json: readyRequirements });
       if (url.pathname === '/api/state') return route.fulfill({ json: state });
@@ -43,29 +51,45 @@ try {
     const create = page.getByRole('button', { name: 'New paper', exact: true });
     await create.click();
     let dialog = page.getByRole('dialog', { name: 'New paper', exact: true });
-    const name = dialog.getByRole('textbox', { name: 'Paper name', exact: true }), location = dialog.getByRole('textbox', { name: 'Save in', exact: true });
+    const name = dialog.getByRole('textbox', { name: 'Paper name', exact: true }), shown = () => dialog.locator('.create-paper-location-copy span').textContent(), change = dialog.locator('.create-paper-location').getByRole('button', { name: 'Change…', exact: true });
     await name.fill('研究论文');
-    await page.waitForFunction(parent => document.querySelector('[name=parent]')?.value === parent || document.querySelector('.create-paper-location-copy span')?.textContent === parent, parent);
+    await page.waitForFunction(parent => document.querySelector('.create-paper-location-copy span')?.textContent === parent, parent);
     // The dialog shows the folder it will create instead of explaining it.
     const target = dialog.locator('.create-paper-target'), separator = mode === 'windows' ? '\\' : '/';
     await page.waitForFunction(([selector, expected]) => document.querySelector(selector)?.textContent === expected, ['.create-paper-target', parent + separator + '研究论文']);
+    assert.equal(await dialog.getByRole('textbox', { name: 'Save in', exact: true }).count(), 0, 'The save location is chosen, not typed');
     if (desktop) {
-      assert.equal(await location.count(), 0, 'Desktop uses a native picker without a path textbox');
-      await dialog.locator('.create-paper-location').getByRole('button', { name: 'Change…', exact: true }).click(); assert.equal(await dialog.locator('.create-paper-location-copy span').textContent(), picked);
+      await change.click(); assert.equal(await shown(), picked);
       assert.equal(await target.textContent(), picked + separator + '研究论文');
     } else {
       await page.setViewportSize({ width: 320, height: 640 });
       await page.emulateMedia({ colorScheme: 'dark' });
       await page.screenshot({ path: 'test-results/create-paper-mobile.png', animations: 'disabled' });
-      assert.ok((await location.boundingBox()).height >= 36, 'Save location remains a usable input on mobile');
+      assert.ok((await change.boundingBox()).height >= 28, 'Change… remains usable on mobile');
       const bounds = await dialog.locator('.modal').boundingBox(); assert.ok(bounds.x >= 0 && bounds.x + bounds.width <= 321, 'Creation dialog fits a narrow phone');
       assert.ok(await target.evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'The target folder truncates instead of widening the dialog');
+      await change.click();
+      await dialog.getByRole('button', { name: 'papers', exact: true }).click();
+      await dialog.getByText('No folders inside.', { exact: true }).waitFor();
+      assert.equal(await dialog.getByRole('textbox', { name: 'Folder path', exact: true }).inputValue(), '/home/author/papers');
+      assert.ok(await dialog.locator('.modal').evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'The folder browser fits a narrow phone');
+      await page.screenshot({ path: 'test-results/create-paper-browse-mobile.png', animations: 'disabled' });
+      // Enter in the path field moves the browser without submitting the creation form.
+      await dialog.getByRole('textbox', { name: 'Folder path', exact: true }).press('Enter');
+      assert.equal(requests.length, 0);
+      await dialog.getByRole('button', { name: 'Use this folder', exact: true }).click();
+      assert.equal(await shown(), '/home/author/papers');
+      assert.equal(await target.textContent(), '/home/author/papers/研究论文');
+      // A browser on the Papilot computer uses the system picker.
+      picker = { path: parent };
+      await change.click();
+      await page.waitForFunction(parent => document.querySelector('.create-paper-location-copy span')?.textContent === parent, parent);
     }
     await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
     if (!desktop) {
       await dialog.getByRole('alert').filter({ hasText: 'permissions' }).waitFor();
       const first = requests.at(-1);
-      assert.equal(await name.inputValue(), '研究论文'); assert.equal(await location.inputValue(), parent);
+      assert.equal(await name.inputValue(), '研究论文'); assert.equal(await shown(), parent);
       await page.reload(); await create.click();
       dialog = page.getByRole('dialog', { name: 'New paper', exact: true });
       assert.equal(await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).inputValue(), '研究论文');
@@ -221,7 +245,7 @@ try {
       await dialog.getByRole('alert').waitFor();
       assert.equal(requests.at(-1).example, true); assert.equal(requests.at(-1).template, undefined);
       await dialog.getByRole('tab', { name: 'Import or open', exact: true }).click();
-      await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Choose folder…', exact: true }).click();
       await dialog.waitFor({ state: 'hidden' });
       const switcher = page.getByRole('button', { name: 'Paper: Local paper', exact: true });
       for (const [entry, tab] of [['New paper…', 'Blank'], ['Import or open', 'Import or open']]) {

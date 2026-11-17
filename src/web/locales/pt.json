@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "São necessárias algumas ferramentas antes de trabalhar nos seus artigos.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "Um pacote, fonte ou arquivo de código-fonte pode estar ausente. Verifique os detalhes abaixo, restaure o arquivo ausente ou peça ajuda.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "Uma habilidade com o mesmo ID tem prioridade aqui: este artigo, depois global e, por fim, integrada.",
@@ -1451,7 +1450,6 @@
   "Example project": "Projeto de exemplo",
   "Import": "Importar",
   "Import link": "Importar link",
-  "Open": "Abrir",
   "Paper or repository link": "Link do artigo ou repositório",
   "Paper source": "Origem do artigo",
   "Paste a link…": "Cole um link…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "Abrir pasta existente",
   "Import or open": "Importar ou abrir",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Salve uma cópia separada no Papilot. Os arquivos originais permanecem inalterados.",
-  "Use a path on the computer running Papilot.": "Use um caminho no computador que executa o Papilot.",
-  "Work in the original folder. Changes are saved directly to your files.": "Trabalhe na pasta original. As alterações são salvas diretamente nos seus arquivos."
+  "Work in the original folder. Changes are saved directly to your files.": "Trabalhe na pasta original. As alterações são salvas diretamente nos seus arquivos.",
+  "Parent folder": "Pasta superior",
+  "Loading folders…": "Carregando pastas…",
+  "No folders inside.": "Nenhuma pasta aqui dentro.",
+  "Choose folder…": "Escolher pasta…",
+  "Open this folder": "Abrir esta pasta",
+  "Use this folder": "Usar esta pasta",
+  "Folders on the computer running Papilot": "Pastas do computador que executa o Papilot",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Escolha uma pasta na janela aberta no computador que executa o Papilot.",
+  "Browse here instead": "Procurar aqui"
 }

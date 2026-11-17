@@ -3,6 +3,7 @@ import type { AgentId, PaperImport, Project } from '../shared.ts';
 import { Icon } from './icons.tsx';
 import { BrandIcon } from './brand-icon.tsx';
 import { ChipSelect } from './chip-select.tsx';
+import { FolderBrowser, FolderPickerWait, useFolderPicker } from './folder-browser.tsx';
 import { t } from './i18n.ts';
 import { browserStorage } from './storage.ts';
 import { droppedFolder, ignoredImportPath, type ImportFile } from './import-files.ts';
@@ -41,9 +42,10 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   const dialog = useRef<HTMLDivElement>(null), folder = useRef<HTMLInputElement>(null), zip = useRef<HTMLInputElement>(null), pending = useRef(false);
   const linkInput = useRef<HTMLInputElement>(null), linkId = useId();
   const [link, setLink] = useState(''), [fromLink, setFromLink] = useState(false);
-  const [draft, setDraft] = useState<PaperImport | null>(null), [form, setForm] = useState({ name: '', path: '', main: '', engine: 'pdflatex' });
-  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [dragging, setDragging] = useState(false);
-  const working = draft?.phase === 'building' || draft?.phase === 'repairing', locked = busy || working;
+  const [draft, setDraft] = useState<PaperImport | null>(null), [form, setForm] = useState({ name: '', main: '', engine: 'pdflatex' });
+  const [busy, setBusy] = useState(false), [error, setError] = useState(''), [dragging, setDragging] = useState(false), [browsing, setBrowsing] = useState(false), picker = useFolderPicker(api), live = useRef(true);
+  useEffect(() => () => { live.current = false; }, []);
+  const working = draft?.phase === 'building' || draft?.phase === 'repairing', locked = busy || working || picker.waiting;
   function receive(value: PaperImport) { setDraft(value); setForm(current => ({ ...current, name: value.name, main: value.main, engine: value.engine })); browserStorage.setItem(memoryKey, value.id); }
   useEffect(() => {
     folder.current?.setAttribute('webkitdirectory', '');
@@ -85,11 +87,20 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   const upload = (list: File[], archive: boolean) => run(() => uploadFiles(list.map(file => ({ file, path: file.webkitRelativePath || file.name })), archive));
   const openFolder = async (path: string) => start(await api<PaperImport>('/imports', { path }));
   const importLink = (url: string) => run(async () => start(await api<PaperImport>('/imports', { url: url.trim() })), true);
+  const focusChooser = () => requestAnimationFrame(() => dialog.current?.querySelector<HTMLButtonElement>('[data-choose-folder]')?.focus());
+  // The desktop app opens the chosen folder at once; a browser on this computer uses
+  // the system picker through the server, and other devices browse in the page.
   async function chooseFolder() {
-    if (!onChooseFolder) { folder.current?.click(); return; }
-    if (pending.current) return;
-    await run(onChooseFolder);
-    requestAnimationFrame(() => dialog.current?.querySelector<HTMLButtonElement>('[data-choose-folder]')?.focus());
+    if (pending.current || picker.waiting) return;
+    if (onChooseFolder) { await run(onChooseFolder); focusChooser(); return; }
+    setError('');
+    let path: string | null | undefined = null;
+    try { path = await picker.pick(t('Open existing folder'), ''); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : String(failure)); }
+    if (!live.current) return;
+    if (path === undefined) setBrowsing(true);
+    else if (path) await run(() => openFolder(path));
+    else focusChooser();
   }
   function drop(transfer: DataTransfer) {
     // Capture entries while the drop event still owns access to the data store.
@@ -145,15 +156,9 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
         <section className="import-original" aria-labelledby={linkId + '-original'}>
           <h3 id={linkId + '-original'}>{t('Open existing folder')}</h3>
           <p id={linkId + '-original-hint'}>{t('Work in the original folder. Changes are saved directly to your files.')}</p>
-          {onChooseFolder ? <button type="button" data-choose-folder className="button secondary compact" disabled={locked} onClick={() => void chooseFolder()}><Icon name="folder" size={15}/>{t('Open existing folder')}</button>
-            : <form className="import-path" aria-labelledby={linkId + '-original'} onSubmit={event => { event.preventDefault(); void run(() => openFolder(form.path)); }}>
-              <label htmlFor={linkId + '-path'}>{t('Folder path')}</label>
-              <div className="import-path-row">
-                <input id={linkId + '-path'} name="path" value={form.path} required disabled={locked} maxLength={4000} aria-describedby={linkId + '-original-hint ' + linkId + '-host-hint'} onChange={event => setForm({ ...form, path: event.target.value })} placeholder={t('/Users/you/papers/my-paper')} autoCapitalize="none" autoCorrect="off" spellCheck={false}/>
-                <button type="submit" className="button secondary compact" disabled={locked}>{t('Open')}</button>
-              </div>
-              <p id={linkId + '-host-hint'}>{t('Use a path on the computer running Papilot.')}</p>
-            </form>}
+          {browsing ? <FolderBrowser api={api} start="" action={t('Open this folder')} onCancel={() => { setBrowsing(false); focusChooser(); }} onChoose={path => { setBrowsing(false); void run(() => openFolder(path)); }}/>
+            : <button type="button" data-choose-folder className="button secondary compact" aria-describedby={linkId + '-original-hint'} disabled={locked} onClick={() => void chooseFolder()}><Icon name="folder" size={15}/>{t('Choose folder…')}</button>}
+          {picker.waiting && <FolderPickerWait onBrowse={picker.browseInstead}/>}
         </section>
         {busy && <p className="import-reading" role="status"><span className="spinner"/>{fromLink ? t('Downloading paper source…') : t('Reading paper files…')}</p>}
         {error && <p id={linkId + '-error'} className="inline-error" role="alert">{error}</p>}

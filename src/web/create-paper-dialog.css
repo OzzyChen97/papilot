@@ -1,6 +1,5 @@
 .create-paper-dialog{min-width:0}
 .create-paper-location{display:flex;align-items:center;gap:8px}
-.create-paper-location input{flex:1;min-width:0}
 .create-paper-location button{flex-shrink:0}
 .create-paper-target{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;min-height:18px;margin:0;font-size:12px;line-height:1.5;color:var(--text-2);white-space:nowrap}
 .create-paper-target svg{flex:none;color:var(--text-3)}
@@ -17,7 +16,6 @@
 .create-paper-footer .create-paper-target{flex:1}
 .create-paper-footer>.button{flex:none}
 .create-paper-dialog form>input{margin:0 0 18px}
-.create-paper-location input{flex-basis:auto;min-height:38px}
 /* Templates share the same preview cards and responsive toolbar. */
 .template-tools{display:flex;flex-direction:column;gap:12px;min-width:0;margin:20px 0 16px}
 .template-browse{display:flex;align-items:center;justify-content:space-between;gap:16px;min-width:0}

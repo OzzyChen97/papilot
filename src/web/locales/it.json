@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "Servono alcuni strumenti prima di poter lavorare ai tuoi articoli.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "Potrebbe mancare un pacchetto, un font o un file sorgente. Controlla i dettagli di seguito, ripristina il file mancante o chiedi aiuto.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "Un'abilità con lo stesso ID ha la priorità qui: questo articolo, poi globale, infine integrata.",
@@ -1451,7 +1450,6 @@
   "Example project": "Progetto di esempio",
   "Import": "Importa",
   "Import link": "Importa link",
-  "Open": "Apri",
   "Paper or repository link": "Link all’articolo o al repository",
   "Paper source": "Origine dell’articolo",
   "Paste a link…": "Incolla un link…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "Apri cartella esistente",
   "Import or open": "Importa o apri",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Salva una copia separata in Papilot. I file originali restano invariati.",
-  "Use a path on the computer running Papilot.": "Usa un percorso sul computer su cui è in esecuzione Papilot.",
-  "Work in the original folder. Changes are saved directly to your files.": "Lavora nella cartella originale. Le modifiche vengono salvate direttamente nei tuoi file."
+  "Work in the original folder. Changes are saved directly to your files.": "Lavora nella cartella originale. Le modifiche vengono salvate direttamente nei tuoi file.",
+  "Parent folder": "Cartella superiore",
+  "Loading folders…": "Caricamento delle cartelle…",
+  "No folders inside.": "Nessuna cartella all’interno.",
+  "Choose folder…": "Scegli cartella…",
+  "Open this folder": "Apri questa cartella",
+  "Use this folder": "Usa questa cartella",
+  "Folders on the computer running Papilot": "Cartelle del computer su cui è in esecuzione Papilot",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Scegli una cartella nella finestra aperta sul computer su cui è in esecuzione Papilot.",
+  "Browse here instead": "Sfoglia qui"
 }

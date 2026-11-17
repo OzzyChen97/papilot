@@ -403,7 +403,7 @@ export const zhCN: Record<string, string> = {
   'Task added: {title}': '已添加任务：{title}',
   'Add your first paper': '添加你的第一篇论文',
   'Dismiss error': '关闭错误提示', 'Close': '关闭',
-  'Repository path': '仓库路径', '/Users/you/papers/my-paper': '/Users/you/papers/my-paper', 'Cancel': '取消',
+  'Repository path': '仓库路径', 'Cancel': '取消',
   'Copied path': '已复制路径', 'Copy path: {path}': '复制路径：{path}',
 
   // Notifications

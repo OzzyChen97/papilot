@@ -373,5 +373,6 @@
   "Use an arXiv abstract, PDF, HTML or source link for one paper.": "Använd en arXiv-länk till sammanfattning, PDF, HTML eller källfiler för en enda artikel.",
   "Use an enabled Overleaf read-only sharing link. Private project links require an Overleaf login; you can also upload the source ZIP.": "Använd en aktiverad skrivskyddad delningslänk från Overleaf. Privata projektlänkar kräver inloggning på Overleaf; du kan också ladda upp en ZIP med källfiler.",
   "Drop one folder or LaTeX ZIP file.": "Släpp en mapp eller en LaTeX-ZIP-fil.",
-  "No files found in this folder.": "Inga filer hittades i den här mappen."
+  "No files found in this folder.": "Inga filer hittades i den här mappen.",
+  "Papilot cannot read this folder.": "Papilot kan inte läsa den här mappen."
 }

@@ -25,6 +25,8 @@ server.post('/api/imports/upload', async request => {
 await server.listen({ host: '127.0.0.1', port: 0 });
 try {
   const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 850 } });
+  // A browser on this computer gets the system picker; other devices browse in the page.
+  let picker = { unavailable: true }, releasePicker = () => undefined;
   const mockApi = async route => {
     const url = new URL(route.request().url()), method = route.request().method();
     if (url.pathname.startsWith('/api/imports')) {
@@ -40,6 +42,20 @@ try {
       if (url.pathname.endsWith('/finish')) { const project = { id: 'paper', name: draft.name, path: draft.path, createdAt: 1 }; state.projects = [project]; return route.fulfill({ json: project }); }
       if (draft.phase === 'building') Object.assign(draft, { phase: result, versioned: true, error: result === 'failed' ? failure : undefined });
       return route.fulfill({ json: draft });
+    }
+    if (url.pathname === '/api/folders/choose') {
+      requests.push({ route: url.pathname, body: route.request().postDataJSON() });
+      // A picker nobody answers, such as one on another screen, keeps the request open.
+      if (picker === 'wait') { await new Promise(resolve => { releasePicker = resolve; }); return route.fulfill({ json: { path: null } }).catch(() => undefined); }
+      return route.fulfill({ json: picker });
+    }
+    if (url.pathname === '/api/folders') {
+      // Folders on the computer running Papilot; unknown paths open the nearest listed folder.
+      const tree = { '/': ['papers', 'Users'], '/Users': ['you'], '/Users/you': ['Downloads', 'papers'], '/Users/you/papers': ['large-local-paper', 'thesis'], '/Users/you/papers/large-local-paper': [], '/Users/you/papers/thesis': [], '/Users/you/Downloads': [], '/papers': ['large-local-paper'], '/papers/large-local-paper': [] };
+      const body = route.request().postDataJSON(); requests.push({ route: url.pathname, body });
+      let current = body.path?.trim().replace(/(.)\/$/, '$1') || '/Users/you';
+      while (!tree[current]) current = current.slice(0, current.lastIndexOf('/')) || '/';
+      return route.fulfill({ json: { path: current, parent: current === '/' ? null : current.slice(0, current.lastIndexOf('/')) || '/', folders: tree[current].map(name => ({ name, path: (current === '/' ? '' : current) + '/' + name })) } });
     }
     if (url.pathname === '/api/runtime/requirements') return route.fulfill({ json: readyRequirements });
     if (url.pathname === '/api/state') return route.fulfill({ json: state });
@@ -61,7 +77,8 @@ try {
   await page.getByRole('button', { name: 'Import or open', exact: true }).first().click();
   assert.equal(await dialog.getByRole('heading', { name: 'Open existing folder' }).isVisible(), true);
   assert.deepEqual(await dialog.locator('.import-copy h3, .import-original h3').allTextContents(), ['Import a copy', 'Open existing folder']);
-  assert.equal(await page.getByLabel('Folder path', { exact: true }).isVisible(), true);
+  assert.equal(await dialog.getByRole('button', { name: 'Choose folder…', exact: true }).isVisible(), true);
+  assert.equal(await dialog.getByRole('textbox', { name: 'Folder path', exact: true }).count(), 0, 'The path is typed only in the folder browser');
   const [folderButton, zipButton] = await dialog.locator('.import-options button').evaluateAll(buttons => buttons.map(button => { const rect = button.getBoundingClientRect(); return { y: rect.y, height: rect.height }; }));
   assert.ok(Math.abs(folderButton.y - zipButton.y) < 1); assert.ok(folderButton.height <= 32 && zipButton.height <= 32);
   await dialog.screenshot({ animations: 'disabled', path: 'test-results/import-start.png' });
@@ -152,9 +169,50 @@ try {
   await page.getByText('Your paper compiled successfully. It is ready for editing.').waitFor();
   await page.getByRole('button', { name: 'Choose different files', exact: true }).click();
   const builds = requests.filter(request => request.route.endsWith('/build')).length;
-  assert.equal(await page.getByLabel('Folder path', { exact: true }).isVisible(), true);
-  await page.getByLabel('Folder path', { exact: true }).fill('/papers/large-local-paper');
-  await page.getByRole('button', { name: 'Open', exact: true }).click();
+  const choose = page.getByRole('button', { name: 'Choose folder…', exact: true }), field = page.getByRole('textbox', { name: 'Folder path', exact: true });
+  // Other devices browse folders on the Papilot computer in the page.
+  await choose.click();
+  await page.getByRole('list', { name: '/Users/you' }).getByRole('button', { name: 'papers', exact: true }).click();
+  await page.getByRole('list', { name: '/Users/you/papers' }).getByRole('button', { name: 'large-local-paper', exact: true }).click();
+  await page.getByText('No folders inside.', { exact: true }).waitFor();
+  assert.equal(await field.inputValue(), '/Users/you/papers/large-local-paper');
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute('aria-label')), 'Folder path', 'Focus stays on the path when the entered folder is replaced');
+  await page.getByRole('button', { name: 'Parent folder', exact: true }).click();
+  await page.getByRole('button', { name: 'thesis', exact: true }).waitFor();
+  await page.getByText('Folders on the computer running Papilot', { exact: true }).waitFor();
+  await page.getByRole('dialog', { name: 'New paper' }).screenshot({ animations: 'disabled', path: 'test-results/import-browse-folders.png' });
+  // A typed, partly existing path opens its nearest folder.
+  await field.fill('/papers/large-local-paper/missing'); await field.press('Enter');
+  await page.getByText('No folders inside.', { exact: true }).waitFor();
+  assert.equal(await field.inputValue(), '/papers/large-local-paper');
+  // Escape closes only the browser and returns to the chooser.
+  await field.press('Escape');
+  await choose.waitFor(); assert.equal(await page.getByRole('dialog', { name: 'New paper' }).isVisible(), true);
+  await page.waitForFunction(() => document.activeElement?.textContent === 'Choose folder…');
+  await choose.click(); await field.fill('/papers/large-local-paper'); await field.press('Enter');
+  await page.getByText('No folders inside.', { exact: true }).waitFor();
+  await page.getByRole('button', { name: 'Open this folder', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
+  assert.deepEqual(requests.filter(request => request.route === '/api/imports').at(-1).body, { path: '/papers/large-local-paper' });
+  // A browser on this computer uses the system picker; cancelling it changes nothing.
+  await page.getByRole('button', { name: 'Choose different files', exact: true }).click();
+  picker = { path: null }; const opened = requests.filter(request => request.route === '/api/imports').length;
+  await choose.click();
+  await page.waitForFunction(() => document.activeElement?.textContent === 'Choose folder…');
+  assert.equal(requests.filter(request => request.route === '/api/imports').length, opened); assert.equal(await field.count(), 0);
+  // While waiting for a picker the person may not see, the page offers to browse instead.
+  picker = 'wait';
+  await choose.click();
+  await page.getByRole('status').filter({ hasText: 'Choose a folder in the window that opened on the computer running Papilot.' }).waitFor();
+  assert.equal(await choose.isDisabled(), true); assert.equal(await page.getByRole('button', { name: 'Import ZIP', exact: true }).isDisabled(), true);
+  await page.getByRole('dialog', { name: 'New paper' }).screenshot({ animations: 'disabled', path: 'test-results/import-picker-wait.png' });
+  await page.getByRole('button', { name: 'Browse here instead', exact: true }).click();
+  await page.getByRole('button', { name: 'papers', exact: true }).waitFor();
+  releasePicker();
+  await field.press('Escape'); await choose.waitFor();
+  picker = { path: '/papers/large-local-paper' };
+  await choose.click();
+  assert.deepEqual(requests.filter(request => request.route === '/api/folders/choose').at(-1).body, { title: 'Open existing folder', path: '' });
   await page.getByRole('combobox', { name: 'Main TeX file', exact: true }).waitFor();
   assert.deepEqual(requests.filter(request => request.route === '/api/imports').at(-1).body, { path: '/papers/large-local-paper' });
   assert.equal(requests.filter(request => request.route.endsWith('/build')).length, builds, 'Local folder selection only inspects the paper');
@@ -172,14 +230,14 @@ try {
   await page.getByRole('menuitem', { name: 'Import or open', exact: true }).click();
   await page.getByRole('dialog', { name: 'New paper' }).getByRole('textbox', { name: 'Paper or repository link', exact: true }).waitFor();
   assert.equal(await page.evaluate(() => window.fixturePickerCalls), 0, 'Import opens without invoking the native picker');
-  await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Choose folder…', exact: true }).click();
   await dialog.getByRole('status').waitFor();
-  assert.equal(await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).isDisabled(), true);
+  assert.equal(await dialog.getByRole('button', { name: 'Choose folder…', exact: true }).isDisabled(), true);
   await page.evaluate(() => window.fixtureRejectPicker());
   await dialog.getByRole('alert').filter({ hasText: 'Folder picker unavailable.' }).waitFor();
   await page.waitForFunction(() => document.activeElement?.matches('[data-choose-folder]'));
   const beforeCancel = requests.length;
-  await dialog.getByRole('button', { name: 'Open existing folder', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Choose folder…', exact: true }).click();
   await dialog.getByRole('status').waitFor();
   await page.evaluate(() => window.fixtureResolvePicker(null));
   await dialog.getByRole('status').waitFor({ state: 'hidden' });
@@ -203,6 +261,14 @@ try {
     // Every source choice is a touch-sized target; later import phases keep their compact layout.
     const choices = await phoneDialog.locator(':is(.import-copy, .import-original) .button').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
     assert.ok(choices.length >= 4 && choices.every(height => height >= 44), JSON.stringify(choices));
+    picker = { unavailable: true };
+    await phoneDialog.getByRole('button', { name: '选择文件夹…', exact: true }).click();
+    await phoneDialog.getByRole('button', { name: 'papers', exact: true }).click();
+    await phoneDialog.getByRole('button', { name: 'thesis', exact: true }).waitFor();
+    await phoneDialog.getByRole('button', { name: '打开此文件夹', exact: true }).scrollIntoViewIfNeeded();
+    await phone.screenshot({ animations: 'disabled', path: 'test-results/import-browse-touch-zh.png' });
+    const rows = await phoneDialog.locator('.folder-browser button, .folder-browser input').evaluateAll(buttons => buttons.map(button => button.getBoundingClientRect().height));
+    assert.ok(rows.length >= 3 && rows.every(height => height >= 44), JSON.stringify(rows));
     assert.equal(await phoneDialog.evaluate(el => el.scrollWidth <= el.clientWidth), true);
   } finally { await touchContext.close(); }
   assert.deepEqual(errors, []);

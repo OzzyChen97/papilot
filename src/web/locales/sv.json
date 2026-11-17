@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "Några verktyg behövs innan du kan arbeta med dina artiklar.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "Ett paket, ett typsnitt eller en källfil kan saknas. Kontrollera detaljerna nedan, återställ den saknade filen eller be om hjälp.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "En färdighet med samma ID har företräde här: denna artikel, sedan global, sedan inbyggd.",
@@ -1451,7 +1450,6 @@
   "Example project": "Exempelprojekt",
   "Import": "Importera",
   "Import link": "Importera länk",
-  "Open": "Öppna",
   "Paper or repository link": "Länk till artikel eller kodförråd",
   "Paper source": "Artikelkälla",
   "Paste a link…": "Klistra in en länk…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "Öppna befintlig mapp",
   "Import or open": "Importera eller öppna",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Spara en separat kopia i Papilot. Dina originalfiler förblir oförändrade.",
-  "Use a path on the computer running Papilot.": "Använd en sökväg på datorn som kör Papilot.",
-  "Work in the original folder. Changes are saved directly to your files.": "Arbeta i den ursprungliga mappen. Ändringar sparas direkt i dina filer."
+  "Work in the original folder. Changes are saved directly to your files.": "Arbeta i den ursprungliga mappen. Ändringar sparas direkt i dina filer.",
+  "Parent folder": "Överordnad mapp",
+  "Loading folders…": "Läser in mappar…",
+  "No folders inside.": "Inga mappar här.",
+  "Choose folder…": "Välj mapp…",
+  "Open this folder": "Öppna den här mappen",
+  "Use this folder": "Använd den här mappen",
+  "Folders on the computer running Papilot": "Mappar på datorn som kör Papilot",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Välj en mapp i fönstret som öppnades på datorn som kör Papilot.",
+  "Browse here instead": "Bläddra här i stället"
 }

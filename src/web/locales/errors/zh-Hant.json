@@ -373,5 +373,6 @@
   "Use an arXiv abstract, PDF, HTML or source link for one paper.": "請使用單篇論文的 arXiv 摘要、PDF、HTML 或原始碼連結。",
   "Use an enabled Overleaf read-only sharing link. Private project links require an Overleaf login; you can also upload the source ZIP.": "請使用已啟用的 Overleaf 唯讀分享連結。私人專案連結需要登入 Overleaf；也可以上傳原始碼 ZIP。",
   "Drop one folder or LaTeX ZIP file.": "請拖放一個資料夾或 LaTeX ZIP 檔案。",
-  "No files found in this folder.": "在此資料夾中找不到檔案。"
+  "No files found in this folder.": "在此資料夾中找不到檔案。",
+  "Papilot cannot read this folder.": "Papilot 無法讀取此資料夾。"
 }

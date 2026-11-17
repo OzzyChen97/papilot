@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "Bevor Sie an Ihren Manuskripten arbeiten können, werden noch einige Werkzeuge benötigt.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "Möglicherweise fehlt ein Paket, eine Schriftart oder eine Quelldatei. Prüfen Sie die Details unten, stellen Sie die fehlende Datei wieder her oder bitten Sie um Hilfe.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "Ein Skill mit derselben ID hat in dieser Reihenfolge Vorrang: dieser Artikel, dann global, dann integriert.",
@@ -1451,7 +1450,6 @@
   "Example project": "Beispielprojekt",
   "Import": "Importieren",
   "Import link": "Link importieren",
-  "Open": "Öffnen",
   "Paper or repository link": "Link zum Paper oder Repository",
   "Paper source": "Paper-Quelle",
   "Paste a link…": "Link einfügen…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "Vorhandenen Ordner öffnen",
   "Import or open": "Importieren oder öffnen",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Eine separate Kopie in Papilot speichern. Die Originaldateien bleiben unverändert.",
-  "Use a path on the computer running Papilot.": "Verwenden Sie einen Pfad auf dem Computer, auf dem Papilot läuft.",
-  "Work in the original folder. Changes are saved directly to your files.": "Im ursprünglichen Ordner arbeiten. Änderungen werden direkt in Ihren Dateien gespeichert."
+  "Work in the original folder. Changes are saved directly to your files.": "Im ursprünglichen Ordner arbeiten. Änderungen werden direkt in Ihren Dateien gespeichert.",
+  "Parent folder": "Übergeordneter Ordner",
+  "Loading folders…": "Ordner werden geladen…",
+  "No folders inside.": "Keine Unterordner.",
+  "Choose folder…": "Ordner auswählen…",
+  "Open this folder": "Diesen Ordner öffnen",
+  "Use this folder": "Diesen Ordner verwenden",
+  "Folders on the computer running Papilot": "Ordner auf dem Computer, auf dem Papilot läuft",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Wählen Sie einen Ordner in dem Fenster, das sich auf dem Computer mit Papilot geöffnet hat.",
+  "Browse here instead": "Stattdessen hier durchsuchen"
 }

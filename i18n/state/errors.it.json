@@ -1443,5 +1443,10 @@
     "revision": "ea335e8fdf4d199ed2721f604fd7e7c23eed249476d27283a590249cfa164ffe",
     "textHash": "26b634754e9f17c5abf4ebed1a9060a3953237169b017d719c8b80f9f2fc6485",
     "model": "manual"
+  },
+  "Papilot cannot read this folder.": {
+    "revision": "e5f8c32b821cacc9b3870a4ce6d6c8bd6c32c43a4508c4eb4d2b09f136a6ce9c",
+    "textHash": "7543a12669bd2b26d6f85df640debc00942cda267b17b66d24b64484c199eba2",
+    "model": "manual"
   }
 }

@@ -4,11 +4,6 @@
     "textHash": "0a07f659461970d8d8dcefe4fff96a1745599810dc7d47391e95c803b7b2072c",
     "model": "gemini-4-argon-medium"
   },
-  "/Users/you/papers/my-paper": {
-    "revision": "8721db996e920763a0f24ac4a63862ee806cc0493602bcf4bd76a855374be2d6",
-    "textHash": "3205f723cebe337adb608bdae635a7a1333285eedb1e558762798b512c517199",
-    "model": "gemini-4-argon-medium"
-  },
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": {
     "revision": "f7bd9ac12f7c99429436a60160ab35414dcfdfe419ddf761a2ec7fbe6e454033",
     "textHash": "8f987713eda54207dc95a84ea89f508b0ba19ccc1bb0e7afadd8b8ba6f055b27",
@@ -470,7 +465,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Cancel": {
-    "revision": "a0067000d6a669ecfeba2ad6c0340c04e50627dafe1e712805226c2ef34e8c82",
+    "revision": "1f9b60960fdf4ea5c884e88d0a38a109e189d1477c6ca6a70a0e4e60b7d08ffa",
     "textHash": "f7ff1178af202f6ffb67b9572c3fcf88059d030657e6e07447123f4e48c78e50",
     "model": "manual-review"
   },
@@ -1720,9 +1715,9 @@
     "model": "gemini-4-argon-medium"
   },
   "Folder path": {
-    "revision": "268e1a8373eb01ea7fba85cb3d1c574e22c7f484710fbc9cbfccf09e979a53c6",
+    "revision": "c66c1957bdf4abc8b8097fee0fe7f89abada5681ac5c8a0918f50c12d1d8940c",
     "textHash": "97f18cfe40190d55f40ceebecaefac4bce1bdf4accc2122a2213b79d6832cd00",
-    "model": "gemini-4-argon-medium"
+    "model": "manual-review"
   },
   "For the SDK instead, start Papilot with ANTHROPIC_API_KEY or a supported cloud provider configured. Restart Papilot after changing its environment.": {
     "revision": "23b9093bff3d92c5bba603df2c9ba2794d3c473345f7873841d5e4d58eba396d",
@@ -5829,11 +5824,6 @@
     "textHash": "a86b61f792046999f2aa82999cab84e8540f8bd27e5931448b0a490c22c075c6",
     "model": "codex"
   },
-  "Open": {
-    "revision": "ae87441dd85cac042a37c2bbcd532e9330a25326377397cb5d7d81844d30c163",
-    "textHash": "bc385a30b5378841099b66c2c42ded6f46ab144f586be608f541661721776859",
-    "model": "manual-review"
-  },
   "Paper or repository link": {
     "revision": "96f6431726429ad01349a6a1b2d1eaf03f02738f662bfd602121126727271ef4",
     "textHash": "da1bc22251206c131b5630036ec99659743578a4397ff0185f0fd513ed9453a2",
@@ -6019,14 +6009,54 @@
     "textHash": "ac4529949031822460c3a17faae9b54a4e6b41a62673c42bc44af7fe64affba6",
     "model": "manual"
   },
-  "Use a path on the computer running Papilot.": {
-    "revision": "f186e417d050826305c3d7ffd3f3e8a5bc8e2bebc9ac1817031aa523a388e32f",
-    "textHash": "3ba9bbad69024dc1c24bf6de54d7e523dfc1d994b6bead4578143798dec88c20",
-    "model": "manual"
-  },
   "Work in the original folder. Changes are saved directly to your files.": {
     "revision": "3cffadfbf3ba1f76a1630105991e8f5ec94940165c86ab9a78d2d6087b9ce45d",
     "textHash": "6d847697f0d24bfbe9b2ae49e7711a0e5a72f38c29b8c3080ec4de2ebbe64bbd",
+    "model": "manual"
+  },
+  "Parent folder": {
+    "revision": "a6259282367a2fe89f84008fd543c1075f7fe7a95ac84e2fada1c369200dfcee",
+    "textHash": "7537a939fd717663168f8c5296c662a92f243c96de5454e867bed19700d6708b",
+    "model": "manual"
+  },
+  "Loading folders…": {
+    "revision": "43f9b27cf81cc9c6ed6f16134d53860f9c484006c8c8a7d6c680e80810565575",
+    "textHash": "b8ec0d1d3d2cf9a6039d0e015cb42e1d355d0b946bd0a0b825d42943b21c9f97",
+    "model": "manual"
+  },
+  "No folders inside.": {
+    "revision": "57e334b8f10260da94978f4952331b390195c80ca54131a623ba60c364eed0cb",
+    "textHash": "949aa239ef3d1b62232a638fedeae00b26b7f6a46796acfe34ac2dd5ec61e1ed",
+    "model": "manual"
+  },
+  "Choose folder…": {
+    "revision": "140e95c86deee683a9f6757c5ec0b415a01a0df4af92b6bdca9e2bf2c5acacf8",
+    "textHash": "f7793bb85015730ac03b9ba88b4ecee1f179bb818ede94cc567ff397d6198bb5",
+    "model": "manual"
+  },
+  "Open this folder": {
+    "revision": "dca7a9607a955e723868f31dbde7b09216c92b9b8310a2a336c1dcffd41cf12f",
+    "textHash": "5290a1a31b904b71d7285958a229c4dcea30b410856e1a7ec939336a8a074af5",
+    "model": "manual"
+  },
+  "Use this folder": {
+    "revision": "93fd432ce74087dddd47516f9b7e1743ba1cd52866893d6bfe7b8eb174e48563",
+    "textHash": "d5dcc9beef01a906e031feba390dbd57ff506a66c9fc73838b734d99b2de4d31",
+    "model": "manual"
+  },
+  "Folders on the computer running Papilot": {
+    "revision": "3ad0f49266e91b618fcd8e54eebb6d984b3c4d3bb82f9595f3cc8944d8c8c63b",
+    "textHash": "cfbd186792c0316afa39b27b4edd198050f2ac3e05e97465f3343b8fe7f0bedc",
+    "model": "manual"
+  },
+  "Choose a folder in the window that opened on the computer running Papilot.": {
+    "revision": "d05ce8f1388f7bb5088f55e45fa5851783f17fa9244ebf00690f6985897a7cfe",
+    "textHash": "d652cc105977332d293f008b6de5259de3271bea334b86353f809344320ee203",
+    "model": "manual"
+  },
+  "Browse here instead": {
+    "revision": "717ab22ab31809a8e0aebac309e973a455e9ec4ad5398526d20df2f3e2bbaa43",
+    "textHash": "1a568d37033d840eb715b97edcf417cba1c9a02e16b12afeadc35d9f6b319c4c",
     "model": "manual"
   }
 }

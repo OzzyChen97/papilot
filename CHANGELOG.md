@@ -19,6 +19,8 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Changed
 
+- Choose folders with the system picker in a browser on the computer running Papilot, when opening an existing paper or choosing where to save a new one, instead of typing the full path. On other devices, such as a phone over Tailscale, browse that computer's folders in the dialog.
+
 - Clarify **Import or open**: opening an existing folder edits its original files, while **Import a copy** keeps originals unchanged. The original-folder option is visible immediately. Folder and ZIP uploads stream to disk without the former 64 MiB / 5,000-file caps.
 
 - Simplify PDF reading controls: remove back/forward history buttons and their separator, align the outline bookmark, anchor numbers and **+** in one compact column, and show a corner delete button on hover or keyboard focus. Phones also show **+** for direct anchor creation. Deletion keeps the current reading position and moves keyboard focus to the next anchor or **+**. Contents, page controls and internal links remain available.

@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "Necesitas preparar algunas herramientas antes de trabajar en tus artículos.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "Puede que falte un paquete, una fuente o un archivo fuente. Consulta los detalles a continuación, restaura el archivo que falta o pide ayuda.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "Una habilidad con el mismo ID tiene prioridad aquí: este artículo, luego global y luego integrada.",
@@ -1451,7 +1450,6 @@
   "Example project": "Proyecto de ejemplo",
   "Import": "Importar",
   "Import link": "Importar enlace",
-  "Open": "Abrir",
   "Paper or repository link": "Enlace al artículo o repositorio",
   "Paper source": "Origen del artículo",
   "Paste a link…": "Pega un enlace…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "Abrir carpeta existente",
   "Import or open": "Importar o abrir",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Guarda una copia independiente en Papilot. Los archivos originales no se modifican.",
-  "Use a path on the computer running Papilot.": "Usa una ruta del equipo donde se ejecuta Papilot.",
-  "Work in the original folder. Changes are saved directly to your files.": "Trabaja en la carpeta original. Los cambios se guardan directamente en tus archivos."
+  "Work in the original folder. Changes are saved directly to your files.": "Trabaja en la carpeta original. Los cambios se guardan directamente en tus archivos.",
+  "Parent folder": "Carpeta superior",
+  "Loading folders…": "Cargando carpetas…",
+  "No folders inside.": "No hay carpetas dentro.",
+  "Choose folder…": "Elegir carpeta…",
+  "Open this folder": "Abrir esta carpeta",
+  "Use this folder": "Usar esta carpeta",
+  "Folders on the computer running Papilot": "Carpetas del equipo que ejecuta Papilot",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Elige una carpeta en la ventana que se abrió en el equipo que ejecuta Papilot.",
+  "Browse here instead": "Explorar aquí"
 }

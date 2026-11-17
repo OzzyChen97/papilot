@@ -1,6 +1,5 @@
 {
   ", ": ", ",
-  "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
   "A few tools are needed before you can work on papers.": "논문 작업을 시작하기 전에 몇 가지 도구를 준비해야 합니다.",
   "A package, font or source file may be missing. Check the details below, restore the missing file or ask for help.": "패키지, 글꼴 또는 소스 파일이 누락되었을 수 있습니다. 아래 세부 정보를 확인하고 누락된 파일을 복원하거나 도움을 요청하세요.",
   "A skill with the same ID takes priority here: this paper, then global, then built-in.": "동일한 ID의 스킬은 이 논문, 전역, 기본 내장 순으로 우선 적용됩니다.",
@@ -1451,7 +1450,6 @@
   "Example project": "예제 프로젝트",
   "Import": "가져오기",
   "Import link": "링크 가져오기",
-  "Open": "열기",
   "Paper or repository link": "논문 또는 저장소 링크",
   "Paper source": "논문 소스",
   "Paste a link…": "링크 붙여넣기…",
@@ -1489,6 +1487,14 @@
   "Open existing folder": "기존 폴더 열기",
   "Import or open": "가져오기 또는 열기",
   "Save a separate copy in Papilot. Your original files stay unchanged.": "Papilot에 별도의 사본을 저장합니다. 원본 파일은 변경되지 않습니다.",
-  "Use a path on the computer running Papilot.": "Papilot이 실행 중인 컴퓨터의 경로를 입력하세요.",
-  "Work in the original folder. Changes are saved directly to your files.": "원본 폴더에서 작업합니다. 변경 사항은 원본 파일에 직접 저장됩니다."
+  "Work in the original folder. Changes are saved directly to your files.": "원본 폴더에서 작업합니다. 변경 사항은 원본 파일에 직접 저장됩니다.",
+  "Parent folder": "상위 폴더",
+  "Loading folders…": "폴더 불러오는 중…",
+  "No folders inside.": "하위 폴더가 없습니다.",
+  "Choose folder…": "폴더 선택…",
+  "Open this folder": "이 폴더 열기",
+  "Use this folder": "이 폴더 사용",
+  "Folders on the computer running Papilot": "Papilot을 실행 중인 컴퓨터의 폴더",
+  "Choose a folder in the window that opened on the computer running Papilot.": "Papilot을 실행 중인 컴퓨터에 열린 창에서 폴더를 선택하세요.",
+  "Browse here instead": "여기에서 찾아보기"
 }
