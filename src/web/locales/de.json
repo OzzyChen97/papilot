@@ -1481,5 +1481,17 @@
   "Collaboration mode": "Kooperationsmodus",
   "Experiments": "Experimentelle Funktionen",
   "Enable collaboration mode": "Kooperationsmodus aktivieren",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex koordiniert DeepSeek über OpenCode Go und Gemini über Antigravity und prüft anschließend jede Anmerkung. Die Dienste müssen auf dem Host angemeldet sein. Standardmäßig deaktiviert."
+  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex koordiniert DeepSeek über OpenCode Go und Gemini über Antigravity und prüft anschließend jede Anmerkung. Die Dienste müssen auf dem Host angemeldet sein. Standardmäßig deaktiviert.",
+  "Add anchor": "Anker hinzufügen",
+  "Anchors": "Anker",
+  "Back in PDF": "Im PDF zurück",
+  "Edit anchor: {name}": "Anker bearbeiten: {name}",
+  "Forward in PDF": "Im PDF vorwärts",
+  "Page unavailable": "Seite nicht verfügbar",
+  "Save a place to return to later.": "Eine Stelle speichern, um später zurückzukehren.",
+  "Source unavailable": "Quelle nicht verfügbar",
+  "Saved anchors": "Gespeicherte Anker",
+  "Previous anchor": "Vorheriger Anker",
+  "Next anchor": "Nächster Anker",
+  "Anchor shortcuts work while the PDF is focused.": "Anker-Tastenkürzel funktionieren, wenn das PDF den Fokus hat."
 }

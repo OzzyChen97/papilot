@@ -1481,5 +1481,17 @@
   "Collaboration mode": "協作模式",
   "Experiments": "實驗功能",
   "Enable collaboration mode": "啟用協作模式",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex 透過 OpenCode Go 呼叫 DeepSeek、透過 Antigravity 呼叫 Gemini，並逐一檢查註解。需要在主機登入這些服務。預設關閉。"
+  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex 透過 OpenCode Go 呼叫 DeepSeek、透過 Antigravity 呼叫 Gemini，並逐一檢查註解。需要在主機登入這些服務。預設關閉。",
+  "Add anchor": "新增錨點",
+  "Anchors": "錨點",
+  "Back in PDF": "PDF 上一步",
+  "Edit anchor: {name}": "編輯錨點：{name}",
+  "Forward in PDF": "PDF 下一步",
+  "Page unavailable": "頁面無法使用",
+  "Save a place to return to later.": "儲存位置，方便稍後返回。",
+  "Source unavailable": "原始碼無法使用",
+  "Saved anchors": "已儲存的錨點",
+  "Previous anchor": "上一個錨點",
+  "Next anchor": "下一個錨點",
+  "Anchor shortcuts work while the PDF is focused.": "PDF 取得焦點時可使用錨點快捷鍵。"
 }

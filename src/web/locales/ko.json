@@ -1481,5 +1481,17 @@
   "Collaboration mode": "협업 모드",
   "Experiments": "실험 기능",
   "Enable collaboration mode": "협업 모드 활성화",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex가 OpenCode Go의 DeepSeek와 Antigravity의 Gemini를 조율한 뒤 모든 주석을 확인합니다. 호스트에서 각 서비스에 로그인해야 합니다. 기본값은 꺼짐입니다."
+  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex가 OpenCode Go의 DeepSeek와 Antigravity의 Gemini를 조율한 뒤 모든 주석을 확인합니다. 호스트에서 각 서비스에 로그인해야 합니다. 기본값은 꺼짐입니다.",
+  "Add anchor": "앵커 추가",
+  "Anchors": "앵커",
+  "Back in PDF": "PDF에서 뒤로",
+  "Edit anchor: {name}": "앵커 편집: {name}",
+  "Forward in PDF": "PDF에서 앞으로",
+  "Page unavailable": "페이지를 사용할 수 없음",
+  "Save a place to return to later.": "나중에 돌아올 위치를 저장하세요.",
+  "Source unavailable": "소스를 찾을 수 없음",
+  "Saved anchors": "저장된 앵커",
+  "Previous anchor": "이전 앵커",
+  "Next anchor": "다음 앵커",
+  "Anchor shortcuts work while the PDF is focused.": "PDF에 포커스가 있을 때 앵커 단축키를 사용할 수 있습니다."
 }
