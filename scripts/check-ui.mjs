@@ -16,6 +16,33 @@ const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHA
 const context = await browser.newContext({ locale: 'en-US', colorScheme: 'light', viewport: { width: 1440, height: 900 } });
 const page = await context.newPage();
 await page.clock.install();
+// Make the panel-resize/page-jump race deterministic: hold frames scheduled
+// by the PDF's ResizeObservers, then run them after Enter changes the page
+// but before PDF.js handles the resulting scroll event. Other frames run normally.
+await page.addInitScript(() => {
+  const NativeResizeObserver = window.ResizeObserver;
+  window.ResizeObserver = class extends NativeResizeObserver {
+    constructor(callback) {
+      super((entries, observer) => {
+        const raf = window.requestAnimationFrame;
+        if (window.holdPdfResize && entries.some(entry => entry.target.matches('.manuscript-pages .pdf-container'))) {
+          window.requestAnimationFrame = frame => {
+            window.pendingPdfResize = frame;
+            return raf.call(window, () => {});
+          };
+        }
+        try { callback(entries, observer); }
+        finally { window.requestAnimationFrame = raf; }
+      });
+    }
+  };
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Enter' || !event.target.matches('[aria-label="Page number"]') || !window.pendingPdfResize) return;
+    const frame = window.pendingPdfResize;
+    window.pendingPdfResize = null; window.holdPdfResize = false;
+    frame(performance.now());
+  });
+});
 const pageErrors = [];
 page.on('pageerror', error => pageErrors.push(error.message));
 const task = { id: 'fixture-task-0001', projectId: 'fixture-paper', name: 'p-fixture', title: 'Clarify the introduction', instructions: 'Keep the technical meaning.', worktree: '/tmp/fixture', threadId: null, turnId: null, model: null, status: 'reviewing', createdAt: 1, updatedAt: 1, feedbackCursor: 0, error: null, review: { state: 'reviewing', round: 1, counts: { pending: 3, commented: 1 } } };
@@ -872,6 +899,8 @@ try {
   assert.equal(await page.locator('.manuscript-pages .pdf-toolbar > :last-child').first().getAttribute('aria-label'), 'Expand manuscript panel');
   assert.equal(await page.locator('.pdf-toolbar').getByRole('link', { name: 'Open PDF', exact: true }).count(), 0);
   await page.screenshot({ path: 'test-results/manuscript-panel-collapsed.png', fullPage: true });
+  await page.clock.runFor(100);
+  await page.evaluate(() => { window.holdPdfResize = true; });
   await expandPanel.press('Enter');
   await manuscriptSide.waitFor();
   assert.equal(await mountedPdf.evaluate(el => el.isConnected), true);
@@ -879,14 +908,16 @@ try {
   assert.equal(Math.round((await manuscriptSide.boundingBox()).width), originalSideWidth);
   assert.equal(await page.getByLabel('Page number').inputValue(), '2');
   await page.waitForFunction(() => document.activeElement === document.querySelector('.manuscript-side-header .manuscript-panel-toggle'));
+  await page.waitForFunction(() => Boolean(window.pendingPdfResize));
   console.log('PASS: Manuscript panel collapses and expands from the keyboard, preserving its draft, PDF and width');
   await prompt.fill('');
   await page.getByLabel('Page number').fill('1');
   await page.getByLabel('Page number').press('Enter');
+  await page.clock.runFor(200);
+  await expect(page.getByLabel('Page number')).toHaveValue('1');
   await contentsTrigger.press('ArrowDown');
   assert.equal(await contents.isVisible(), true);
   await expect(contents.getByRole('menuitemradio', { name: /^Introduction/ })).toHaveAttribute('aria-checked', 'true');
-  await page.clock.runFor(200);
   await page.screenshot({ path: 'test-results/contents-desktop.png', fullPage: true });
   await contents.getByRole('menuitemradio', { name: /^Method/ }).click();
   await page.waitForFunction(() => document.querySelector('[aria-label="Page number"]').value === '2');

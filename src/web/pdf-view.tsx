@@ -453,9 +453,12 @@ export const PdfView = forwardRef<PdfHandle, {
       cancelAnimationFrame(resizeFrame);
       resizeFrame = requestAnimationFrame(() => {
         if (!viewer.pagesCount || !box.clientWidth || !box.clientHeight) return;
+        // Navigation may have scrolled since PDF.js last saved its location.
+        // Refresh it before fitting, which restores that saved location.
+        viewer.update();
         const scale = viewer.currentScaleValue;
         if (scale === 'page-width' || scale === 'page-fit' || scale === 'page-height' || scale === 'auto') viewer.currentScaleValue = scale;
-        viewer.update(); goBack();
+        goBack();
       });
     });
     resize.observe(box);
