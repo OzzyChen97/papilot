@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { Project } from '../shared.ts';
 import { Icon } from './icons.tsx';
-import { FolderBrowser, FolderPickerWait, useFolderPicker } from './folder-browser.tsx';
+import { FolderBrowser, FolderChooser, useFolderPicker } from './folder-browser.tsx';
 import { locale, t } from './i18n.ts';
 import { browserStorage } from './storage.ts';
 import { requestId } from './request-id.ts';
@@ -149,8 +149,7 @@ export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChang
         <label htmlFor={id + '-name'}>{t('Paper name')}</label><input id={id + '-name'} name="name" value={form.name} required maxLength={120} autoComplete="off" disabled={busy} onChange={event => setForm({ ...form, name: event.target.value })}/>
         <div className="create-paper-save-label" id={id + '-location'}>{t('Save in')}</div>
         {browsing ? <FolderBrowser api={api} start={form.parent} action={t('Use this folder')} onCancel={() => { setBrowsing(false); focusChange(); }} onChoose={parent => { setForm(current => ({ ...current, parent })); setBrowsing(false); focusChange(); }}/>
-          : <div className="create-paper-location"><Icon name="folder" size={16}/><div className="create-paper-location-copy" role="group" aria-labelledby={id + '-location'}><strong>{form.parent.split(/[\\/]/).filter(Boolean).at(-1) || form.parent}</strong><span>{form.parent}</span></div><button type="button" className="button secondary compact" disabled={busy || picker.waiting || !form.parent} onClick={() => void browse()}>{t('Change…')}</button></div>}
-        {picker.waiting && <FolderPickerWait onBrowse={picker.browseInstead}/>}
+          : <div className="create-paper-location"><Icon name="folder" size={16}/><div className="create-paper-location-copy" role="group" aria-labelledby={id + '-location'}><strong>{form.parent.split(/[\\/]/).filter(Boolean).at(-1) || form.parent}</strong><span>{form.parent}</span></div><FolderChooser picker={picker} label={t('Change…')} icon={false} disabled={busy || !form.parent} onChoose={() => void browse()}/></div>}
         {busy && <p className="create-paper-status" role="status"><span className="spinner"/>{t('Creating your paper…')}</p>}
         {error && <p className="inline-error" role="alert">{error}</p>}
         <div className="create-paper-footer">

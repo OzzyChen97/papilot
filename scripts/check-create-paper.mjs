@@ -21,7 +21,7 @@ try {
     if (desktop) await context.addInitScript(picked => { window.papilotDesktop = { platform: 'win32', minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => picked }; }, picked);
     let fail = !desktop;
     // A browser on another device cannot show the system picker and browses in the page instead.
-    let picker = { unavailable: true };
+    let picker = { unavailable: true }, held = null;
     await context.route('**/api/**', route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/projects/create-defaults') return route.fulfill({ json: { parent } });
@@ -31,7 +31,12 @@ try {
         const project = { id: 'created-' + mode, name: body.name, path: body.parent + (mode === 'windows' ? '\\' : '/') + body.name, createdAt: 1 };
         state.projects = [project]; return route.fulfill({ json: project });
       }
-      if (url.pathname === '/api/folders/choose') { assert.equal(desktop, false, 'Desktop uses its own folder picker'); return route.fulfill({ json: picker }); }
+      if (url.pathname === '/api/folders/choose') {
+        assert.equal(desktop, false, 'Desktop uses its own folder picker');
+        // A picker nobody answers keeps the request open until the page stops waiting.
+        if (picker === 'wait') { held = route; return; }
+        return route.fulfill({ json: picker });
+      }
       if (url.pathname === '/api/folders') {
         assert.equal(desktop, false, 'Desktop uses the native folder picker');
         const current = route.request().postDataJSON().path.replace(/\/$/, '') || '/';
@@ -80,6 +85,16 @@ try {
       await dialog.getByRole('button', { name: 'Use this folder', exact: true }).click();
       assert.equal(await shown(), '/home/author/papers');
       assert.equal(await target.textContent(), '/home/author/papers/研究论文');
+      // While the system picker is open, browsing in the page stays one click away.
+      picker = 'wait';
+      await change.click();
+      const choosing = dialog.getByRole('button', { name: 'Choosing…', exact: true }); await choosing.waitFor();
+      assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).isDisabled(), true);
+      assert.ok(await dialog.locator('.modal').evaluate(element => element.scrollWidth <= element.clientWidth + 1), 'The waiting chooser fits a narrow phone');
+      await page.screenshot({ path: 'test-results/create-paper-choosing-mobile.png', animations: 'disabled' });
+      await dialog.getByRole('button', { name: 'Browse here instead', exact: true }).click();
+      await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await held.fulfill({ json: { path: null } }).catch(() => undefined);
       // A browser on the Papilot computer uses the system picker.
       picker = { path: parent };
       await change.click();

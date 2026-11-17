@@ -26,9 +26,16 @@ export function useFolderPicker(api: Api) {
   return { waiting, pick, browseInstead: () => request.current?.abort() };
 }
 
-// The picker may open behind other windows or on a screen nobody is watching.
-export function FolderPickerWait({ onBrowse }: { onBrowse: () => void }) {
-  return <p className="folder-picker-wait" role="status"><span className="spinner"/><span>{t('Choose a folder in the window that opened on the computer running Papilot.')}</span><button type="button" className="button ghost compact" onClick={onBrowse}>{t('Browse here instead')}</button></p>;
+// While the system picker is open, its button reads "Choosing…" and stays
+// focusable so the change is announced. The picker may open behind other windows
+// or on a screen nobody is watching, so browsing in the page stays one click away.
+export function FolderChooser({ picker, label, icon = true, disabled, onChoose, ...props }: { picker: ReturnType<typeof useFolderPicker>; label: string; icon?: boolean; disabled: boolean; onChoose: () => void } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'disabled'>) {
+  return <span className="folder-chooser">
+    <button type="button" {...props} className="button secondary compact" disabled={disabled && !picker.waiting} aria-disabled={picker.waiting || undefined} onClick={() => { if (!picker.waiting) onChoose(); }}>
+      {picker.waiting ? <><span className="spinner"/>{t('Choosing…')}</> : <>{icon && <Icon name="folder" size={15}/>}{label}</>}
+    </button>
+    {picker.waiting && <button type="button" className="button ghost compact" onClick={picker.browseInstead}>{t('Browse here instead')}</button>}
+  </span>;
 }
 
 // Lists folders on the computer running Papilot. Entering a folder or typing a

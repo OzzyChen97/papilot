@@ -203,8 +203,9 @@ try {
   // While waiting for a picker the person may not see, the page offers to browse instead.
   picker = 'wait';
   await choose.click();
-  await page.getByRole('status').filter({ hasText: 'Choose a folder in the window that opened on the computer running Papilot.' }).waitFor();
-  assert.equal(await choose.isDisabled(), true); assert.equal(await page.getByRole('button', { name: 'Import ZIP', exact: true }).isDisabled(), true);
+  const choosing = page.getByRole('button', { name: 'Choosing…', exact: true }); await choosing.waitFor();
+  assert.equal(await choosing.getAttribute('aria-disabled'), 'true'); assert.equal(await page.getByRole('button', { name: 'Import ZIP', exact: true }).isDisabled(), true);
+  assert.equal(await page.evaluate(() => document.activeElement?.textContent), 'Choosing…', 'The chooser keeps focus while waiting');
   await page.getByRole('dialog', { name: 'New paper' }).screenshot({ animations: 'disabled', path: 'test-results/import-picker-wait.png' });
   await page.getByRole('button', { name: 'Browse here instead', exact: true }).click();
   await page.getByRole('button', { name: 'papers', exact: true }).waitFor();

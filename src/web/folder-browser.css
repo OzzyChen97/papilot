@@ -21,5 +21,5 @@
   .folder-browser-list button, .folder-browser-actions .button { min-height: 44px; }
 }
 
-.folder-picker-wait { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 12px; color: var(--text-2); }
-.folder-picker-wait > span:nth-child(2) { flex: 1 1 180px; min-width: 0; }
+.folder-chooser { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.folder-chooser .button[aria-disabled=true] { cursor: progress; color: var(--text-2); }

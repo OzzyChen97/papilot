@@ -3,7 +3,7 @@ import type { AgentId, PaperImport, Project } from '../shared.ts';
 import { Icon } from './icons.tsx';
 import { BrandIcon } from './brand-icon.tsx';
 import { ChipSelect } from './chip-select.tsx';
-import { FolderBrowser, FolderPickerWait, useFolderPicker } from './folder-browser.tsx';
+import { FolderBrowser, FolderChooser, useFolderPicker } from './folder-browser.tsx';
 import { t } from './i18n.ts';
 import { browserStorage } from './storage.ts';
 import { droppedFolder, ignoredImportPath, type ImportFile } from './import-files.ts';
@@ -157,8 +157,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
           <h3 id={linkId + '-original'}>{t('Open existing folder')}</h3>
           <p id={linkId + '-original-hint'}>{t('Work in the original folder. Changes are saved directly to your files.')}</p>
           {browsing ? <FolderBrowser api={api} start="" action={t('Open this folder')} onCancel={() => { setBrowsing(false); focusChooser(); }} onChoose={path => { setBrowsing(false); void run(() => openFolder(path)); }}/>
-            : <button type="button" data-choose-folder className="button secondary compact" aria-describedby={linkId + '-original-hint'} disabled={locked} onClick={() => void chooseFolder()}><Icon name="folder" size={15}/>{t('Choose folder…')}</button>}
-          {picker.waiting && <FolderPickerWait onBrowse={picker.browseInstead}/>}
+            : <FolderChooser picker={picker} label={t('Choose folder…')} data-choose-folder aria-describedby={linkId + '-original-hint'} disabled={busy || working} onChoose={() => void chooseFolder()}/>}
         </section>
         {busy && <p className="import-reading" role="status"><span className="spinner"/>{fromLink ? t('Downloading paper source…') : t('Reading paper files…')}</p>}
         {error && <p id={linkId + '-error'} className="inline-error" role="alert">{error}</p>}

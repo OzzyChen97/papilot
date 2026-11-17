@@ -6049,14 +6049,14 @@
     "textHash": "cfbd186792c0316afa39b27b4edd198050f2ac3e05e97465f3343b8fe7f0bedc",
     "model": "manual"
   },
-  "Choose a folder in the window that opened on the computer running Papilot.": {
-    "revision": "d05ce8f1388f7bb5088f55e45fa5851783f17fa9244ebf00690f6985897a7cfe",
-    "textHash": "d652cc105977332d293f008b6de5259de3271bea334b86353f809344320ee203",
-    "model": "manual"
-  },
   "Browse here instead": {
     "revision": "717ab22ab31809a8e0aebac309e973a455e9ec4ad5398526d20df2f3e2bbaa43",
     "textHash": "1a568d37033d840eb715b97edcf417cba1c9a02e16b12afeadc35d9f6b319c4c",
+    "model": "manual"
+  },
+  "Choosing…": {
+    "revision": "628c7cc0aff0a3ad024a1f2e6abb4bf6ee3f0c7e93ad0f62cfb72b16c9b8a470",
+    "textHash": "7ffe86aec764b5e2da458de039efff4bcd9feceee6f6c562f5a199c3d99e7ddd",
     "model": "manual"
   }
 }

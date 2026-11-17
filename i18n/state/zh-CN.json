@@ -299,14 +299,14 @@
     "textHash": "3a03016b6a8449f7baed2c342ad8ac34cecffcd0f2c58dd8ae03e887a2c809e0",
     "model": "manual"
   },
-  "Choose a folder in the window that opened on the computer running Papilot.": {
-    "revision": "32e15a2c716946d27e70352327a311c147558046fdd6ca2f177e8c11fed41657",
-    "textHash": "e404060e7e871f8c126b260eb3053118ab001cded877e6d9b9bfa4f2bfb25db1",
-    "model": "manual"
-  },
   "Browse here instead": {
     "revision": "cdb885217d4ee68e452ef2648a4556628aad31c920c760bcc61c9e9f90430dc4",
     "textHash": "6e7ca17a1d8ec357b5fc51fd0ae35bae41499a0083f08a78f861d9825f5c5563",
+    "model": "manual"
+  },
+  "Choosing…": {
+    "revision": "f45420fc692d161d31e53b5a314c18140b80124619b16956915a1307064b3c25",
+    "textHash": "07b9d2a60922eb9117f84e612453596dc864b3bd0eb67ebde956baa0e52011e5",
     "model": "manual"
   }
 }
