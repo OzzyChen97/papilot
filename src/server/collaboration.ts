@@ -8,6 +8,7 @@ import { Codex } from './codex.ts';
 import { AntigravityAgent, type AgentRuntime } from './agents.ts';
 import { ACP_PROFILES, AcpAgent } from './acp.ts';
 import { editWorkflowSources, type WorkflowEdit } from './collaboration-edits.ts';
+import { realPath } from './real-path.ts';
 import type { NoteSummary } from '../shared.ts';
 
 const exec = promisify(execFile);
@@ -104,7 +105,7 @@ export async function auditWorkflow(root: string, notes: WorkflowNote[], args: a
 // Fresh native agent sessions; no custom model loop or shared editing workspace.
 export async function runWorkflowHelper(executor: WorkflowExecutor, prompt: string, signal: AbortSignal, model?: string | null, edit?: WorkflowEdit, factory?: (cwd: string) => AgentRuntime): Promise<string> {
   signal.throwIfAborted();
-  const cwd = edit?.cwd || fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-'));
+  const cwd = realPath(edit?.cwd || fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-')));
   const files = edit?.files.map(file => path.join(cwd, file));
   if (files?.some(file => /[()*?\r\n]/.test(file))) throw new Error('Delegated edits must stay within the selected source files.');
   const runtime: AgentRuntime = factory?.(cwd) || (executor === 'codex' ? new Codex() : executor === 'gemini'

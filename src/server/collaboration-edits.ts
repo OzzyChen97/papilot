@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { merge3Async } from '../../engine/src/core/git.ts';
 import { atomicWrite } from '../../engine/src/core/files.ts';
+import { realPath } from './real-path.ts';
 
 export type WorkflowEdit = { cwd: string; files: string[] };
 type Source = { file: string; source: string };
@@ -42,8 +43,8 @@ async function integrate<T>(root: string, work: () => Promise<T>) {
 }
 
 export async function editWorkflowSources(root: string, sources: Source[], run: (edit: WorkflowEdit) => Promise<string>, signal: AbortSignal, current: () => boolean) {
-  const baseRoot = fs.realpathSync(root);
-  const active = () => { signal.throwIfAborted(); if (!current() || fs.realpathSync(root) !== baseRoot) throw new Error('The workflow is no longer active.'); };
+  const baseRoot = realPath(root);
+  const active = () => { signal.throwIfAborted(); if (!current() || realPath(root) !== baseRoot) throw new Error('The workflow is no longer active.'); };
   active();
   const base = new Map<string, Buffer>();
   const identities = new Map<string, string>();
@@ -56,7 +57,7 @@ export async function editWorkflowSources(root: string, sources: Source[], run: 
     if (entry.bytes.toString('utf8') !== source.source) throw new Error('The source changed while merging delegated edits. Retry the delegation.');
     base.set(file, entry.bytes);
   }
-  const cwd = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-edit-')));
+  const cwd = realPath(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-edit-')));
   try {
     for (const [file, bytes] of base) { fs.mkdirSync(path.dirname(path.join(cwd, file)), { recursive: true }); fs.writeFileSync(path.join(cwd, file), bytes); }
     // A manuscript and the temp volume may differ in case/Unicode handling.

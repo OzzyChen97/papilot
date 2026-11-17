@@ -12,7 +12,7 @@ import { delegateWorkflow, runWorkflowHelper, type WorkflowGenerate } from '../s
 // endpoint. This exercises real tool registration, sandboxing and apply_patch,
 // without host credentials or live model calls.
 test('native Codex workers edit snapshots without inherited tools, network or writable roots', { timeout: 60000 }, async () => {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-codex-worker-')));
+  const dir = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-codex-worker-')));
   const paper = path.join(dir, 'paper'), extra = path.join(dir, 'extra'), home = path.join(dir, 'home');
   for (const folder of [paper, extra, home]) fs.mkdirSync(folder);
   const original = 'Original text.\n', protectedFile = path.join(extra, 'secret.txt'), marker = path.join(dir, 'mcp-started');
@@ -61,6 +61,7 @@ test('native Codex workers edit snapshots without inherited tools, network or wr
   let copy = '';
   const generate: WorkflowGenerate = async (executor, prompt, signal, model, edit) => {
     copy = edit!.cwd;
+    assert.equal(copy, fs.realpathSync.native(copy), 'the native sandbox must see expanded Windows paths');
     const summary = await runWorkflowHelper(executor, prompt, signal, model, edit, factory);
     assert.equal(fs.readFileSync(path.join(paper, 'main.tex'), 'utf8'), original, 'the worker has not edited the task');
     assert.equal(fs.readFileSync(path.join(copy, 'main.tex'), 'utf8'), 'Checked text.\n');

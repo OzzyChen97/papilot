@@ -10,7 +10,7 @@ import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts'
 import { AGENT_IDS, type RuntimeStatus } from '../src/shared.ts';
 
 function paper() {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-test-'));
+  const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-test-')));
   const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe', env: { ...process.env, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' } });
   git('init'); fs.writeFileSync(path.join(root, 'main.tex'), 'First paragraph.\n\nSecond paragraph.\n'); git('add', '.'); git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'Base');
   return { root, close: () => fs.rmSync(root, { recursive: true, force: true }) };
@@ -65,6 +65,7 @@ test('Codex edits use the same isolated merge route and inherit only the task Co
       const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, executor }, async (worker, _prompt, _signal, model, edit) => {
         assert.equal(worker, executor); assert.equal(model, executor === 'codex' ? 'task-codex-model' : undefined);
         assert.ok(edit); copy = edit.cwd; assert.notEqual(copy, fs.realpathSync(f.root));
+        assert.equal(copy, fs.realpathSync.native(copy), 'workers use the native path identity, including Windows short-name expansion');
         const file = path.join(copy, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Checked'));
         assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^First/); return 'Checked the annotation.';
       }, signal(), () => true, 'task-codex-model');
