@@ -7,6 +7,8 @@ import { chooseDirectory, nativeFolders } from './desktop-chrome.tsx';
 import { browserStorage } from './storage.ts';
 import { requestId } from './request-id.ts';
 import './create-paper-dialog.css';
+// The example project's first page, as the gallery shows each template's.
+import exampleThumbnail from './example-paper.jpg';
 
 const draftKey = 'papilot:create-paper', identityKey = draftKey + ':request';
 // A Universe template as /api/universe lists it; null below means the blank paper.
@@ -127,7 +129,7 @@ export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChang
         </search>
         <ul className="template-grid" role="list" aria-label={t('Templates')}>
           {group === 'all' && !words.length && <li><button type="button" className="template-card" aria-pressed={Boolean(form.example)} onClick={() => pick(null)}>
-            <span className="template-thumb blank"><Icon name="paper" size={24}/></span>
+            <span className="template-thumb"><img src={exampleThumbnail} alt="" loading="lazy"/></span>
             <span className="template-name">{t('Example project')}</span>
           </button></li>}
           {shown.map(item => <li key={item.id}><button type="button" className="template-card" aria-pressed={form.template?.id === item.id} title={item.venue?.full ?? templateName(item)} onClick={() => pick(item)}>
@@ -139,7 +141,7 @@ export function CreatePaperPanel({ api, onDone, preset, tab, active, onBusyChang
         </ul>
       </> : <>
         {tab === 'templates' && <div className="template-chosen">
-          <span className="template-thumb">{chosen?.thumbnail ? <img src={chosen.thumbnail} alt="" referrerPolicy="no-referrer"/> : <Icon name="paper" size={14}/>}</span>
+          <span className="template-thumb">{chosen ? chosen.thumbnail && <img src={chosen.thumbnail} alt="" referrerPolicy="no-referrer"/> : <img src={exampleThumbnail} alt=""/>}</span>
           <span className="template-chosen-text"><strong>{chosen ? templateName(chosen) : t('Example project')}</strong><span>{chosen ? [templateMeta(chosen), ENGINE[chosen.engine]].filter(Boolean).join(' · ') : 'pdfLaTeX'}</span></span>
           <button type="button" className="button ghost compact" disabled={busy} onClick={() => setStep('template')}>{t('Change…')}</button>
         </div>}

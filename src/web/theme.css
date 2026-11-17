@@ -1,36 +1,53 @@
 /* Shared by the workspace and its embedded review viewer. In the dark theme
    PDF pages turn dark too: --pdf-filter inverts their lightness and turns the
    hue back, so red, green and blue stay recognisable, and --pdf-page is the
-   colour white paper becomes, for the space around a page's image. */
+   colour white paper becomes, for the space around a page's image.
+
+   The interface follows a canvas-tool design: the PDF lies on a light grey
+   canvas between white panels joined by 1px rules. Neutral greys carry the
+   interface; blue marks selection, focus and primary actions; green, red,
+   amber and purple only carry meaning (changes, warnings, stamps).
+   --bg is a panel, --canvas the surface the pages lie on, --raised anything
+   floating above both (toolbars, menus, popovers, dialogs). Appearance
+   presets (appearance.ts) rewrite the panel colours. */
 :root{
-  --bg:#ffffff;--sidebar:#f9f9f9;--bg-subtle:#fafafa;--bg-muted:#f4f4f4;--bg-hover:#efefef;--bg-active:#e7e7e7;--canvas:#f3f3f3;
-  --line:#e8e8e8;--line-strong:#d6d6d6;
-  --text:#171717;--text-2:#525252;--text-3:#8a8a8a;
-  --accent:#2563eb;--accent-hover:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;
-  --primary:#2563eb;--primary-hover:#1d4ed8;
-  --green:#15803d;--green-soft:#f0fdf4;--purple:#7c3aed;--purple-soft:#f5f3ff;--red:#dc2626;--red-soft:#fef2f2;--red-line:#fecaca;
-  --amber-soft:#fffbeb;--amber-line:#fde68a;--amber-text:#92400e;
-  --shadow-xs:0 1px 2px rgb(0 0 0/.06);
-  --shadow-sm:0 1px 2px rgb(0 0 0/.05),0 3px 8px rgb(0 0 0/.05);
-  --float:0 2px 4px rgb(0 0 0/.04),0 14px 36px rgb(0 0 0/.13);
-  --ring:0 0 0 3px rgb(37 99 235/.18);
-  --line-hover:#c4c4c4;--danger:#dc2626;--danger-hover:#b91c1c;
+  --bg:#ffffff;--sidebar:#ffffff;--bg-subtle:#fafafa;--bg-muted:#f5f5f5;--bg-hover:#f0f0f0;--bg-active:#e6e6e6;--canvas:#f5f5f5;--raised:#ffffff;
+  /* The selected segment of a segmented control, above its groove. */
+  --thumb:#ffffff;
+  --line:#e6e6e6;--line-strong:#d9d9d9;--line-hover:#c4c4c4;
+  --text:#1e1e1e;--text-2:#5e5e5e;--text-3:#8f8f8f;
+  --accent:#0b8af0;--accent-hover:#0a76d1;--accent-soft:#e5f3ff;--accent-line:#b3dbff;
+  --primary:#0b8af0;--primary-hover:#0a76d1;
+  --green:#14a35a;--green-soft:#e6f6ec;--purple:#8a46f0;--purple-soft:#f2ebfe;--red:#e5482d;--red-soft:#fdede9;--red-line:#f8c4b8;
+  --amber:#f5a524;--amber-soft:#fff5e0;--amber-line:#fcd99a;--amber-text:#a15c00;
+  --danger:#e5482d;--danger-hover:#cc3b22;
+  /* Elevation: controls, cards, then floating toolbars, popovers and dialogs. */
+  --shadow-xs:0 0 0 .5px rgb(0 0 0/.15),0 1px 3px rgb(0 0 0/.1);
+  --shadow-sm:0 0 .5px rgb(0 0 0/.18),0 3px 8px rgb(0 0 0/.1),0 1px 3px rgb(0 0 0/.1);
+  --float:0 0 .5px rgb(0 0 0/.12),0 10px 16px rgb(0 0 0/.12),0 2px 5px rgb(0 0 0/.15);
+  --ring:0 0 0 1px var(--accent);
+  /* Menus, tooltips and toasts float above the panels. */
+  --menu-bg:var(--raised);--menu-text:var(--text);--menu-text-2:var(--text-2);--menu-text-3:var(--text-3);--menu-line:var(--line);--menu-hover:var(--bg-hover);
+  --menu-shadow:var(--float);
+  --scrim:rgb(0 0 0/.32);
   --scroll-thumb:rgb(0 0 0/.12);--scroll-hover:rgb(0 0 0/.2);--scroll-active:rgb(0 0 0/.34);
   --pdf-filter:none;--pdf-page:#ffffff;
   color-scheme:light;
 }
 :root[data-theme="dark"]{
-  --bg:#26272b;--sidebar:#202124;--bg-subtle:#2a2b2f;--bg-muted:#303135;--bg-hover:#37383c;--bg-active:#404145;--canvas:#1e1f22;
-  --line:#38393e;--line-strong:#4b4c52;--line-hover:#63646b;
-  --text:#ececee;--text-2:#c2c3c9;--text-3:#9c9da5;
-  --accent:#8ab4ff;--accent-hover:#b2ceff;--accent-soft:#2b3651;--accent-line:#445c85;
-  --primary:#2563eb;--primary-hover:#1d4ed8;
-  --green:#7bd5a0;--green-soft:#243a2f;--purple:#bfa1ff;--purple-soft:#372d48;--red:#ff9696;--red-soft:#46292e;--red-line:#733b45;
-  --amber-soft:#3e3424;--amber-line:#6d5631;--amber-text:#eac584;
-  --shadow-xs:0 1px 2px rgb(0 0 0/.2);
-  --shadow-sm:0 1px 2px rgb(0 0 0/.18),0 3px 8px rgb(0 0 0/.2);
-  --float:0 2px 4px rgb(0 0 0/.2),0 14px 36px rgb(0 0 0/.4);
-  --ring:0 0 0 3px rgb(138 180 255/.22);
+  --bg:#2c2c2c;--sidebar:#2c2c2c;--bg-subtle:#303030;--bg-muted:#383838;--bg-hover:#383838;--bg-active:#444444;--canvas:#1e1e1e;--raised:#333333;
+  --thumb:#4d4d4d;
+  --line:#444444;--line-strong:#4d4d4d;--line-hover:#5e5e5e;
+  --text:#f0f0f0;--text-2:#b3b3b3;--text-3:#8c8c8c;
+  --accent:#3aa6ff;--accent-hover:#6bbcff;--accent-soft:#1c3a57;--accent-line:#2e5f8c;
+  --primary:#0b8af0;--primary-hover:#2496f2;
+  --green:#3fc47c;--green-soft:#1e3a2a;--purple:#a97bff;--purple-soft:#33284d;--red:#ff7759;--red-soft:#47271f;--red-line:#6e3a2d;
+  --amber:#ffc04d;--amber-soft:#3d3220;--amber-line:#66532c;--amber-text:#ffcb6b;
+  --danger:#e5482d;--danger-hover:#cc3b22;
+  --shadow-xs:0 0 0 .5px rgb(0 0 0/.5),0 1px 3px rgb(0 0 0/.35);
+  --shadow-sm:0 0 .5px rgb(0 0 0/.6),0 3px 8px rgb(0 0 0/.35);
+  --float:0 0 0 .5px rgb(255 255 255/.08),0 10px 16px rgb(0 0 0/.35),0 2px 5px rgb(0 0 0/.35);
+  --scrim:rgb(0 0 0/.5);
   --scroll-thumb:rgb(255 255 255/.16);--scroll-hover:rgb(255 255 255/.25);--scroll-active:rgb(255 255 255/.38);
   /* White becomes #292929 and black #d6d6d6. */
   --pdf-filter:invert(.84) hue-rotate(180deg);--pdf-page:#292929;

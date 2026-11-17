@@ -12,7 +12,7 @@ import { markText, NoteQuote } from './note-content.tsx';
 import { NoteAttachButton, PdfNoteCard, TaskRemoveButton } from './pdf-suggestion.tsx';
 import { StrictMode, Suspense, lazy, memo, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createRoot } from 'react-dom/client';
-import { flushSync } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { readNotesInstructions, type NoteSummary } from '../notes.ts';
 import { aiReviewSummary, isFeedbackPrompt } from '../conversation.ts';
 import { ignorePattern } from '../commit.ts';
@@ -31,7 +31,7 @@ import { browserStorage } from './storage.ts';
 import { requestId } from './request-id.ts';
 import { readPlace, savePlace } from './places.ts';
 import { ModeSwitch, type PdfMode } from './mode-switch.tsx';
-import { ReviewFrame, reviewUrl, type ReviewSources } from './review-frame.tsx';
+import { ReviewFrame, type ReviewSources } from './review-frame.tsx';
 import { AiReviewView } from './ai-review.tsx';
 import { keepDialogFocus } from './focus.ts';
 import { DeleteTaskDialog } from './task-dialog.tsx';
@@ -902,7 +902,7 @@ function NotesPanel({ notes, sections = [], currentKey, active, actions, onShow,
 // The composer receives only attachments the author explicitly chose in the PDF.
 // Each one is the same card as in My notes: click the text or ✏️ to edit it,
 // 🗑 deletes it (⌘Z brings it back), and × takes it out of the task.
-function TaskNotes({ notes, currentKey, actions, onShow, controller, cards }: { notes: Annotation[]; currentKey?: string; actions: NoteActions; onShow: (note: Annotation) => void; controller: React.Ref<NotesHandle>; cards: ReturnType<typeof useNoteCards> }) {
+function TaskNotes({ notes, currentKey, actions, onShow, controller, cards, headerSlot }: { notes: Annotation[]; currentKey?: string; actions: NoteActions; onShow: (note: Annotation) => void; controller: React.Ref<NotesHandle>; cards: ReturnType<typeof useNoteCards>; headerSlot?: HTMLElement | null }) {
   const panel = useRef<HTMLElement>(null);
   const chosen = notes.filter(note => actions.selection.has(note.id));
   // Saving can outlive this view; drafts, failures and busy state live in App.
@@ -926,7 +926,10 @@ function TaskNotes({ notes, currentKey, actions, onShow, controller, cards }: { 
     {note.key !== currentKey && <NotePlacementWarning/>}
   </li>;
   return <section ref={panel} className="task-notes-panel" aria-label={t('Notes in this task')}>
-    {chosen.length > 0 && <div className="note-selection-head"><span>{t('Added to task: {n}', { n: chosen.length })}</span><button type="button" className="note-select-all" disabled={selectionLocked} onClick={() => putBack(chosen)}>{t('Remove all from task')}</button></div>}
+    {/* Beside the panel's tabs, whose count already says how many notes the task has; phones hide that header. */}
+    {chosen.length > 0 && (headerSlot
+      ? createPortal(<button type="button" className="icon-button" aria-label={t('Remove all from task')} title={t('Remove all from task')} disabled={selectionLocked} onClick={() => putBack(chosen)}><Icon name="minus" size={16}/></button>, headerSlot)
+      : <div className="note-selection-head"><span>{t('Added to task: {n}', { n: chosen.length })}</span><button type="button" className="note-select-all" disabled={selectionLocked} onClick={() => putBack(chosen)}>{t('Remove all from task')}</button></div>)}
     {noteGroups(notes).map(({ group, entries }) => {
       const selected = entries.filter(({ note }) => actions.selection.has(note.id));
       return selected.length > 0 && <GroupCard key={group} group={group} count={selected.length}>
@@ -1030,7 +1033,9 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
     setCollapsed(value => !value); pdf.current?.fitWidth();
     requestAnimationFrame(() => panelToggle.current?.focus());
   }}><Icon name={hidden ? 'panelExpand' : 'panelCollapse'} size={18}/></button>;
-  const pageTools = <>{tools}{!hidden && !sideBySide && share}{hidden && togglePanel}</>;
+  // Sharing exports the paper, so it sits with the page's own tools.
+  const [taskActions, setTaskActions] = useState<HTMLDivElement | null>(null), sideHeader = useMedia('(min-width: 681px)');
+  const pageTools = <>{tools}{share}{hidden && togglePanel}</>;
   // PDF or Changes stays as the author left it when they come back to the paper.
   const [mode, showMode] = useState<PdfMode>(() => !isPlayground && readPlace('mode:' + project.id) === 'changes' ? 'changes' : 'pdf'), [committing, setCommitting] = useState(false);
   const setMode = (value: PdfMode) => {
@@ -1063,7 +1068,7 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
     })}/>;
   // The button always says how many notes are saved, and pops as more arrive.
   const notesLabel = notes.length ? `${t('My notes')} · ${tn(notes.length, 'Note on the PDF', '{n} notes on the PDF')}` : t('My notes');
-  const pdfTools = <>{tools}{problemsButton}<button type="button" data-notes-home="library" className={'icon-button' + (readingNotes ? ' active' : '')} aria-label={notesLabel} title={notesLabel} aria-pressed={readingNotes} onClick={() => { if (readingNotes) void closeReadingNotes(); else { setActive(''); setReadingNotes(true); } }}><Icon name="notes" size={16}/>{notes.length > 0 && <span className="notes-count" aria-hidden="true">{notes.length}</span>}</button>{!hidden && !sideBySide && share}{hidden && togglePanel}</>;
+  const pdfTools = <>{tools}{problemsButton}<button type="button" data-notes-home="library" className={'icon-button' + (readingNotes ? ' active' : '')} aria-label={notesLabel} title={notesLabel} aria-pressed={readingNotes} onClick={() => { if (readingNotes) void closeReadingNotes(); else { setActive(''); setReadingNotes(true); } }}><Icon name="notes" size={16}/>{notes.length > 0 && <span className="notes-count" aria-hidden="true">{notes.length}</span>}</button>{share}{hidden && togglePanel}</>;
   const staged = Array.isArray(git?.files) && !git.merging ? git.files.filter(file => file.staged).map(file => file.path) : [];
   const reloadGit = () => void api<GitStatus>(`/projects/${project.id}/git`).then(onGit, () => undefined);
   const commitButton = (inFrame: boolean) => staged.length > 0 && (inFrame
@@ -1114,9 +1119,9 @@ function ManuscriptView({ notesRequest, taskCards, navigationGuard, collapsed, s
           <button ref={taskTab} role="tab" data-task-home aria-selected={side === 'task'} title={t('New task')} onClick={() => setView('task')}><Icon name="compose" size={14}/><span className="tab-label">{t('New task')}</span>{actions.selection.selected.length > 0 && <span className="count" aria-hidden="true">{actions.selection.selected.length}</span>}</button>
           {source.tab && <SourceTab tab={source.tab} selected={side === 'source'} onSelect={() => setView('source')} onClose={source.close}/>}
         </div>
-        {!hidden && sideBySide && share}
+        <div ref={setTaskActions} className="side-header-actions" hidden={side !== 'task'}/>
       </div>
-      <div className="side-pane" hidden={side !== 'task'}>{newTask(<TaskNotes cards={taskCards} controller={taskNotes} notes={notes} currentKey={build?.key} actions={actions} onShow={show}/>)}</div>
+      <div className="side-pane" hidden={side !== 'task'}>{newTask(<TaskNotes headerSlot={sideHeader ? taskActions : null} cards={taskCards} controller={taskNotes} notes={notes} currentKey={build?.key} actions={actions} onShow={show}/>)}</div>
       {source.panel && <div className="side-pane" hidden={side !== 'source'}>{source.panel}</div>}
     </aside>
     {committing && <CommitDialog branch={git?.branch ?? null} files={staged} staged remote={Boolean(git?.remote)} agent={AGENT_LABELS[writer.agent]} onClose={() => setCommitting(false)}
@@ -2047,7 +2052,6 @@ function App() {
           <button aria-label={replyNeeded ? t('Chat (reply needed)') : t('Chat')} title={noManuscriptChanges(task) ? t('This conversation has no manuscript changes.') : t('Chat only')} aria-pressed={layout === 'conversation'} onClick={() => selectLayout('conversation')}><Icon name="chat" size={16}/><span>{t('Chat')}</span>{replyNeeded && <i className="attention-dot" aria-hidden="true"/>}</button>
         </>}</div>;
   const taskControls = task && <>{taskStateActions}{workspaceViews}</>;
-  const reviewOpen = task && fullPdfUrl ? <a className="icon-button review-open" href={reviewUrl(task)} target="_blank" rel="noreferrer" aria-label={t('Open review in new tab')} title={t('Open review in new tab')}><Icon name="external" size={16}/></a> : null;
   // Before the first comparison the task shows the manuscript PDF, so a turn
   // that stopped (for example on an agent error) builds one from the toolbar.
   // Without a manuscript PDF the placeholder offers it; answers need none.
@@ -2165,7 +2169,7 @@ function App() {
       {flyingTask && <TaskFlight task={flyingTask} sidebarShown={sidebarShown} onArrive={taskArrived}/>}
       <span className="sr-only" role="status" aria-atomic="true">{addedTask ? t('Task added: {title}', { title: addedTask.title }) : ''}</span>
       {!gitOpen && (mobile || (!task && !manuscriptOpen)) && (sidebarToggle || task || manuscriptOpen) && <div className="workspace-navigation">
-        {sidebarToggle}{taskControls}{manuscriptNavigation}{reviewOpen}
+        {sidebarToggle}{taskControls}{manuscriptNavigation}
       </div>}
       {state && <RequirementsBanner state={requirements} onOpen={setSettings}/>}
       {state && !online && <div className="connection-banner" role="status"><Icon name="alert" size={15}/><span>{t('Connection lost. Showing the last update; your draft is kept.')}</span><button onClick={() => void refresh(true)}>{t('Retry connection')}</button></div>}
@@ -2174,8 +2178,8 @@ function App() {
           <section id="review-panel" className="review-panel" aria-label={t('PDF review')}>
           {!mobile && !chatOnly && task.status === 'deleting' && (sidebarToggle || !conversationVisible) && <div className="review-placeholder-toolbar">{sidebarToggle}{!conversationVisible && workspaceViews}<div className="panel-tools">{!conversationVisible && taskStateActions}</div></div>}
           {(task.review?.state === 'build_failed' || task.status === 'failed' && task.review?.job?.status === 'failed') && <div className="review-build-error" role="status"><Icon name="alert" size={15}/><span>{t('Could not generate the PDF comparison.')}</span><button className="button secondary compact" disabled={taskActionBusy} onClick={() => void action('/tasks/' + task.id + '/publish')}>{t('Retry build')}</button></div>}
-          {task.status === 'deleting' ? <div className="review-placeholder"><div className="placeholder-icon"><Icon name="trash" size={22}/></div><h2>{t('Deletion is in progress')}</h2><p>{t('This task is reserved until its worktree cleanup is confirmed. Use Retry deletion if the connection was interrupted.')}</p></div> : !task.preparation && task.mode === 'review' ? <AiReviewView key={task.id} task={task} api={api} onCopied={() => void loadManuscript(task.projectId)} lead={!mobile && !chatOnly && (sidebarToggle || !conversationVisible) ? <>{sidebarToggle}{!conversationVisible && workspaceViews}</> : null} tools={!mobile && !conversationVisible ? taskStateActions : null}/> : <TaskDocument key={task.id} projectId={task.projectId} manuscript={manuscriptData.data} placeholder={task.preparation ? <PreparingTask task={task}/> : <PendingComparison task={task} busy={taskActionBusy} onBuild={() => void action('/tasks/' + task.id + '/publish')}/>} task={task} sources={taskReview} onOpenSource={openTaskSource} onChanges={next => setTaskChanges(current => JSON.stringify(current) === JSON.stringify(next) ? current : next)} onCurrentChange={change => { if (taskSource.editing && taskSide === 'source') void taskSource.follow(change, () => undefined); }} onDecided={() => void refresh(true)} lead={!mobile && !chatOnly && (sidebarToggle || !conversationVisible) ? <>{sidebarToggle}{!conversationVisible && workspaceViews}</> : null} tools={<>{reviewTools}{!mobile && !conversationVisible && <>{taskStateActions}{reviewOpen}</>}</>} completion={chatOnly ? null : applicationStep} onComment={() => { setMobileTab('conversation'); setTaskSide('chat'); setLayout(current => current === 'review' ? 'split' : current); }}/>}
-        </section><Activity key={`${task.id}:${restartDraftVersion}`} runtimes={runtimes} relatedTasks={state?.tasks.filter(other => other.id === task.restart?.taskId || other.restart?.taskId === task.id) || []} onOpenTask={id => { setSelected(id); setSidebar(false); }} onRestarted={finishRestart} source={taskSourceSide} onRevealQuote={() => { setMobileTab('review'); setLayout(current => current === 'conversation' ? 'split' : current); }} task={task} lead={!mobile && chatOnly ? sidebarToggle : null} tools={!mobile && conversationVisible ? <>{taskControls}{reviewOpen}</> : null} connection={<AgentConnectionNotice name={agentName(task)} runtime={runtimes[task.agent || 'codex']} reconnecting={pendingActions.has('/reconnect')} onReconnect={() => void action('/reconnect')}/>} runtime={runtimes[task.agent || 'codex']} reconnecting={pendingActions.has('/reconnect')} onReconnect={() => void action('/reconnect')} composer={composers.current.get(task.id)!} answerDrafts={answerDrafts.current} items={timeline.taskId === task.id ? timeline.items : timelineCache.current.get(task.id) || []} loading={timeline.taskId === task.id ? itemsLoading : !timelineCache.current.has(task.id)} loadError={timelineError.taskId === task.id ? timelineError.message : ''} retry={() => void refreshTimeline(task.id)} requests={taskRequests} refresh={() => void refresh(true)} errorActions={task.preparation && task.status === 'failed' ? <div className="task-error-actions">
+          {task.status === 'deleting' ? <div className="review-placeholder"><div className="placeholder-icon"><Icon name="trash" size={22}/></div><h2>{t('Deletion is in progress')}</h2><p>{t('This task is reserved until its worktree cleanup is confirmed. Use Retry deletion if the connection was interrupted.')}</p></div> : !task.preparation && task.mode === 'review' ? <AiReviewView key={task.id} task={task} api={api} onCopied={() => void loadManuscript(task.projectId)} lead={!mobile && !chatOnly && (sidebarToggle || !conversationVisible) ? <>{sidebarToggle}{!conversationVisible && workspaceViews}</> : null} tools={!mobile && !conversationVisible ? taskStateActions : null}/> : <TaskDocument key={task.id} projectId={task.projectId} manuscript={manuscriptData.data} placeholder={task.preparation ? <PreparingTask task={task}/> : <PendingComparison task={task} busy={taskActionBusy} onBuild={() => void action('/tasks/' + task.id + '/publish')}/>} task={task} sources={taskReview} onOpenSource={openTaskSource} onChanges={next => setTaskChanges(current => JSON.stringify(current) === JSON.stringify(next) ? current : next)} onCurrentChange={change => { if (taskSource.editing && taskSide === 'source') void taskSource.follow(change, () => undefined); }} onDecided={() => void refresh(true)} lead={!mobile && !chatOnly && (sidebarToggle || !conversationVisible) ? <>{sidebarToggle}{!conversationVisible && workspaceViews}</> : null} tools={<>{reviewTools}{!mobile && !conversationVisible && taskStateActions}</>} completion={chatOnly ? null : applicationStep} onComment={() => { setMobileTab('conversation'); setTaskSide('chat'); setLayout(current => current === 'review' ? 'split' : current); }}/>}
+        </section><Activity key={`${task.id}:${restartDraftVersion}`} runtimes={runtimes} relatedTasks={state?.tasks.filter(other => other.id === task.restart?.taskId || other.restart?.taskId === task.id) || []} onOpenTask={id => { setSelected(id); setSidebar(false); }} onRestarted={finishRestart} source={taskSourceSide} onRevealQuote={() => { setMobileTab('review'); setLayout(current => current === 'conversation' ? 'split' : current); }} task={task} lead={!mobile && chatOnly ? sidebarToggle : null} tools={!mobile && conversationVisible ? taskControls : null} connection={<AgentConnectionNotice name={agentName(task)} runtime={runtimes[task.agent || 'codex']} reconnecting={pendingActions.has('/reconnect')} onReconnect={() => void action('/reconnect')}/>} runtime={runtimes[task.agent || 'codex']} reconnecting={pendingActions.has('/reconnect')} onReconnect={() => void action('/reconnect')} composer={composers.current.get(task.id)!} answerDrafts={answerDrafts.current} items={timeline.taskId === task.id ? timeline.items : timelineCache.current.get(task.id) || []} loading={timeline.taskId === task.id ? itemsLoading : !timelineCache.current.has(task.id)} loadError={timelineError.taskId === task.id ? timelineError.message : ''} retry={() => void refreshTimeline(task.id)} requests={taskRequests} refresh={() => void refresh(true)} errorActions={task.preparation && task.status === 'failed' ? <div className="task-error-actions">
             <button type="button" className="button secondary compact" disabled={taskActionBusy} aria-busy={taskActionBusy} onClick={() => void action('/tasks/' + task.id + '/prepare')}><Icon name="refresh" size={14}/>{t('Retry')}</button>
             <button type="button" className="button secondary compact" onClick={() => setDeleteTarget(task)}><Icon name="trash" size={14}/>{t('Delete task…')}</button>
           </div> : chatOnly && task.mode !== 'review' && ['failed', 'interrupted'].includes(task.status) ? <div className="task-error-actions">

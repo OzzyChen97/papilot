@@ -70,27 +70,27 @@ try {
     await expect(frame.locator('.sheet')).toHaveCSS('background-color', darkReview ? 'rgb(41, 41, 41)' : 'rgb(255, 255, 255)');
     for (const kind of ['inline', 'standalone']) {
       const change = frame.locator('.change.' + kind).first();
-      await expect(change.locator('.side.before')).toHaveCSS('background-color', darkReview ? 'rgb(67, 44, 48)' : 'rgb(251, 238, 238)');
-      await expect(change.locator('.side.after')).toHaveCSS('background-color', darkReview ? 'rgb(40, 57, 45)' : 'rgb(238, 248, 241)');
+      await expect(change.locator('.side.before')).toHaveCSS('background-color', darkReview ? 'rgb(71, 39, 31)' : 'rgb(253, 237, 233)');
+      await expect(change.locator('.side.after')).toHaveCSS('background-color', darkReview ? 'rgb(30, 58, 42)' : 'rgb(230, 246, 236)');
       await expect(change.locator('.pdf-strip img').first()).toHaveCSS('filter', darkReview ? 'invert(0.84) hue-rotate(180deg)' : 'none');
       const selected = /\bcurrent\b/.test(await change.getAttribute('class'));
-      await expect(change.locator('.change-head')).toHaveCSS('background-color', darkReview ? (selected ? 'rgb(48, 49, 53)' : 'rgb(42, 43, 47)') : (selected ? 'rgb(244, 244, 244)' : 'rgb(250, 250, 250)'));
+      await expect(change.locator('.change-head')).toHaveCSS('background-color', darkReview ? (selected ? 'rgb(28, 58, 87)' : 'rgb(44, 44, 44)') : (selected ? 'rgb(229, 243, 255)' : 'rgb(255, 255, 255)'));
       const sourceToggle = change.getByRole('button', { name: /LaTeX$/ });
       await sourceToggle.click();
-      await expect(change.locator('.source-code').first()).toHaveCSS('background-color', darkReview ? 'rgb(38, 39, 43)' : 'rgb(255, 255, 255)');
-      await expect(change.locator('.source-code').first()).toHaveCSS('color', darkReview ? 'rgb(236, 236, 238)' : 'rgb(23, 23, 23)');
+      await expect(change.locator('.source-code').first()).toHaveCSS('background-color', darkReview ? 'rgb(44, 44, 44)' : 'rgb(255, 255, 255)');
+      await expect(change.locator('.source-code').first()).toHaveCSS('color', darkReview ? 'rgb(240, 240, 240)' : 'rgb(30, 30, 30)');
       // Grouped changes expose per-edit actions. Their hover background must
       // follow the review surface even when the surrounding workspace is dark.
       if (kind === 'inline') {
         for (const [action, light, dark, lightBackground, darkBackground] of [
-          ['accept', 'rgb(21, 128, 61)', 'rgb(123, 213, 160)', 'rgb(240, 253, 244)', 'rgb(36, 58, 47)'],
-          ['reject', 'rgb(220, 38, 38)', 'rgb(255, 150, 150)', 'rgb(254, 242, 242)', 'rgb(70, 41, 46)'],
-          ['comment', 'rgb(37, 99, 235)', 'rgb(138, 180, 255)', 'rgb(239, 246, 255)', 'rgb(43, 54, 81)'],
+          ['accept', 'rgb(20, 163, 90)', 'rgb(63, 196, 124)', 'rgb(230, 246, 236)', 'rgb(30, 58, 42)'],
+          ['reject', 'rgb(229, 72, 45)', 'rgb(255, 119, 89)', 'rgb(253, 237, 233)', 'rgb(71, 39, 31)'],
+          ['comment', 'rgb(11, 138, 240)', 'rgb(58, 166, 255)', 'rgb(229, 243, 255)', 'rgb(28, 58, 87)'],
         ]) {
           const button = change.locator('.unit-actions .' + action).first();
           await button.hover();
           await expect(button).toHaveCSS('background-color', darkReview ? darkBackground : lightBackground);
-          await expect(button).toHaveCSS('color', darkReview ? 'rgb(236, 236, 238)' : 'rgb(23, 23, 23)');
+          await expect(button).toHaveCSS('color', darkReview ? 'rgb(240, 240, 240)' : 'rgb(30, 30, 30)');
           await expect(button).toHaveCSS('font-size', '0px');
           await expect.poll(() => button.evaluate(el => getComputedStyle(el, '::before').backgroundColor)).toBe(darkReview ? dark : light);
           assert.notEqual(await button.evaluate(el => getComputedStyle(el, '::before').maskImage), 'none', 'Per-edit actions retain their visible icons');

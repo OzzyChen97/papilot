@@ -75,7 +75,7 @@ async function check(button, color, busy = false) {
   }
   assert.equal(await button.innerText(), '', 'The toolbar remains icon-only');
 }
-const green = 'rgb(21, 128, 61)', blue = 'rgb(37, 99, 235)', red = 'rgb(220, 38, 38)';
+const green = 'rgb(20, 163, 90)', blue = 'rgb(11, 138, 240)', red = 'rgb(229, 72, 45)';
 try {
   fs.mkdirSync('test-results', { recursive: true });
   await page.goto(`http://127.0.0.1:${server.server.address().port}`);
@@ -87,7 +87,7 @@ try {
     await page.emulateMedia({ colorScheme });
     if (width <= 680) await page.getByRole('group', { name: 'Manuscript view', exact: true }).getByRole('button', { name: 'PDF', exact: true }).click();
     await expect(initialToolbar).toBeVisible();
-    await check(compile, colorScheme === 'dark' ? 'rgb(138, 180, 255)' : blue, true);
+    await check(compile, colorScheme === 'dark' ? 'rgb(58, 166, 255)' : blue, true);
     const spacing = await initialToolbar.evaluate(toolbar => {
       const boxes = [...toolbar.querySelectorAll(':scope > button, :scope > .problems-anchor > button')].map(button => button.getBoundingClientRect());
       const modes = toolbar.querySelector('.pdf-modes').getBoundingClientRect();
@@ -158,7 +158,7 @@ try {
 
   // Transport errors leave the action available instead of claiming success.
   failRequest = true; await compile.click();
-  await check(compile, 'rgb(138, 138, 138)');
+  await check(compile, 'rgb(143, 143, 143)');
   await expect(compile).toHaveAttribute('title', /status unavailable/);
   failRequest = false; await compile.click();
   await check(compile, blue, true);
@@ -192,16 +192,16 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.clock.runFor(300);
   await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
-  await check(compile, 'rgb(123, 213, 160)');
+  await check(compile, 'rgb(63, 196, 124)');
   assert.equal((await compile.boundingBox()).width, 44);
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
   await page.locator('.workspace-navigation').screenshot({ path: 'test-results/compile-mobile-dark.png' });
   await compile.click();
-  await check(compile, 'rgb(138, 180, 255)', true);
+  await check(compile, 'rgb(58, 166, 255)', true);
   await expect(compile.locator('.spinner')).toHaveCSS('animation-name', 'none');
   Object.assign(build, { status: 'failed', error: 'Compile failed.' });
   await page.clock.runFor(1600);
-  await check(compile, 'rgb(255, 150, 150)');
+  await check(compile, 'rgb(255, 119, 89)');
 
   // Comparison generation uses the task's actual build status, too.
   await page.setViewportSize({ width: 1440, height: 900 });

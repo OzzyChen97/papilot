@@ -2,72 +2,73 @@
 .group-highlight{position:relative;display:flex;justify-content:center;width:20px;height:22px}
 .group-highlight::after{content:"";position:absolute;bottom:0;left:3px;right:3px;height:2px;border-radius:2px;background:var(--text-3);opacity:.4}
 .group-select[data-group] .group-highlight::after{background:var(--note-color);opacity:1}
-.group-palette{position:fixed;inset:auto;margin:0;padding:8px;max-width:calc(100vw - 16px);border:1px solid var(--line);border-radius:var(--r-lg);background:var(--bg);color:var(--text);box-shadow:var(--float);font:13px/1.5 var(--sans)}
-.group-palette-label{padding:3px 6px 7px;color:var(--text-3);font-size:12px}
-.group-swatches{display:flex;gap:4px;padding:0 2px 4px}
-.group-swatch{display:flex;align-items:center;justify-content:center;width:32px;height:32px;padding:6px;border:0;border-radius:var(--r);background:transparent;cursor:pointer}
-.group-swatch>span{width:20px;height:20px;flex:none;border-radius:50%;background:var(--note-color)}
-.group-swatch:hover{background:var(--bg-hover)}
-.group-swatch[aria-checked=true]>span{outline:1.5px solid var(--note-color);outline-offset:3px}
-.group-individual{position:relative;display:flex;align-items:center;gap:8px;width:100%;margin-top:9px;padding:7px 6px;border:0;border-radius:var(--r);background:transparent;color:var(--text-2);font:inherit;cursor:pointer}
-.group-individual::before{content:"";position:absolute;left:2px;right:2px;top:-5px;border-top:1px solid var(--line)}
+/* The note tool's colors, a dark menu like the app's others. */
+.group-palette{position:fixed;inset:auto;margin:0;padding:6px;max-width:calc(100vw - 16px);border:0;border-radius:12px;background:var(--menu-bg);color:var(--menu-text);box-shadow:var(--menu-shadow);font:12px/1.45 var(--sans)}
+.group-palette-label{padding:4px 8px;color:var(--menu-text-3);font-size:11px}
+.group-swatches{display:flex;gap:2px;padding:0 2px}
+.group-swatch{display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:5px;background:transparent;cursor:pointer}
+.group-swatch>span{width:16px;height:16px;flex:none;border-radius:50%;background:var(--note-color)}
+.group-swatch:hover,.group-swatch:focus-visible{background:var(--menu-line);outline:none}
+.group-swatch[aria-checked=true]>span{outline:1.5px solid var(--menu-text);outline-offset:2px}
+.group-individual{position:relative;display:flex;align-items:center;gap:8px;width:100%;min-height:28px;margin-top:13px;padding:0 8px;border:0;border-radius:5px;background:transparent;color:var(--menu-text);font:inherit;cursor:pointer}
+.group-individual::before{content:"";position:absolute;left:0;right:0;top:-7px;border-top:1px solid var(--menu-line)}
 .group-individual>span{flex:1;text-align:left}
-.group-individual:hover{background:var(--bg-hover);color:var(--text)}
-.group-dot{display:inline-block;flex:none;width:9px;height:9px;border-radius:50%;background:var(--note-color);box-shadow:0 0 0 1px color-mix(in srgb,var(--note-color) 30%,transparent)}
-.annotation-group{border:1px solid var(--line);border-left:2px solid var(--note-color);border-radius:10px;margin:3px 0;background:var(--bg)}
+.group-individual>svg{color:var(--menu-text-2)}
+.group-individual:hover,.group-individual:focus-visible{background:var(--menu-hover);color:var(--menu-text);outline:none}
+.group-individual:hover>svg,.group-individual:focus-visible>svg,.group-individual[aria-checked=true]>svg:last-child{color:inherit}
+.group-dot{display:inline-block;flex:none;width:8px;height:8px;border-radius:50%;background:var(--note-color)}
+/* A color group in the chat and the task: one grouped box, its color on the dot. */
+.annotation-group{margin:4px 0;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
 .annotation-group.active:not([data-selected]){border-color:var(--note-color)}
 .annotation-group[data-selected]{transition:background-color .15s,border-color .15s}
-.annotation-group[data-selected=true]{border-color:color-mix(in srgb,var(--note-color) 70%,var(--line));background:color-mix(in srgb,var(--note-color) 11%,var(--bg))}
-.annotation-group[data-selected=mixed]{border-color:color-mix(in srgb,var(--note-color) 55%,var(--line));border-style:dashed;background:color-mix(in srgb,var(--note-color) 4%,var(--bg))}
+.annotation-group[data-selected=true]{border-color:color-mix(in srgb,var(--note-color) 60%,var(--line));background:color-mix(in srgb,var(--note-color) 8%,var(--bg))}
+.annotation-group[data-selected=mixed]{border-color:color-mix(in srgb,var(--note-color) 50%,var(--line));border-style:dashed}
 .annotation-group[data-selected=false]{border-color:var(--line);background:var(--bg)}
-.group-header{display:flex;align-items:stretch;gap:2px;padding-right:4px;font:12px/1.5 var(--sans);color:var(--text-2)}
+.group-header{display:flex;align-items:center;gap:2px;padding-right:4px;font:12px/1.45 var(--sans);color:var(--text-2)}
 .group-header strong{font-weight:500;color:var(--text);margin-right:auto}
-.group-disclosure{display:flex;align-items:center;justify-content:center;align-self:center;width:32px;height:32px;flex:none;border-radius:6px}
-.group-disclosure:hover{background:var(--bg-hover)}
-.group-disclosure[aria-expanded=true]>svg{transform:rotate(180deg)}
-.group-selection-toggle,.group-heading{display:flex;align-items:center;gap:8px;flex:1;min-width:0;min-height:36px;padding:6px 10px;text-align:left;color:inherit;font:inherit}
-.group-selection-toggle[aria-pressed=true]>strong{font-weight:600}
-.group-selection-toggle[aria-pressed=false]>strong{color:var(--text-3)}
-.group-selection-toggle:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:2px}
-.group-locations{padding:0 10px 5px;max-height:240px;overflow:auto}
-.group-instruction-input{position:relative;margin:0 0 10px}
-.group-instruction-input textarea{display:block;box-sizing:border-box;width:100%;min-height:64px;max-height:160px;padding:11px 34px 11px 12px;resize:none;border:1px solid var(--line-strong);border-radius:10px;background:var(--bg);color:var(--text);font:14px/1.6 var(--sans);box-shadow:0 1px 2px rgb(0 0 0/.025);transition:border-color .15s,box-shadow .15s}
-.group-instruction-input textarea:hover:not(:disabled){border-color:var(--line-hover)}
-.group-instruction-input textarea:focus{outline:none;border-color:color-mix(in srgb,var(--note-color) 70%,var(--text-3));box-shadow:0 0 0 3px color-mix(in srgb,var(--note-color) 13%,transparent)}
+.group-disclosure{display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex:none;border-radius:5px;color:var(--text-2)}
+.group-disclosure:hover{background:var(--bg-muted);color:var(--text)}
+.group-disclosure>svg{transition:transform .15s var(--ease)}
+.group-disclosure[aria-expanded=false]>svg{transform:rotate(-90deg)}
+.group-selection-toggle,.group-heading{display:flex;align-items:center;gap:8px;flex:1;min-width:0;min-height:32px;padding:0 8px;text-align:left;color:inherit;font:inherit}
+.group-selection-toggle[aria-pressed=false]>strong{color:var(--text-2)}
+.group-selection-toggle:focus-visible{outline:1px solid var(--accent);outline-offset:-1px;border-radius:5px}
+.group-locations{padding:0 8px 4px;max-height:240px;overflow:auto}
+/* The group's instruction, a filled field. */
+.group-instruction-input{position:relative;margin:0 0 8px}
+.group-instruction-input textarea{display:block;box-sizing:border-box;width:100%;min-height:56px;max-height:160px;padding:6px 28px 6px 8px;resize:none;border:1px solid transparent;border-radius:5px;background:var(--bg-muted);color:var(--text);font:12px/1.5 var(--sans);transition:border-color .15s,background-color .15s}
+.group-instruction-input textarea:hover:not(:disabled){border-color:var(--line)}
+.group-instruction-input textarea:focus{outline:none;border-color:var(--accent);background:var(--bg)}
 .group-instruction-input textarea::placeholder{color:var(--text-3)}
-.group-instruction-input>svg{position:absolute;right:12px;top:15px;color:var(--text-3);pointer-events:none;opacity:.7;transition:opacity .15s}
+.group-instruction-input>svg{position:absolute;right:8px;top:8px;width:14px;height:14px;color:var(--text-3);pointer-events:none;transition:opacity .15s}
 .group-instruction-input:focus-within>svg{opacity:0}
-.group-instruction-sent{margin:2px 0 8px;font:13px/1.5 var(--sans);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+.group-instruction-sent{margin:2px 0 8px;font:13px/1.6 var(--sans);white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
 @media(pointer:coarse){.group-instruction-input textarea{font-size:16px}.group-disclosure{width:44px;height:44px}.group-selection-toggle{min-height:44px}}
-.group-location{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:4px 0 1px;font:12px/1.5 var(--sans)}
-.notes-panel .group-location{border:1px solid var(--line);border-radius:6px;margin:4px 0;padding:6px 8px}
-.notes-panel .annotation-group{flex:none}
-.notes-panel .group-locations{max-height:none;overflow:visible}
+.group-location{display:flex;gap:6px;align-items:center;border-top:1px solid var(--line);padding:4px 0 2px;font:12px/1.45 var(--sans)}
 .group-location-target{flex:1;min-width:0;text-align:left;color:var(--text-2);background:none;border:0;cursor:default}
 .group-location-target>span{font-size:11px;color:var(--text-3)}
-.group-location blockquote{margin:1px 0 0;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
-.notes-panel .group-location blockquote{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;white-space:normal;overflow-wrap:anywhere}
+.group-location blockquote{margin:1px 0 0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
 .group-locations .sent-notes{padding:0;margin:0}
 .group-locations .sent-notes>li{list-style:none}
-/* The editor has its own surface; color belongs to the selected references. */
-.notes-panel .annotation-group[data-selected]{margin:5px 0;border:1px solid var(--line);border-radius:14px;background:var(--bg-subtle);box-shadow:var(--shadow-xs)}
-.notes-panel .annotation-group[data-selected=true]{border-color:color-mix(in srgb,var(--note-color) 25%,var(--line))}
-.notes-panel .group-header{padding:4px 8px 4px 3px;color:var(--text-2)}
-.notes-panel .group-header strong,.notes-panel .group-selection-toggle[aria-pressed=true]>strong{font-weight:500;color:var(--text-2);font-size:12px}
-.notes-panel .group-header .group-dot{width:8px;height:8px;box-shadow:0 0 0 3px color-mix(in srgb,var(--note-color) 12%,transparent)}
-.notes-panel .group-disclosure{width:28px;height:28px;color:var(--text-3)}
-.notes-panel .group-locations{padding:0 12px 12px}
-.group-references{display:grid;gap:6px}
-.notes-panel .group-location.note-card{gap:8px;align-items:flex-start;margin:0;padding:9px 8px;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
-.notes-panel .group-location.note-card[data-selected=true]{border-color:color-mix(in srgb,var(--note-color) 65%,var(--line));background:color-mix(in srgb,var(--note-color) 16%,var(--bg))}
-.notes-panel .group-location.note-card:hover{border-color:var(--line-hover);background:var(--bg-hover)}
-.notes-panel .group-location.note-card[data-selected=true]:hover{border-color:var(--note-color);background:color-mix(in srgb,var(--note-color) 22%,var(--bg))}
-.notes-panel .group-location.note-card.active{box-shadow:inset 3px 0 0 var(--note-color)}
-.notes-panel .group-location .note-number{flex:none;min-width:20px;height:22px;padding:0 4px;border-radius:5px;background:color-mix(in srgb,var(--text) 5%,transparent);color:var(--text-2);font-size:11px;font-variant-numeric:tabular-nums}
-.notes-panel .group-location .note-number:hover:not(:disabled){background:var(--bg-active);color:var(--text)}
-.notes-panel .group-location-target blockquote{margin:0 0 3px;color:var(--text);font-size:13px;line-height:1.5;-webkit-line-clamp:2}
-.notes-panel .group-location-target>span{display:block;color:var(--text-2);font-size:11px;line-height:1.5;overflow-wrap:anywhere}
-.notes-panel .group-location-remove{width:22px;height:22px;color:var(--text-3);opacity:0;transition:opacity .15s}
+/* In the notes library a group is a flat section, as in a design tool's
+   layers panel: a header row, then one row per place; rules divide groups. */
+.notes-panel .annotation-group,.notes-panel .annotation-group[data-selected]{flex:none;margin:0 -8px;padding:4px 8px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;box-shadow:none}
+.notes-panel .group-header{padding:0;color:var(--text-2)}
+.notes-panel .group-header strong,.notes-panel .group-selection-toggle[aria-pressed=true]>strong{font-weight:500;color:var(--text);font-size:12px}
+.notes-panel .group-selection-toggle,.notes-panel .group-heading{border-radius:5px}
+.notes-panel .group-selection-toggle:hover:not(:disabled){background:var(--bg-muted)}
+.notes-panel .group-locations{max-height:none;padding:0 0 4px;overflow:visible}
+.group-references{display:grid;gap:2px}
+.notes-panel .group-location.note-card{gap:8px;align-items:flex-start;margin:0;padding:6px 4px 6px 8px;border:0;border-radius:5px;background:transparent}
+.notes-panel .group-location.note-card:hover{background:var(--bg-muted)}
+.notes-panel .group-location.note-card[data-selected=true]{background:color-mix(in srgb,var(--note-color) 14%,transparent)}
+.notes-panel .group-location.note-card[data-selected=true]:hover{background:color-mix(in srgb,var(--note-color) 20%,transparent)}
+.notes-panel .group-location.note-card.active{box-shadow:inset 2px 0 0 var(--note-color)}
+.notes-panel .group-location .note-number{flex:none;min-width:20px;height:20px;padding:0 4px;border-radius:5px;background:var(--bg-active);color:var(--text-2);font-size:11px;font-variant-numeric:tabular-nums}
+.notes-panel .group-location .note-number:hover:not(:disabled){background:var(--line-strong);color:var(--text)}
+.notes-panel .group-location-target blockquote{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin:0 0 2px;white-space:normal;overflow-wrap:anywhere;color:var(--text);font-size:12px;line-height:1.45}
+.notes-panel .group-location-target>span{display:block;color:var(--text-3);font-size:11px;line-height:1.45;overflow-wrap:anywhere}
+.notes-panel .group-location-remove{width:24px;height:24px;color:var(--text-2);opacity:0;transition:opacity .15s}
 .group-location:hover>.group-location-remove,.group-location:focus-within>.group-location-remove{opacity:1}
 @media(pointer:coarse){.notes-panel .group-disclosure{width:44px;height:44px}.notes-panel .group-location-remove{width:36px;height:36px;opacity:1}.notes-panel .group-location .note-number{min-width:32px;height:36px}}
 .note-mark[data-group]{background:color-mix(in srgb,var(--note-color) 26%,transparent)}
@@ -75,7 +76,7 @@
 .note-box[data-group]{border-color:var(--note-color);background:color-mix(in srgb,var(--note-color) 12%,transparent)}
 .note-tag[data-group]{background:var(--note-color);color:var(--note-ink)}
 .review-select-menu>button{display:inline-flex;align-items:center;gap:6px}
-@media(max-width:680px){.group-location>button{min-height:36px}.group-swatch{width:44px;height:44px}.group-individual{min-height:44px}}
+@media(max-width:680px){.group-location>button{min-height:36px}.group-swatch{width:44px;height:44px}.group-swatch>span{width:22px;height:22px}.group-individual{min-height:44px;font-size:14px}.notes-panel .group-header strong,.notes-panel .group-location-target blockquote{font-size:13px}}
 
 .review-note-mark[data-group]{background:color-mix(in srgb,var(--note-color) 26%,transparent)}
 .review-note-box[data-group]{border-color:var(--note-color);background:color-mix(in srgb,var(--note-color) 12%,transparent)}

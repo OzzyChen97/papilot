@@ -1,7 +1,10 @@
 /* Window controls share the existing toolbar: macOS/Linux on the left,
    Windows on the right, with no second title row. */
-.desktop-window-drag{position:fixed;top:0;left:0;width:272px;height:var(--toolbar-height);z-index:20;-webkit-app-region:drag;user-select:none}
-[data-desktop] .sidebar{position:relative;padding-top:var(--toolbar-height)}
+.desktop-window-drag{position:fixed;top:0;left:0;width:240px;height:var(--toolbar-height);z-index:20;-webkit-app-region:drag;user-select:none}
+/* The title row above the sidebar carries the traffic lights; its rule lines
+   up with the toolbars' bottom rules, so the header below needs none. */
+[data-desktop] .sidebar{position:relative;padding-top:var(--toolbar-height);background-image:linear-gradient(var(--line),var(--line));background-size:100% 1px;background-position:0 calc(var(--toolbar-height) - 1px);background-repeat:no-repeat}
+[data-desktop] .sidebar-header{border-bottom:0}
 [data-desktop] .sidebar-header>.icon-button{position:absolute;top:7px;right:12px;z-index:21;-webkit-app-region:no-drag}
 .sidebar-collapsed .desktop-window-drag{width:92px}
 [data-desktop] .sidebar-collapsed .sidebar-toggle{margin-left:92px}
@@ -14,8 +17,8 @@
    drag handle too. On macOS that stops every click reaching the window. */
 [data-desktop] :is([popover],dialog){-webkit-app-region:no-drag}
 .desktop-window-buttons{display:flex;gap:4px;padding:8px 12px;width:max-content}
-.desktop-window-buttons button{display:grid;place-items:center;width:28px;height:28px;border-radius:6px;color:var(--text-2);-webkit-app-region:no-drag}
-.desktop-window-buttons button:hover{background:var(--bg-hover);color:var(--text)}
+.desktop-window-buttons button{display:grid;place-items:center;width:28px;height:28px;border-radius:var(--r);color:var(--text-2);-webkit-app-region:no-drag}
+.desktop-window-buttons button:hover{background:var(--bg-muted);color:var(--text)}
 .desktop-window-buttons .desktop-window-close:hover{background:var(--red-soft);color:var(--red)}
 .desktop-window-buttons svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.25}
 [data-desktop="linux"] .sidebar-collapsed .desktop-window-drag{width:112px}
@@ -26,7 +29,8 @@
 [data-desktop="win32"] .desktop-window-buttons{gap:0;padding:0;background:var(--bg)}
 [data-desktop="win32"] .desktop-window-buttons button{width:46px;height:var(--toolbar-height);border-radius:0}
 [data-desktop="win32"] .desktop-window-close:hover{background:#c42b1c;color:#fff}
-[data-desktop="win32"] .sidebar{padding-top:0}
+[data-desktop="win32"] .sidebar{padding-top:0;background-image:none}
+[data-desktop="win32"] .sidebar-header{border-bottom:1px solid var(--line)}
 [data-desktop="win32"] .sidebar-header{-webkit-app-region:drag}
 [data-desktop="win32"] .sidebar-header>.icon-button{position:static}
 [data-desktop="win32"] .sidebar-collapsed .sidebar-toggle{margin-left:0}

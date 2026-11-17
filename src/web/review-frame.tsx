@@ -40,187 +40,123 @@ function compactReviewFrame(doc: Document, reserve: number, lead: number, change
   doc.documentElement.style.setProperty('--papilot-lead', `${lead}px`);
   const style = doc.createElement('style'); style.id = 'papilot-embed-style';
   style.textContent = themeStyles + `
-    :root{--sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI","PingFang SC","Noto Sans SC",system-ui,sans-serif;--comment:var(--accent);--accept:var(--green);--reject:var(--red);--frame:var(--canvas);--bar:var(--bg);--muted:var(--text-3);--ink:var(--text);--head:var(--bg-subtle);font-size:14px}
-    .banner{border-radius:10px}
-    .source,.source-code,.unit-actions button,.toast,.change-map-tooltip,.review-mode,.review-mode select,.review-complete,.change.standalone{background:var(--bg);color:var(--text)}
-    .banner{background:var(--accent-soft);border-color:var(--accent-line)}.banner .details{background:var(--bg-subtle)}
-    .composer{border-color:color-mix(in srgb,var(--line-strong) 65%,transparent);box-shadow:var(--float)}
-    .composer-close:hover{background:var(--bg-hover);color:var(--text)}
-    .composer-send{background:var(--primary)}.composer-send:hover:not(:disabled){background:var(--primary-hover)}.composer-send:disabled{background:var(--bg-active);color:var(--text-3)}
-    .composer-send:focus-visible,.composer-close:focus-visible{outline:none;box-shadow:var(--ring)}
-    .source-title{color:var(--text-2)}
-    .source-code del{background:var(--red-soft);color:var(--red)}
-    .source-code ins{background:var(--green-soft);color:var(--green)}
-    .remark{background:var(--accent-soft)}.histories,.caption{background:var(--bg-subtle);color:var(--text-2)}
-    /* Bibliography entries and their checks follow the theme. */
-    :root{--ok-soft:var(--green-soft);--bad-soft:var(--red-soft);--warn:var(--amber-text);--warn-soft:var(--amber-soft);--warn-line:var(--amber-line)}
-    .references,.reference-entry{background:var(--bg);color:var(--text)}
-    .reference-fields th,.reference-status,.reference-lines,.reference-cited,.reference-side,.reference-resolved{color:var(--text-3)}
-    .toast.error{background:var(--red-soft);color:var(--red)}
+    /* Papilot's theme (above) and appearance replace the viewer's own light
+       tokens; the viewer's stylesheet already follows the same recipes. */
     /* Papilot's commit step at the end of the completion card. */
     .review-complete{align-items:center}
     .review-complete-actions{flex-wrap:wrap;justify-content:flex-end;max-width:100%}
-    .review-complete-actions .commit-state{font-size:13px;color:var(--text-3)}
-    .review-complete-actions .commit-button{display:inline-flex;align-items:center;height:28px;padding:0 12px;border:1px solid var(--line-strong);border-radius:7px;background:var(--bg);color:var(--text);font:500 13px var(--sans);cursor:pointer;box-shadow:0 1px 2px rgb(0 0 0/.06)}
-    .review-complete-actions .commit-button:hover{background:var(--bg-subtle);border-color:var(--line-hover)}
-    .review-complete-actions .commit-button:focus-visible{outline:none;box-shadow:var(--ring)}
-    .review-complete-actions .commit-button{height:auto;min-height:30px;padding:5px 12px;white-space:nowrap}
-    .review-complete-actions .commit-button:disabled{opacity:.5;cursor:default}
+    .review-complete-actions .commit-state{font-size:12px;color:var(--text-3)}
+    .review-complete-actions .commit-button{display:inline-flex;align-items:center;min-height:28px;padding:4px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text);font:500 12px/18px var(--sans);white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s}
+    .review-complete-actions .commit-button:hover{background:var(--bg-muted);border-color:var(--line-hover)}
+    .review-complete-actions .commit-button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+    .review-complete-actions .commit-button:disabled{opacity:.4;cursor:default}
     :root[data-papilot-phone] .review-complete-actions{justify-content:flex-start;margin-left:0}
     :root[data-papilot-phone] .review-complete-actions .commit-state:not(.task-save-result){flex-basis:100%}
-    :root[data-papilot-phone] .review-complete-actions .commit-button{min-height:40px}
+    :root[data-papilot-phone] .review-complete-actions .commit-button{min-height:40px;font-size:13px}
     /* Review previews, difference rows and embedded controls share one mode.
        The surrounding toolbar and workspace keep the application's theme. */
     .document{--pdf-filter:var(--review-filter);--pdf-page:var(--review-page);--before:var(--review-before);--after:var(--review-after)}
-    .pdf-strip{color-scheme:light}.pdf-strip img{filter:var(--pdf-filter)}.sheet{background:var(--pdf-page)}
+    .pdf-strip{color-scheme:light}.pdf-strip img{filter:var(--pdf-filter)}
     :root[data-theme="dark"][data-review-theme="light"] :is(.sheet,.paper-page,.document .change){
-      color-scheme:light;--bg:#ffffff;--bg-subtle:#fafafa;--bg-muted:#f4f4f4;--bg-hover:#efefef;--bg-active:#e7e7e7;--frame:#f3f3f3;
-      --text:#171717;--text-2:#525252;--text-3:#8a8a8a;--ink:var(--text);--muted:var(--text-3);--head:var(--bg-subtle);
-      --line:#e8e8e8;--line-strong:#d6d6d6;--line-hover:#c4c4c4;
-      --accent:#2563eb;--accent-hover:#1d4ed8;--accent-soft:#eff6ff;--accent-line:#bfdbfe;
-      --green:#15803d;--green-soft:#f0fdf4;--red:#dc2626;--red-soft:#fef2f2;--red-line:#fecaca;
-      --amber-text:#92400e;--amber-soft:#fffbeb;--amber-line:#fde68a;
-      --accept:var(--green);--reject:var(--red);--comment:var(--accent);--ok-soft:var(--green-soft);--bad-soft:var(--red-soft);--warn:var(--amber-text);--warn-soft:var(--amber-soft);--warn-line:var(--amber-line);
+      color-scheme:light;--bg:#ffffff;--bg-subtle:#fafafa;--bg-muted:#f5f5f5;--bg-hover:#f0f0f0;--bg-active:#e6e6e6;--canvas:#f5f5f5;--raised:#ffffff;
+      --text:#1e1e1e;--text-2:#5e5e5e;--text-3:#8f8f8f;
+      --line:#e6e6e6;--line-strong:#d9d9d9;--line-hover:#c4c4c4;
+      --accent:#0b8af0;--accent-hover:#0a76d1;--accent-soft:#e5f3ff;--accent-line:#b3dbff;--primary:#0b8af0;--primary-hover:#0a76d1;
+      --green:#14a35a;--green-soft:#e6f6ec;--red:#e5482d;--red-soft:#fdede9;--red-line:#f8c4b8;
+      --amber-text:#a15c00;--amber-soft:#fff5e0;--amber-line:#fcd99a;
+      --scroll-thumb:rgb(0 0 0/.12);--scroll-hover:rgb(0 0 0/.2);--scroll-active:rgb(0 0 0/.34);
     }
     .review-body{margin-left:var(--papilot-rail,0px)}
-    .bar{display:flex;align-items:center;height:var(--papilot-bar-height,46px);min-height:var(--papilot-bar-height,46px);padding:0 max(14px,calc(var(--papilot-tools,0px) + 4px)) 0 calc(var(--papilot-lead,0px) + 14px);gap:12px;flex-wrap:nowrap;overflow:hidden}
+    .bar{display:flex;align-items:center;height:var(--papilot-bar-height,44px);min-height:var(--papilot-bar-height,44px);padding:0 max(12px,calc(var(--papilot-tools,0px) + 4px)) 0 calc(var(--papilot-lead,0px) + 12px);gap:8px;flex-wrap:nowrap;overflow:hidden}
     .bar .identity h1,.bar .identity span{display:none}
     .bar .identity{flex:1;min-width:0;flex-direction:row;gap:6px}
-    .bar .identity span{font-size:13px;font-weight:600;color:var(--text-2);overflow:hidden;text-overflow:ellipsis}
-    .bar .meter{display:flex;order:initial;width:auto;font-size:13px}
-    .bar .bar-end{margin-left:0;gap:6px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
-    .bar .ghost{font-size:13px;font-weight:500;height:28px;padding:0 10px;border-radius:7px}
-    .bar .ghost:hover{text-decoration:none;background:var(--bg-hover)}
-    .bar .accept-all,.bar .reject-all{display:inline-flex;align-items:center;gap:6px;border-color:var(--line-strong);background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgb(0 0 0/.06)}
-    .bar .accept-all:hover,.bar .reject-all:hover{background:var(--bg-subtle);border-color:var(--line-hover)}
+    .bar .meter{display:flex;order:initial;width:auto}
+    .bar .bar-end{margin-left:0;gap:8px;flex-wrap:wrap;justify-content:flex-end;min-width:0}
     .bar .ghost.round{display:none}
-    .bar .status{font-size:13px}
-    .sheet{border-radius:4px;box-shadow:0 1px 2px rgb(0 0 0/.06),0 8px 24px rgb(0 0 0/.08)}
-    .change-head{font-size:13px;background:var(--bg-subtle)}.link{font-size:13px}
-    /* Keep the selection cue in the toolbar, clear of the PDF itself. */
+    /* Keep the selection cue in the header, clear of the PDF itself. */
     .change.current{box-shadow:none}
-    .change.current .change-head{background:var(--bg-muted);box-shadow:inset 2px 0 var(--accent);color:var(--ink)}
-    .change-head .link{display:inline-flex;align-items:center;height:28px;padding:0 8px;border-radius:7px;color:var(--text-2);font-weight:500}
-    .change-head .link:hover{background:var(--bg-hover);color:var(--ink);text-decoration:none}
-    .change-head .link.active{background:var(--accent-soft);color:var(--accent);text-decoration:none}
-    /* Decision buttons are plain text actions like the rest of the header
-       (Copy reference, LaTeX, Undo): a coloured icon says what each does, and
-       hovering tints it green, red or blue. On phones the bar is a solid
-       toolbar at the bottom. */
+    /* Decisions are 28px icon buttons: a green check, a red cross and a blue
+       bubble say what each does, and hovering tints the button to match.
+       Their names and shortcut hints stay readable. On phones the actions are
+       a floating toolbar at the bottom. */
     :root{--icon-copy:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linejoin='round'><rect x='8' y='8' width='12' height='12' rx='2'/><path d='M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2'/></svg>");--icon-check:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'><path d='M20 6 9 17l-5-5'/></svg>");--icon-cross:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'><path d='M18 6 6 18M6 6l12 12'/></svg>");--icon-comment:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linejoin='round'><path d='M20 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2z'/></svg>")}
-    .change-head .actions .accept::before,.change-head .actions .reject::before,.change-head .actions .comment::before,.bar .accept-all::before,.bar .reject-all::before{content:"";flex:none;width:13px;height:13px;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+    .change-head .actions .accept::before,.change-head .actions .reject::before,.change-head .actions .comment::before,.bar .accept-all::before,.bar .reject-all::before{content:"";flex:none;width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+    .bar .accept-all::before,.bar .reject-all::before{width:12px;height:12px}
     .change-head .actions .accept,.bar .accept-all{--icon:var(--icon-check)}.change-head .actions .reject,.bar .reject-all{--icon:var(--icon-cross)}.change-head .actions .comment{--icon:var(--icon-comment)}
-    .change-head .actions .accept::before,.bar .accept-all::before{background:var(--accept)}.change-head .actions .reject::before,.bar .reject-all::before{background:var(--reject)}.change-head .actions .comment::before{background:var(--accent)}
-    .change-head .actions{gap:3px;padding:4px;background:var(--bg);border:1px solid var(--line-strong);border-radius:12px;box-shadow:0 1px 2px rgb(0 0 0/.06),0 4px 12px rgb(0 0 0/.06)}
-    .change-head .actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:28px;padding:0 11px;border:1px solid transparent;border-radius:7px;font-size:13px;font-weight:500;line-height:1;transition:background-color .15s,border-color .15s}
-    .change-head .actions .nav{width:28px;padding:0;font-size:19px;font-weight:400;color:var(--text-2)}
-    .change-head .actions .nav:hover:not(:disabled){background:var(--bg-hover)}
-    .change-head .actions .nav:disabled{color:var(--text-3);opacity:1}
-    .change-head .position{min-width:38px;font-size:12.5px;color:var(--text-2);font-variant-numeric:tabular-nums}
-    .change-head .actions .accept,.change-head .actions .reject,.change-head .actions .comment,.change-head .actions .skip{background:transparent;color:var(--ink)}
-    .change-head .actions .accept:hover:not(:disabled){background:var(--green-soft);color:var(--accept)}
-    .change-head .actions .reject:hover:not(:disabled){background:var(--red-soft);color:var(--reject)}
-    .change-head .actions .comment:hover:not(:disabled){background:var(--accent-soft);color:var(--accent)}
-    .change-head .actions .skip:hover{background:var(--bg-hover)}
-    .change-head .actions button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-    .change-head .complete{display:inline-flex;align-items:center;gap:6px;padding:0 8px;font-size:13px;font-weight:500;color:var(--accept)}
-    .change-head .complete::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
-    .change-head .actions .undo{margin-left:3px;padding:0 9px;font-weight:400;color:var(--text-2)}
-    .change-head .actions .undo:hover:not(:disabled){background:var(--bg-hover)}
-    .change-head .actions .undo:disabled{color:var(--text-3);opacity:1}
-    .change-head .actions .accept:disabled,.change-head .actions .reject:disabled,.change-head .actions .comment:disabled{opacity:.4}
+    .change-head .actions .accept::before,.bar .accept-all::before{background:var(--green)}.change-head .actions .reject::before,.bar .reject-all::before{background:var(--red)}.change-head .actions .comment::before{background:var(--accent)}
+    .change-head .actions :is(.accept,.reject,.comment,.skip,.unstage){color:var(--text)}
     /* Uncommitted changes: Stage is the check, Unstage a minus and Revert an
        arrow back. The last revert is undone from the bar. */
     :root{--icon-minus:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.6' stroke-linecap='round'><path d='M5 12h14'/></svg>");--icon-revert:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><path d='M9 14 4 9l5-5'/><path d='M4 9h10.5a5.5 5.5 0 0 1 0 11H11'/></svg>")}
-    .change-head .actions .unstage::before{content:"";flex:none;width:13px;height:13px;background:var(--text-2);-webkit-mask:var(--icon-minus) center/contain no-repeat;mask:var(--icon-minus) center/contain no-repeat}
+    .change-head .actions .unstage::before{content:"";flex:none;width:16px;height:16px;background:var(--text-2);-webkit-mask:var(--icon-minus) center/contain no-repeat;mask:var(--icon-minus) center/contain no-repeat}
     [data-mode=changes] .change-head .actions .reject{--icon:var(--icon-revert)}
-    .change-head .actions .unstage{background:transparent;color:var(--ink)}
-    .change-head .actions .unstage:hover:not(:disabled){background:var(--bg-hover)}
-    .change-head .actions .unstage:disabled{opacity:.4}
-    .unit-actions .unstage{color:var(--text-2)}
     /* Each edit's own decisions in the LaTeX view use the change bar's icons. */
-    .unit-actions button:is(.accept,.reject,.comment,.unstage){display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--ink);font-size:0;flex:none;transition:background-color .15s}
-    .unit-actions button:is(.accept,.reject,.comment,.unstage)::before{content:"";flex:none;width:15px;height:15px;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
+    .unit-actions button:is(.accept,.reject,.comment,.unstage){display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;padding:0;border:0;border-radius:5px;background:transparent;color:var(--text);font-size:0;flex:none;transition:background-color .15s}
+    .unit-actions button:is(.accept,.reject,.comment,.unstage)::before{content:"";flex:none;width:16px;height:16px;-webkit-mask:var(--icon) center/contain no-repeat;mask:var(--icon) center/contain no-repeat}
     .unit-actions .accept{--icon:var(--icon-check)}.unit-actions .reject{--icon:var(--icon-cross)}.unit-actions .comment{--icon:var(--icon-comment)}.unit-actions .unstage{--icon:var(--icon-minus)}
     [data-mode=changes] .unit-actions .reject{--icon:var(--icon-revert)}
-    .unit-actions .accept::before{background:var(--accept)}.unit-actions .reject::before{background:var(--reject)}.unit-actions .comment::before{background:var(--accent)}.unit-actions .unstage::before{background:var(--text-2)}
-    .unit-actions .accept:hover:not(:disabled){background:var(--green-soft)}.unit-actions .reject:hover:not(:disabled){background:var(--red-soft)}.unit-actions .comment:hover:not(:disabled){background:var(--accent-soft)}.unit-actions .unstage:hover:not(:disabled){background:var(--bg-hover)}
-    .unit-actions button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-    .unit-actions button:is(.accept,.reject,.comment,.unstage):disabled{opacity:.4}
+    .unit-actions .accept::before{background:var(--green)}.unit-actions .reject::before{background:var(--red)}.unit-actions .comment::before{background:var(--accent)}.unit-actions .unstage::before{background:var(--text-2)}
+    .unit-actions .accept:hover:not(:disabled){background:var(--green-soft)}.unit-actions .reject:hover:not(:disabled){background:var(--red-soft)}.unit-actions .comment:hover:not(:disabled){background:var(--accent-soft)}.unit-actions .unstage:hover:not(:disabled){background:var(--bg-muted)}
     :root[data-papilot-phone] .unit-actions button:is(.accept,.reject,.comment,.unstage){width:40px;height:36px}
     :root[data-papilot-phone] .unit-actions button:is(.accept,.reject,.comment,.unstage)::before{width:18px;height:18px}
     .bar .ghost.undo{flex-shrink:0;white-space:nowrap}
-    /* A single compact row: location yields space to the change's controls. */
-    .change-head{flex-wrap:nowrap;align-items:center;gap:4px;padding:4px 8px;min-height:36px}
+    /* A single compact 32px row: location yields space to the change's controls. */
+    .change-head{flex-wrap:nowrap;gap:4px;padding:2px 4px 2px 8px}
+    :root:not([data-papilot-phone]) .change-head:has(.nav){padding-left:4px}
     :root:not([data-papilot-phone]) .change{container:change-tools/inline-size}
     .change-head .dock,.change-head .actions{display:contents}
     .change-head .actions>.nav:first-child{order:1}.change-head .change-number{order:2}.change-head .actions>.nav:not(:first-child){order:3}
     .change-head .change-number{flex:0 0 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
-    .change-head .change-where{order:4;flex:1 1 0;min-width:0;margin-left:4px;color:var(--text-3);font-size:10px}
-    .change-head .change-kind,.change-head .badge{order:5;font-size:11px;color:var(--text-3)}
-    .change-head .change-kind,.change-head .badge{min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
+    .change-head .change-where{order:4;flex:1 1 0;min-width:0;margin-left:4px}
+    .change-head .change-kind,.change-head .badge{order:5;min-width:0;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto}
     .change-head .actions>*{order:6}
     .change-head .link{order:7}
     :root:not([data-papilot-phone]) .change-head .position,:root:not([data-papilot-phone]) .change-head .complete{display:none}
     .change-head .actions .undo:disabled{display:none}
-    .change-head .actions .nav{flex:none;width:28px;height:28px;font-size:18px}
-    .change-head .copy-reference{flex:none;width:28px;padding:0;justify-content:center;font-size:0}
-    .change-head .copy-reference::before{content:"";width:15px;height:15px;background:currentColor;-webkit-mask:var(--icon-copy) center/contain no-repeat;mask:var(--icon-copy) center/contain no-repeat}
+    .change-head .actions .nav{flex:none}
+    .change-head .copy-reference{width:28px;padding:0;justify-content:center;font-size:0}
+    .change-head .copy-reference::before{content:"";width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon-copy) center/contain no-repeat;mask:var(--icon-copy) center/contain no-repeat}
     @container change-tools (max-width:360px){
       .change-number-full{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
       .change-number-short{display:inline}
     }
     @container change-tools (max-width:280px){
-      .change-head{gap:1px;padding-inline:2px}
+      .change-head{gap:0;padding-inline:2px}
       .change-head .change-where,.change-head .change-kind,.change-head .badge{display:none}
-      .change-head .change-number{flex:1 1 auto;font-size:12px}
+      .change-head .change-number{flex:1 1 auto}
     }
     #paper{--paper-top:14px;padding-top:14px}
-    .review-body>#paper{padding-right:34px;overscroll-behavior:contain}
-    .change-map{top:10px;bottom:10px;right:8px;width:14px;border:0;border-radius:0;background:none;box-shadow:none}
-    .change-map::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;border-radius:2px;background:var(--line)}
-    .change-map-viewport{left:50%;right:auto;width:4px;margin-left:-2px;border:0;border-radius:999px;background:var(--scroll-thumb);transition:width .15s,margin .15s,background-color .15s}
-    .change-map:hover .change-map-viewport,.change-map-viewport:active{width:6px;margin-left:-3px;background:var(--scroll-hover)}
-    .change-map-mark{--mark:var(--text-3);left:50%;width:4px;min-height:3px;margin-left:-2px;border-radius:999px;transition:width .15s,margin .15s}
-    .change-map-mark[aria-current]{outline:0;width:6px;margin-left:-3px;box-shadow:0 0 0 2px var(--frame)}
-    .change-map:hover .change-map-mark{width:6px;margin-left:-3px}
-    .change-map .change-map-mark:hover{outline:0;width:8px;margin-left:-4px;box-shadow:0 0 0 2px var(--frame)}
-    .change-map-mark:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-    ::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track,::-webkit-scrollbar-corner{background:transparent}
-    ::-webkit-scrollbar-thumb{background-color:var(--scroll-thumb);border:3px solid transparent;border-radius:999px;background-clip:padding-box}
-    ::-webkit-scrollbar-thumb:hover{background-color:var(--scroll-active);border-width:2px}
-    @supports not selector(::-webkit-scrollbar){*{scrollbar-width:thin;scrollbar-color:var(--scroll-hover) transparent}}
-    .part-title{font-size:15px;margin:6px 0 10px}
     .side .pdf-strip,.context .pdf-strip{max-width:none}
     /* Only the host window, never an iframe's width, selects the phone
        layout. Navigation and position stay alongside the decisions. */
     :root[data-papilot-phone]{
-      .bar{gap:6px;min-height:var(--papilot-bar-height,42px);padding:0 max(8px,calc(var(--papilot-tools,0px) + 4px)) 0 calc(var(--papilot-lead,0px) + 10px);background:color-mix(in srgb,var(--bg) 90%,transparent);-webkit-backdrop-filter:saturate(180%) blur(18px);backdrop-filter:saturate(180%) blur(18px);border-bottom:.5px solid color-mix(in srgb,var(--line-strong) 75%,transparent)}
-      .bar .meter{font-size:12.5px;font-weight:500;color:var(--text-2);font-variant-numeric:tabular-nums}
-      .bar .ghost:not(.history){min-height:30px;height:30px;padding:0 9px;border-radius:999px;font-size:12px}
+      .bar{gap:6px;min-height:var(--papilot-bar-height,42px);padding:0 max(8px,calc(var(--papilot-tools,0px) + 4px)) 0 calc(var(--papilot-lead,0px) + 10px)}
+      .bar .meter{font-size:13px;font-weight:500}
+      .bar .ghost:not(.history){height:36px;padding:0 10px;font-size:13px}
       .review-body>#paper{--paper-top:12px;padding:12px 18px calc(136px + var(--papilot-bottom-rail,0px)) 10px}
-      .sheet{border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgb(0 0 0/.06),0 8px 24px rgb(0 0 0/.07)}
+      .sheet{overflow:hidden}
       .change-map{right:3px;width:10px}
       .side.before::after,.side.after::after{content:none}
-      .change-head{padding:5px 8px 5px 12px;min-height:38px;gap:6px}
-      .change-head .change-number{margin-right:auto;font-size:13px;font-weight:600}
+      .change-head{padding:4px 4px 4px 12px;min-height:44px;gap:6px}
+      .change-head .change-number{margin-right:auto;font-size:13px}
       .change-head .change-where{position:absolute;width:1px;height:1px;margin:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
       .change-head .copy-reference{display:none}
-      .change-head .link{min-height:32px;height:32px;padding:0 6px;border-radius:8px}
-      .change-head .source-toggle{width:32px}
+      .change-head .link{height:36px;padding:0 8px}
+      .change-head .source-toggle{width:36px}
       .change-head .dock{display:flex;position:fixed;z-index:6;left:50%;right:auto;transform:translateX(-50%);width:min(352px,calc(100% - 20px));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--papilot-bottom-rail,0px));margin:0;transition:bottom .16s cubic-bezier(.2,0,0,1)}
-      .change-head .actions{display:flex;width:100%;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:5px;padding:5px 6px;border-radius:999px;background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(180%) blur(24px);backdrop-filter:saturate(180%) blur(24px);border:.5px solid color-mix(in srgb,var(--line-strong) 85%,transparent);box-shadow:0 4px 14px rgb(0 0 0/.08),0 12px 32px rgb(0 0 0/.14)}
+      .change-head .actions{display:flex;width:100%;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:4px;padding:4px;border-radius:12px;background:var(--raised);box-shadow:var(--float)}
       .change-head .actions>*{order:initial!important}
-      .change-head .actions button{flex:1 1 auto;min-width:0;height:40px;gap:5px;padding:0 8px;border-radius:999px;font-size:13px}
-      .change-head .actions .nav{flex:0 0 36px;width:36px;min-width:36px;height:40px;padding:0;border-radius:999px}
+      .change-head .actions button{flex:1 1 auto;min-width:0;height:40px;gap:6px;padding:0 8px;font-size:13px}
+      .change-head .actions .nav{flex:0 0 36px;width:36px;min-width:36px;height:40px;padding:0}
       .change-head .actions .accept:not(:disabled){background:var(--green-soft)}
       .change-head .actions .reject:not(:disabled){background:var(--red-soft)}
       .change-head .actions .comment:not(:disabled){background:var(--accent-soft)}
-      .change-head .position{flex:0 0 auto;min-width:32px;text-align:center;font-size:12px;font-weight:600}
+      .change-head .position{flex:0 0 auto;min-width:32px;text-align:center;font-size:13px;font-weight:500}
+      .change-head .complete{font-size:13px}
       .change-head .actions .undo{flex:0 0 auto;margin-left:0;padding:0 10px;font-size:13px;background:var(--bg-muted)}
       @media(max-width:350px){
         .change-head .dock{left:8px;right:8px;width:auto;transform:none}
-        .change-head .actions{border-radius:20px;flex-wrap:wrap}
+        .change-head .actions{flex-wrap:wrap}
         .change-head .actions:has(.nav){display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
         .change-head .actions .nav{width:100%;min-width:0;grid-row:1}
         .change-head .actions>.nav:first-child{grid-column:1}
@@ -228,26 +164,28 @@ function compactReviewFrame(doc: Document, reserve: number, lead: number, change
         .change-head .position{grid-row:1;grid-column:2;justify-self:center}
         .change-head .actions button:not(.nav){grid-row:2}
       }
-      .composer{left:8px!important;right:8px!important;width:auto!important;max-width:none;top:calc(var(--papilot-review-bar-height,42px) + 8px);bottom:auto;transform:none;max-height:calc(100% - var(--papilot-review-bar-height,42px) - var(--keyboard,0px) - 16px);overflow:auto;border-width:1px;border-radius:18px;box-shadow:0 8px 30px rgb(0 0 0/.16)}
+      .composer{left:8px!important;right:8px!important;width:auto!important;max-width:none;top:calc(var(--papilot-review-bar-height,42px) + 8px);bottom:auto;transform:none;max-height:calc(100% - var(--papilot-review-bar-height,42px) - var(--keyboard,0px) - 16px);overflow:auto}
       #root:has(>.composer) .change-head .dock{display:none}
-      .composer textarea{font-size:16px;min-height:76px;max-height:min(140px,30vh)}.composer-head{padding:12px 10px 0 16px}.composer-close{width:40px;height:40px;border-radius:999px}.composer-send{width:40px;height:40px;border-radius:999px}
-      .composer-row{justify-content:flex-end;padding:4px 12px 12px 16px}.composer-row .muted{display:none}
+      .composer-head{height:48px;padding:0 6px 0 16px}.composer-head label{font-size:13px}
+      .composer textarea{width:calc(100% - 32px);margin:0 16px;font-size:16px;min-height:76px;max-height:min(140px,30vh)}
+      .composer-close,.composer-send{width:36px;height:36px}.composer-send svg{width:18px;height:18px}
+      .composer-row{justify-content:flex-end;padding:8px 16px 16px}.composer-row .muted{display:none}
       .side .pdf-strip,.context .pdf-strip{width:calc(100% * var(--pdf-crop-scale,1));margin-left:calc(-100% * var(--pdf-crop-scale,1) * var(--pdf-crop-shift,0))}
       .side,.context{overflow-x:clip}
     }
     /* Keep readable names and shortcut hints while drawing only the icons. */
     :root{--icon-source:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='m8 7-5 5 5 5m8-10 5 5-5 5m-3-13-2 16'/></svg>")}
     :root .change-head .actions button:is(.accept,.reject,.comment,.unstage,.skip){width:28px;padding:0;gap:0;font-size:0;flex:none}
-    .change-head .actions button:is(.accept,.reject,.comment,.unstage,.skip)::before{width:15px;height:15px}
-    .change-head .actions .skip::before{content:"";background:currentColor;--skip-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m5 5 7 7-7 7M19 5v14'/></svg>");-webkit-mask:var(--skip-icon) center/contain no-repeat;mask:var(--skip-icon) center/contain no-repeat}
-    .change-head .source-toggle{width:28px;padding:0;flex:none;justify-content:center;font-size:0}
+    .change-head .actions .skip::before{content:"";width:16px;height:16px;background:currentColor;--skip-icon:url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m5 5 7 7-7 7M19 5v14'/></svg>");-webkit-mask:var(--skip-icon) center/contain no-repeat;mask:var(--skip-icon) center/contain no-repeat}
+    .change-head .source-toggle{width:28px;padding:0;justify-content:center;font-size:0}
     .change-head .source-toggle::before{content:"";width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon-source) center/contain no-repeat;mask:var(--icon-source) center/contain no-repeat}
     :root[data-papilot-phone] .change-head .actions button:is(.accept,.reject,.comment,.unstage,.skip){width:44px;flex:1 1 auto}
     :root[data-papilot-phone] .change-head .actions button:is(.accept,.reject,.comment,.unstage,.skip)::before{width:18px;height:18px}
-    /* History shares the PDF tools' size. Shortcut settings live in Papilot. */
+    /* History shares the PDF tools' size, at least an icon button's. Shortcut
+       settings live in Papilot. */
     /* Papilot shows the full paper switch with its own controls. */
     .view-switch{display:none}
-    .bar .ghost.history{display:inline-flex;align-items:center;justify-content:center;width:var(--papilot-button-size,30px);height:var(--papilot-button-size,30px);min-height:0;padding:0;font-size:0}
+    .bar .ghost.history{width:var(--papilot-button-size,28px);height:var(--papilot-button-size,28px);min-height:0;padding:0;font-size:0;color:var(--text)}
     .bar .history::before{content:"";width:16px;height:16px;background:currentColor;-webkit-mask:var(--icon-history) center/contain no-repeat;mask:var(--icon-history) center/contain no-repeat}
     /* Reserve the outer tools' row when there is too little room. Keep
        progress, batch counts and history; shorten only the batch labels. */
@@ -256,16 +194,15 @@ function compactReviewFrame(doc: Document, reserve: number, lead: number, change
        available to screen readers without pushing decisions into another row. */
     :root[data-papilot-build-indicator] .bar .status[data-state="building"]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%)}
     .bar .accept-all,.bar .reject-all{flex-shrink:0;white-space:nowrap}
-    .bar .batch-count{margin-left:0;background:var(--bg-muted);color:var(--text-2)}
-    :root[data-papilot-toolbar-stacked] .bar{padding:calc(var(--papilot-bar-height,46px) + 4px) 8px 4px;min-height:calc(var(--papilot-bar-height,46px) + 44px)}
+    :root[data-papilot-toolbar-stacked] .bar{padding:calc(var(--papilot-bar-height,44px) + 4px) 8px 4px;min-height:calc(var(--papilot-bar-height,44px) + 44px)}
     :root[data-papilot-toolbar-stacked] .bar .identity{display:none}
     :root[data-papilot-toolbar-stacked] .bar .bar-end{margin-left:auto}
     /* The common PDF toolbar owns the first row; review decisions keep a
        separate row below it. Full pages use the manuscript's fit and margins. */
-    :root[data-papilot-reader] .bar{margin-top:var(--papilot-bar-height,46px);padding:0 8px;min-height:44px}
+    :root[data-papilot-reader] .bar{margin-top:var(--papilot-bar-height,44px);padding:0 8px;min-height:44px}
     :root[data-papilot-reader] .change-map{display:none}
     :root[data-papilot-reader] .review-body>#paper{--paper-top:20px;padding:20px 0 56px}
-    :root[data-papilot-reader] .paper-page{margin-bottom:20px;border-radius:2px;box-shadow:0 1px 2px rgb(0 0 0/.06),0 8px 24px rgb(0 0 0/.08)}
+    :root[data-papilot-reader] .paper-page{margin-bottom:20px}
     :root[data-papilot-reader] .paper{--pdf-crop-scale:1;--pdf-crop-shift:0}
     :root[data-papilot-reader][data-papilot-phone] .review-body>#paper{--paper-top:10px;padding:10px 0 132px}
     :root[data-papilot-reader][data-papilot-phone] .paper-page{margin-bottom:10px}
@@ -530,7 +467,8 @@ export function ReviewFrame({ task, changesOf, tools, lead, completion, onCommen
       root.style.setProperty('--papilot-lead', `${leadWidth}px`);
       root.style.setProperty('--papilot-bar-height', `${host.offsetHeight}px`);
       root.toggleAttribute('data-papilot-toolbar-stacked', box.clientWidth - reserve - leadWidth < (phone.matches ? 185 : 220));
-      const button = toolbar.current?.querySelector<HTMLElement>('.icon-button');
+      // Hidden controls (a collapsed group picker) measure 0px; size the viewer's buttons from a visible one.
+      const button = [...toolbar.current?.querySelectorAll<HTMLElement>('.icon-button') ?? []].find(item => item.offsetWidth > 0);
       if (button) root.style.setProperty('--papilot-button-size', `${button.offsetWidth}px`);
       if (bar) {
         root.style.setProperty('--papilot-review-bar-height', `${bar.offsetHeight}px`);

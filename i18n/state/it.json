@@ -2704,11 +2704,6 @@
     "textHash": "907691e4184547bdb8df9bb4663a2a1b62826e33af61af8e9173e0c369b7f945",
     "model": "gemini-4-argon-medium"
   },
-  "Open review in new tab": {
-    "revision": "ea2ce7f712f6f742b57152aaa876fb1fb92174ae3d6ac164a36378cb846178c2",
-    "textHash": "8fe4504b6be483f75d54d458997849e2bf89b62ddd5fccc69bbf39160c4fc0ad",
-    "model": "gemini-4-argon-medium"
-  },
   "Open reviews on": {
     "revision": "08b475f064aaed8db7f5861bcf33f2e8ab9139d28dcf0b78e937551ed184c723",
     "textHash": "d8fb7e3dda69e6d8b3941c2a83bd43d15be7233e2d50bfbc2c0a0cba3688394f",

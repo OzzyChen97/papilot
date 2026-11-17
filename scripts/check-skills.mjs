@@ -185,7 +185,8 @@ try {
   await page.getByRole('button', { name: 'Settings', exact: true }).click();
   await selectOption(page.getByRole('dialog', { name: 'Settings' }).getByRole('combobox', { name: 'Language' }), 'zh-Hans');
   await page.keyboard.press('Escape');
-  await expect(page.getByText('已加入任务：2 条', { exact: true })).toBeVisible();
+  await expect(page.locator('.manuscript-side-header').getByRole('button', { name: '全部移出', exact: true })).toBeVisible();
+  await expect(page.locator('.side-tabs .count')).toHaveText('2');
   await page.screenshot({ path: 'test-results/merged-task-notes.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => page.locator('.sidebar').evaluate(element => element.getBoundingClientRect().right)).toBeLessThanOrEqual(0);
@@ -201,7 +202,7 @@ try {
   await expect(page.getByText('Connection lost. Try again.', { exact: true })).toBeVisible();
   await expect(draft).toHaveValue('Keep all technical terms.');
   await expect(page.locator('.composer-skill .skill-chip')).toHaveText('Polish');
-  await expect(page.getByText('Added to task: 2', { exact: true })).toBeVisible();
+  await expect(page.locator('.side-tabs .count')).toHaveText('2');
   failCreate = false;
   await page.getByRole('button', { name: 'Start task', exact: true }).click();
   await expect.poll(() => creates.length).toBe(3);

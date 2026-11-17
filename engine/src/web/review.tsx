@@ -976,28 +976,41 @@ export function ReviewApp({
     if (!detail || !state) return;
     const selected = window.getSelection()?.toString().trim() ?? "",
       known = stops[index].units.map((id) => units.get(id)!).filter(Boolean);
+    const reference = copyReference(
+      state.title,
+      detail.round,
+      index + 1,
+      describeLocation(known),
+      selected,
+    );
+    // Plain-http addresses, such as a phone over Tailscale, have no async
+    // clipboard; the document's copy command still works there.
+    let copied = false;
     try {
-      await navigator.clipboard.writeText(
-        copyReference(
-          state.title,
-          detail.round,
-          index + 1,
-          describeLocation(known),
-          selected,
-        ),
-      );
-      setToast(
-        selected
+      await navigator.clipboard.writeText(reference);
+      copied = true;
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = reference;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.append(area);
+      area.select();
+      try {
+        copied = document.execCommand("copy");
+      } finally {
+        area.remove();
+      }
+    }
+    setToast(
+      !copied
+        ? t(
+            "Clipboard unavailable. Select the PDF text and use your browser’s Copy command.",
+          )
+        : selected
           ? t("Copied selected text with file, lines and PDF page.")
           : t("Copied the change location."),
-      );
-    } catch (e) {
-      setToast(
-        t(
-          "Clipboard unavailable. Select the PDF text and use your browser’s Copy command.",
-        ),
-      );
-    }
+    );
   }
   useEffect(() => {
     const listener = (event: KeyboardEvent) => {
@@ -1690,78 +1703,84 @@ export function ReviewApp({
           {/* Batch decisions cover only undecided changes; accepted,
               rejected and commented changes keep their state. A single
               undecided change is decided from its own bar. */}
-          {undecided.length > 1 && batch.length > 0 && (
-            <button
-              className="ghost accept accept-all"
-              disabled={
-                busy ||
-                !latest ||
-                Boolean(composer) ||
-                Boolean(state?.decisionLock)
-              }
-              title={
-                state?.decisionLock ||
-                [
-                  changes
-                    ? tn(
-                        batch.length,
-                        "Stage the {n} unstaged change.",
-                        "Stage the {n} unstaged changes.",
-                      )
-                    : tn(
-                        batch.length,
-                        "Accept {n} undecided change",
-                        "Accept {n} undecided changes",
-                      ),
-                  undecided.length > batch.length
-                    ? tn(
-                        undecided.length - batch.length,
-                        "Leaves {n} change with bibliography entries to check.",
-                        "Leaves {n} changes with bibliography entries to check.",
-                      )
-                    : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")
-              }
-              aria-label={
-                changes
-                  ? t("Stage all ({n})", { n: batch.length })
-                  : t("Accept all ({n})", { n: batch.length })
-              }
-              aria-describedby={state?.decisionLock ? "review-lock" : undefined}
-              onClick={() => void decide("accept", batch)}
-            >
-              <span className="batch-label">
-                {changes ? t("Stage all") : t("Accept all")}
-              </span>
-              <span className="batch-count">{batch.length}</span>
-            </button>
-          )}
-          {undecided.length > 1 && !changes && (
-            <button
-              className="ghost reject reject-all"
-              disabled={
-                busy ||
-                !latest ||
-                Boolean(composer) ||
-                Boolean(lockOf(state, "reject"))
-              }
-              title={
-                actionLock("reject") ||
-                tn(
-                  undecided.length,
-                  "Reject {n} undecided change",
-                  "Reject {n} undecided changes",
-                )
-              }
-              aria-label={t("Reject all ({n})", { n: undecided.length })}
-              aria-describedby={lockOf(state, "reject") ? "review-lock" : undefined}
-              onClick={() => void decide("reject", undecided)}
-            >
-              <span className="batch-label">{t("Reject all")}</span>
-              <span className="batch-count">{undecided.length}</span>
-            </button>
+          {/* The two batch decisions exclude each other, so they share one
+              segmented control. */}
+          {undecided.length > 1 && (batch.length > 0 || !changes) && (
+            <div className="batch-decisions">
+              {batch.length > 0 && (
+                <button
+                  className="ghost accept accept-all"
+                  disabled={
+                    busy ||
+                    !latest ||
+                    Boolean(composer) ||
+                    Boolean(state?.decisionLock)
+                  }
+                  title={
+                    state?.decisionLock ||
+                    [
+                      changes
+                        ? tn(
+                            batch.length,
+                            "Stage the {n} unstaged change.",
+                            "Stage the {n} unstaged changes.",
+                          )
+                        : tn(
+                            batch.length,
+                            "Accept {n} undecided change",
+                            "Accept {n} undecided changes",
+                          ),
+                      undecided.length > batch.length
+                        ? tn(
+                            undecided.length - batch.length,
+                            "Leaves {n} change with bibliography entries to check.",
+                            "Leaves {n} changes with bibliography entries to check.",
+                          )
+                        : "",
+                    ]
+                      .filter(Boolean)
+                      .join(" ")
+                  }
+                  aria-label={
+                    changes
+                      ? t("Stage all ({n})", { n: batch.length })
+                      : t("Accept all ({n})", { n: batch.length })
+                  }
+                  aria-describedby={state?.decisionLock ? "review-lock" : undefined}
+                  onClick={() => void decide("accept", batch)}
+                >
+                  <span className="batch-label">
+                    {changes ? t("Stage all") : t("Accept all")}
+                  </span>
+                  <span className="batch-count">{batch.length}</span>
+                </button>
+              )}
+              {!changes && (
+                <button
+                  className="ghost reject reject-all"
+                  disabled={
+                    busy ||
+                    !latest ||
+                    Boolean(composer) ||
+                    Boolean(lockOf(state, "reject"))
+                  }
+                  title={
+                    actionLock("reject") ||
+                    tn(
+                      undecided.length,
+                      "Reject {n} undecided change",
+                      "Reject {n} undecided changes",
+                    )
+                  }
+                  aria-label={t("Reject all ({n})", { n: undecided.length })}
+                  aria-describedby={lockOf(state, "reject") ? "review-lock" : undefined}
+                  onClick={() => void decide("reject", undecided)}
+                >
+                  <span className="batch-label">{t("Reject all")}</span>
+                  <span className="batch-count">{undecided.length}</span>
+                </button>
+              )}
+            </div>
           )}
           {/* "All decided" would repeat the meter's "N of N decided". */}
           {(!online ||

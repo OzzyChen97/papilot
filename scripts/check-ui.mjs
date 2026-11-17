@@ -537,7 +537,7 @@ try {
   await page.emulateMedia({ colorScheme: 'light' });
   await themeIs('dark');
   assert.equal(await page.getByRole('textbox', { name: 'Instructions for Codex' }).inputValue(), 'Preserve this draft while changing appearance.');
-  assert.equal(await page.locator('.main').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(38, 39, 43)');
+  assert.equal(await page.locator('.main').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(44, 44, 44)');
   assert.equal(await page.locator('html').evaluate(el => getComputedStyle(el).colorScheme), 'dark');
   await page.reload();
   await settingsButton.click();
@@ -562,7 +562,6 @@ try {
   await page.getByRole('button', { name: '设置', exact: true }).waitFor();
   assert.equal(await page.getByRole('textbox', { name: '给 Codex 的指令' }).inputValue(), 'Keep this draft across languages.');
   await page.waitForFunction(() => document.querySelector('.review-frame')?.getAttribute('src')?.endsWith('&lang=zh-Hans'));
-  assert.match(await page.getByRole('link', { name: '在新标签页中打开审阅' }).getAttribute('href'), /&lang=zh-Hans$/);
   await page.reload();
   await page.getByRole('button', { name: '设置', exact: true }).click();
   await selectOption(page.getByRole('dialog', { name: '设置' }).getByRole('combobox', { name: '语言' }), 'zh-Hant');
@@ -742,7 +741,6 @@ try {
   // marking rail, while narrow panes expose the compact color picker.
   const reviewTools = page.locator('.review-tools');
   assert.equal(await reviewTools.getByRole('link', { name: 'Full PDF', exact: true }).getAttribute('href'), '/api/tasks/fixture-task-0001/pdf?round=1');
-  assert.equal(await page.locator('.panel-tools').getByRole('link', { name: 'Open review in new tab', exact: true }).getAttribute('href'), '/review/fixture-paper/?task=p-fixture');
   assert.equal(await reviewTools.getByRole('button', { name: 'Regenerate PDF comparison', exact: true }).isDisabled(), false);
   await expect(page.locator('.review-marking-rail').getByRole('button', { name: 'Note', exact: true })).toBeVisible();
   await expect(reviewTools.getByRole('button', { name: 'Annotation group color', exact: true, includeHidden: true })).toHaveCount(1);
@@ -838,7 +836,9 @@ try {
   await page.reload(); await manuscriptDivider.waitFor();
   assert.equal(Math.round((await manuscriptSide.boundingBox()).width), widenedSide, 'manuscript width survives a reload');
   await page.setViewportSize({ width: 1000, height: 900 });
-  assert.ok(Math.round((await manuscriptSide.boundingBox()).width) <= 368, 'a narrow desktop clamps the saved width');
+  // The side panel leaves the PDF at least 360px of the manuscript area.
+  const narrowManuscript = await page.locator('.manuscript').boundingBox();
+  assert.ok(Math.round((await manuscriptSide.boundingBox()).width) <= Math.round(narrowManuscript.width - 360) && narrowManuscript.width - 360 < widenedSide, 'a narrow desktop clamps the saved width');
   await page.setViewportSize({ width: 800, height: 900 });
   await manuscriptDivider.waitFor({ state: 'hidden' });
   assert.equal(await page.evaluate(() => document.body.classList.contains('resizing')), false);
@@ -1380,7 +1380,8 @@ try {
   Object.assign(gitState, structuredClone(originalGit));
   await pdfLink.click();
   const pdfToolbar = page.getByRole('toolbar', { name: 'PDF controls' });
-  await page.locator('.manuscript-side-header').getByRole('button', { name: 'Share', exact: true }).click();
+  // Sharing exports the paper, so it sits in the PDF's own toolbar.
+  await pdfToolbar.getByRole('button', { name: 'Share', exact: true }).click();
   assert.equal(await page.getByRole('menuitem', { name: 'Open PDF', exact: true }).getAttribute('href'), '/api/projects/fixture-paper/manuscript.pdf?key=fixture');
   assert.equal(await page.getByRole('menuitem', { name: 'Export PDF', exact: true }).getAttribute('href'), '/api/projects/fixture-paper/manuscript.pdf?key=fixture&download=1');
   await page.keyboard.press('Escape');
@@ -1867,7 +1868,6 @@ try {
       // Phone layouts hide desktop new-tab links and keep rebuild in the review bar.
       await page.locator('.review-tools').getByRole('button', { name: 'Regenerate PDF comparison', exact: true }).waitFor();
       assert.equal(await page.locator('.review-tools').getByRole('link', { name: 'Full PDF', exact: true }).isVisible(), false);
-      assert.equal(await page.locator('.workspace-navigation').getByRole('link', { name: 'Open review in new tab', exact: true }).isVisible(), false);
       await page.screenshot({ path: `test-results/english-mobile-${width}.png`, fullPage: true });
     }
     const drawerToggle = page.getByRole('button', { name: 'Show task list', exact: true });

@@ -8,7 +8,7 @@ export const DEFAULT_APPEARANCE: Appearance = { preset: 'papilot', accent: 'defa
 // Paper stays the visual focus. Presets vary the warmth of neutral surfaces;
 // accents are reserved for actions, selection and focus, with no decorative tint.
 export const PRESETS = {
-  papilot: { light: { background: '#ffffff', foreground: '#171717', accent: '#2563eb' }, dark: { background: '#26272b', foreground: '#ececee', accent: '#2563eb' } },
+  papilot: { light: { background: '#ffffff', foreground: '#1e1e1e', accent: '#0b8af0' }, dark: { background: '#2c2c2c', foreground: '#f0f0f0', accent: '#0b8af0' } },
   paper: { light: { background: '#faf9f6', foreground: '#302e2b', accent: '#74695c' }, dark: { background: '#282724', foreground: '#e8e6e1', accent: '#74695c' } },
   slate: { light: { background: '#f6f7f8', foreground: '#2c3035', accent: '#526477' }, dark: { background: '#24272b', foreground: '#e5e7ea', accent: '#526477' } },
 } satisfies Record<PresetId, Record<ColorMode, { background: string; foreground: string; accent: string }>>;
@@ -54,28 +54,28 @@ export function appearanceVariables(appearance: Appearance, mode: ColorMode): Re
   const custom = appearance.preset !== 'papilot' || appearance.colors[mode].background || appearance.colors[mode].foreground;
   const customAccent = appearance.preset !== 'papilot' || appearance.accent !== 'default';
   const defaults = dark
-    ? { '--sidebar': '#202124', '--bg-subtle': '#2a2b2f', '--bg-muted': '#303135', '--bg-hover': '#37383c', '--bg-active': '#404145', '--canvas': '#1e1f22', '--line': '#38393e', '--line-strong': '#4b4c52', '--line-hover': '#63646b', '--text-2': '#c2c3c9', '--text-3': '#9c9da5' }
-    : { '--sidebar': '#f9f9f9', '--bg-subtle': '#fafafa', '--bg-muted': '#f4f4f4', '--bg-hover': '#efefef', '--bg-active': '#e7e7e7', '--canvas': '#f3f3f3', '--line': '#e8e8e8', '--line-strong': '#d6d6d6', '--line-hover': '#c4c4c4', '--text-2': '#525252', '--text-3': '#8a8a8a' };
-  const activeAccent = customAccent ? (dark ? mix(accent, '#ffffff', .45) : accent) : (dark ? '#8ab4ff' : '#2563eb');
+    ? { '--sidebar': '#2c2c2c', '--bg-subtle': '#303030', '--bg-muted': '#383838', '--bg-hover': '#383838', '--bg-active': '#444444', '--canvas': '#1e1e1e', '--raised': '#333333', '--thumb': '#4d4d4d', '--line': '#444444', '--line-strong': '#4d4d4d', '--line-hover': '#5e5e5e', '--text-2': '#b3b3b3', '--text-3': '#8c8c8c' }
+    : { '--sidebar': '#ffffff', '--bg-subtle': '#fafafa', '--bg-muted': '#f5f5f5', '--bg-hover': '#f0f0f0', '--bg-active': '#e6e6e6', '--canvas': '#f5f5f5', '--raised': '#ffffff', '--thumb': '#ffffff', '--line': '#e6e6e6', '--line-strong': '#d9d9d9', '--line-hover': '#c4c4c4', '--text-2': '#5e5e5e', '--text-3': '#8f8f8f' };
+  const activeAccent = customAccent ? (dark ? mix(accent, '#ffffff', .45) : accent) : (dark ? '#3aa6ff' : '#0b8af0');
   return {
     '--bg': bg, '--text': fg,
     ...(custom ? {
-      '--sidebar': mix(bg, dark ? '#000000' : fg, dark ? .16 : .025), '--bg-subtle': mix(bg, fg, .025), '--bg-muted': mix(bg, fg, .055),
+      '--sidebar': bg, '--raised': dark ? mix(bg, fg, .04) : bg, '--thumb': dark ? mix(bg, fg, .15) : bg, '--bg-subtle': mix(bg, fg, .025), '--bg-muted': mix(bg, fg, .055),
       '--bg-hover': mix(bg, fg, .09), '--bg-active': mix(bg, fg, .14), '--canvas': mix(bg, dark ? '#000000' : fg, dark ? .24 : .05),
       '--line': mix(bg, fg, .12), '--line-strong': mix(bg, fg, .22), '--line-hover': mix(bg, fg, .32), '--text-2': mix(bg, fg, .76), '--text-3': mix(bg, fg, .58),
     } : defaults),
-    '--accent': activeAccent, '--accent-hover': customAccent ? mix(activeAccent, dark ? '#ffffff' : '#000000', .18) : (dark ? '#b2ceff' : '#1d4ed8'),
-    '--accent-soft': !custom && !customAccent ? (dark ? '#2b3651' : '#eff6ff') : mix(bg, activeAccent, .11),
-    '--accent-line': !custom && !customAccent ? (dark ? '#445c85' : '#bfdbfe') : mix(bg, activeAccent, .3),
-    '--primary': accent, '--primary-hover': customAccent ? mix(accent, '#000000', .18) : '#1d4ed8',
-    '--ring': `0 0 0 3px ${activeAccent}33`,
+    '--accent': activeAccent, '--accent-hover': customAccent ? mix(activeAccent, dark ? '#ffffff' : '#000000', .18) : (dark ? '#6bbcff' : '#0a76d1'),
+    '--accent-soft': !custom && !customAccent ? (dark ? '#1c3a57' : '#e5f3ff') : mix(bg, activeAccent, .11),
+    '--accent-line': !custom && !customAccent ? (dark ? '#2e5f8c' : '#b3dbff') : mix(bg, activeAccent, .3),
+    '--primary': accent, '--primary-hover': customAccent ? mix(accent, '#000000', .18) : (dark ? '#2496f2' : '#0a76d1'),
+    '--ring': `0 0 0 1px ${activeAccent}`,
     '--pdf-filter': darkPaper ? 'invert(.84) hue-rotate(180deg)' : 'none',
     '--pdf-page': darkPaper ? '#292929' : '#ffffff',
     '--review-theme': darkReview ? 'dark' : 'light',
     '--review-filter': darkReview ? 'invert(.84) hue-rotate(180deg)' : 'none',
     '--review-page': darkReview ? '#292929' : '#ffffff',
-    '--review-before': darkReview ? '#432c30' : '#fbeeee',
-    '--review-after': darkReview ? '#28392d' : '#eef8f1',
+    '--review-before': darkReview ? '#47271f' : '#fdede9',
+    '--review-after': darkReview ? '#1e3a2a' : '#e6f6ec',
   };
 }
 

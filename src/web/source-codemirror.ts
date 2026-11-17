@@ -39,15 +39,15 @@ const highlight = HighlightStyle.define([
   { tag: tags.invalid, color: 'var(--danger)' },
 ]);
 const theme = EditorView.theme({
-  '&': { height: '100%', fontSize: '13px', color: 'var(--text)', backgroundColor: 'var(--bg)' },
+  '&': { height: '100%', fontSize: '12px', color: 'var(--text)', backgroundColor: 'var(--bg)' },
   '&.cm-focused': { outline: 'none' },
-  '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '1.7' },
+  '.cm-scroller': { fontFamily: 'var(--mono)', lineHeight: '20px' },
   '.cm-content': { padding: '6px 0 40vh', caretColor: 'var(--text)' },
   '.cm-line': { padding: '0 16px 0 10px' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--text)', borderLeftWidth: '1.5px' },
   '&.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-selectionBackground, ::selection': { backgroundColor: 'color-mix(in srgb, var(--accent) 22%, transparent)' },
   '.cm-gutters': { backgroundColor: 'var(--bg)', color: 'var(--text-3)', border: 'none' },
-  '.cm-lineNumbers .cm-gutterElement': { minWidth: '34px', padding: '0 6px 0 10px', fontSize: '11.5px', fontVariantNumeric: 'tabular-nums' },
+  '.cm-lineNumbers .cm-gutterElement': { minWidth: '34px', padding: '0 6px 0 10px', fontSize: '11px', fontVariantNumeric: 'tabular-nums' },
   '.cm-activeLine': { backgroundColor: 'color-mix(in srgb, var(--text) 4%, transparent)' },
   '.cm-activeLineGutter': { backgroundColor: 'transparent', color: 'var(--text)' },
   '.cm-matchingBracket, &.cm-focused .cm-matchingBracket': { backgroundColor: 'color-mix(in srgb, var(--accent) 18%, transparent)', outline: 'none' },
@@ -55,8 +55,8 @@ const theme = EditorView.theme({
   '.cm-searchMatch.cm-searchMatch-selected': { backgroundColor: 'color-mix(in srgb, var(--amber, #d79b00) 55%, transparent)' },
   '.cm-panels': { backgroundColor: 'var(--bg-subtle)', color: 'var(--text)', borderColor: 'var(--line)' },
   '.cm-panels.cm-panels-bottom': { borderTop: '1px solid var(--line)' },
-  '.cm-panel.cm-search': { padding: '6px 10px', fontFamily: 'var(--sans)', fontSize: '12.5px' },
-  '.cm-panel.cm-search input, .cm-panel.cm-search button': { fontFamily: 'var(--sans)', fontSize: '12.5px' },
+  '.cm-panel.cm-search': { padding: '6px 10px', fontFamily: 'var(--sans)', fontSize: '12px' },
+  '.cm-panel.cm-search input, .cm-panel.cm-search button': { fontFamily: 'var(--sans)', fontSize: '12px' },
   '.cm-textfield': { border: '1px solid var(--line)', borderRadius: '6px', backgroundColor: 'var(--bg)', color: 'var(--text)', padding: '3px 6px' },
   '.cm-button': { backgroundImage: 'none', backgroundColor: 'var(--bg)', border: '1px solid var(--line)', borderRadius: '6px', color: 'var(--text)', padding: '3px 8px' },
   // The lines a click on the PDF named, and lines shown briefly.
@@ -67,7 +67,7 @@ const theme = EditorView.theme({
   // header, then the lines before and after, whose text starts where the
   // editor's lines do; the changed words stand out of their line's tint.
   '.cm-review-card': { marginTop: '6px', fontFamily: 'var(--sans)' },
-  '.cm-review-head': { display: 'flex', alignItems: 'center', gap: '8px', height: '30px', padding: '0 4px 0 9px', borderRadius: '6px 6px 0 0', backgroundColor: 'var(--bg-muted)', fontSize: '12.5px', fontWeight: '500', color: 'var(--text)' },
+  '.cm-review-head': { display: 'flex', alignItems: 'center', gap: '8px', height: '28px', padding: '0 4px 0 9px', borderRadius: '8px 8px 0 0', backgroundColor: 'var(--bg-muted)', fontSize: '12px', fontWeight: '500', color: 'var(--text)' },
   '.cm-review-title': { flex: '1' },
   '.cm-review-buttons': { display: 'flex', gap: '2px' },
   '.cm-review-buttons > button': { display: 'grid', placeItems: 'center', width: '26px', height: '24px', padding: '0', border: '0', borderRadius: '5px', backgroundColor: 'transparent', cursor: 'pointer' },

@@ -1,49 +1,60 @@
-.pdf-note-card{position:absolute;z-index:5;display:flex;flex-direction:column;gap:10px;box-sizing:border-box;width:280px;padding:12px 10px 10px 14px;border:1px solid color-mix(in srgb,var(--line-strong) 55%,transparent);border-radius:12px;background:var(--bg);color:var(--text);box-shadow:var(--float),inset 0 1px 0 color-mix(in srgb,var(--bg) 75%,transparent);font:13px/1.5 var(--sans);pointer-events:auto;text-align:left;outline:none}
-.pdf-note-content{display:flex;align-items:stretch;gap:6px;min-height:0}
+/* A note's popover on the PDF: a floating panel with the note's text and a
+   row of icon actions; the reading list reuses it as a flat row. */
+.pdf-note-card{position:absolute;z-index:5;display:flex;flex-direction:column;gap:8px;box-sizing:border-box;width:280px;padding:10px 8px 8px 12px;border:0;border-radius:12px;background:var(--raised);color:var(--text);box-shadow:var(--float);font:13px/1.6 var(--sans);pointer-events:auto;text-align:left;outline:none}
+.pdf-note-content{display:flex;align-items:stretch;gap:4px;min-height:0}
 .pdf-suggestion-body{flex:1;min-width:0;min-height:0;max-height:inherit;overflow:auto;overscroll-behavior:contain;-webkit-user-select:text;user-select:text}
-.pdf-suggestion-body p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.55 var(--sans)}
+.pdf-suggestion-body p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.6 var(--sans)}
 .pdf-note-text{cursor:text;border-radius:5px;outline:none}
-.pdf-note-text:hover{background:var(--bg-hover)}
-.pdf-note-text:focus-visible{box-shadow:0 0 0 2px var(--line-strong)}
-.pdf-note-input{display:block;box-sizing:border-box;width:100%;min-height:22px;max-height:min(240px,40dvh);margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);font:14px/1.55 var(--sans);resize:none;outline:none;box-shadow:none}
+.pdf-note-text:hover{background:var(--bg-muted)}
+.pdf-note-text:focus-visible{box-shadow:var(--ring)}
+.pdf-note-input{display:block;box-sizing:border-box;width:100%;min-height:21px;max-height:min(240px,40dvh);margin:0;padding:0;border:0;border-radius:0;background:transparent;color:var(--text);font:13px/1.6 var(--sans);resize:none;outline:none;box-shadow:none}
+.pdf-note-input::placeholder{color:var(--text-3)}
 .pdf-note-input:focus{outline:none;box-shadow:none}
-.pdf-note-card .icon-button{flex:none;width:26px;height:26px;border-radius:8px;color:var(--text-3)}
-.pdf-note-card .icon-button:hover{color:var(--text);background:var(--bg-hover)}
-.pdf-note-card .icon-button:focus-visible{outline-color:var(--text-3)}
-.pdf-note-card .pdf-note-close{align-self:flex-start;margin-top:-2px}
-.pdf-note-tools{display:flex;align-items:center;gap:4px;flex:none;color:var(--text-3)}
+.pdf-note-card .icon-button{flex:none;width:28px;height:28px;border-radius:5px;color:var(--text-2)}
+.pdf-note-card .icon-button:hover:not(:disabled){color:var(--text);background:var(--bg-muted)}
+.pdf-note-card .icon-button:focus-visible{outline:1px solid var(--accent);outline-offset:-1px}
+.pdf-note-card .pdf-note-close{align-self:flex-start;margin-top:-4px}
+.pdf-note-tools{display:flex;align-items:center;gap:2px;flex:none;color:var(--text-3)}
 .pdf-note-tools-space{flex:1}
-.pdf-note-origin{margin-left:3px;font-size:10px;color:var(--text-3)}
-.pdf-note-card .pdf-note-delete:hover{color:var(--danger)}
-.pdf-suggestion-navigation{display:flex;align-items:center;gap:1px;margin-left:3px;font-size:10px;color:var(--text-3);flex:none;font-variant-numeric:tabular-nums}
+.pdf-note-origin{font-size:11px;color:var(--text-3)}
+.pdf-note-card .pdf-note-delete:hover:not(:disabled){color:var(--danger)}
+.pdf-suggestion-navigation{display:flex;align-items:center;gap:0;margin-left:2px;font-size:11px;color:var(--text-3);flex:none;font-variant-numeric:tabular-nums}
 .pdf-suggestion-navigation>span{min-width:28px;text-align:center}
-.pdf-suggestion-trigger{display:inline-flex;align-items:center;gap:4px;flex:none;min-width:30px;height:30px;padding:0 6px;border-radius:6px;color:#b45309;font-size:12px}
-.pdf-suggestion-trigger:hover,.pdf-suggestion-trigger[aria-pressed=true]{background:var(--bg-hover)}
-.pdf-suggestion-undo{position:absolute;z-index:15;bottom:12px;left:50%;transform:translateX(-50%);max-width:calc(100% - 24px);padding:8px 12px;border:1px solid var(--line);border-radius:8px;box-shadow:var(--float);background:var(--bg);color:var(--text);font-size:12px}
-.pdf-suggestion-undo button{color:var(--accent);text-decoration:underline;margin-left:8px}
-@media(pointer:coarse){.pdf-note-card .icon-button{width:36px;height:36px}.pdf-suggestion-navigation{gap:0;margin-left:0}.pdf-suggestion-navigation .icon-button{width:32px}.pdf-suggestion-navigation>span{min-width:24px}.pdf-personal-note .pdf-note-text,.pdf-note-input{font-size:16px}}
-@media(max-width:680px){.pdf-note-card:not(.pdf-note-inline){border-radius:16px;border-color:color-mix(in srgb,var(--line-strong) 70%,transparent);box-shadow:0 8px 30px rgb(0 0 0/.16)}.pdf-suggestion-undo{z-index:25;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px)}}
+.pdf-suggestion-trigger{display:inline-flex;align-items:center;gap:4px;flex:none;min-width:28px;height:28px;padding:0 6px;border-radius:5px;color:var(--amber-text);font-size:12px}
+.pdf-suggestion-trigger:hover,.pdf-suggestion-trigger[aria-pressed=true]{background:var(--bg-muted)}
+.pdf-suggestion-trigger[aria-pressed=true]{background:var(--bg-active)}
+/* A dark toast, its action a blue text button. */
+.pdf-suggestion-undo{position:absolute;z-index:15;bottom:12px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;max-width:calc(100% - 24px);padding:8px 12px;border:0;border-radius:12px;box-shadow:var(--menu-shadow);background:var(--menu-bg);color:var(--menu-text);font-size:12px}
+.pdf-suggestion-undo button{color:var(--accent);font-weight:500}
+.pdf-suggestion-undo button:hover:not(:disabled){color:var(--accent-hover)}
+.pdf-suggestion-undo p{flex-basis:100%;margin:0;color:var(--menu-text-2)}
+@media(pointer:coarse){.pdf-note-card .icon-button{width:36px;height:36px}.pdf-suggestion-navigation .icon-button{width:32px}.pdf-suggestion-navigation>span{min-width:24px}.pdf-personal-note .pdf-note-text,.pdf-note-input{font-size:16px}}
+@media(max-width:680px){.pdf-suggestion-undo{z-index:25;bottom:calc(max(12px,env(safe-area-inset-bottom)) + 56px);font-size:13px}.pdf-suggestion-undo button{min-height:36px}}
 
-.pdf-note-card.pdf-note-inline{--note-tool:24px;position:relative;z-index:auto;width:100%;gap:4px;padding:8px 10px;box-shadow:none;border-radius:10px}
-.pdf-note-inline:hover,.note-list>li.active>.pdf-note-inline{border-color:var(--line-strong)}
+/* In the reading list and the task a note is a flat row: hover fills it, the
+   open one carries a blue edge. */
+.pdf-note-card.pdf-note-inline{--note-tool:24px;position:relative;z-index:auto;width:100%;gap:2px;padding:6px 4px 6px 8px;border-radius:5px;background:transparent;box-shadow:none}
+.pdf-note-inline:hover{background:var(--bg-muted)}
+.note-list>li.active>.pdf-note-inline{background:var(--accent-soft)}
 :is(.note-list,.task-note-cards)>li.stale>.pdf-note-inline{background:var(--bg-subtle)}
 /* In the library, delete and add-to-task share the location row instead of taking a row of their own; the row gives them whatever width the button needs. */
 .pdf-note-card.pdf-note-inline{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:6px}
 .pdf-note-inline>*,.pdf-note-inline>.note-card-context>*{grid-column:1/-1}
 .pdf-note-inline>.note-card-context{display:contents}
 .pdf-note-inline>.note-card-context>.note-head{grid-column:1;grid-row:1}
-.pdf-note-inline>.pdf-note-tools{grid-column:2;grid-row:1;align-self:start;gap:2px}
+.pdf-note-inline>.pdf-note-tools{grid-column:2;grid-row:1;align-self:start;gap:0}
 .pdf-note-inline .note-head{min-height:var(--note-tool);margin-bottom:0}
 .pdf-note-inline .pdf-note-tools .icon-button,.pdf-note-inline .note-send{width:var(--note-tool);height:var(--note-tool)}
+.pdf-note-inline .pdf-note-tools .icon-button:hover:not(:disabled){background:var(--bg-active)}
 .pdf-note-inline .pdf-note-origin{display:none}
-@media(pointer:fine){.pdf-note-inline .pdf-suggestion-body p,.pdf-note-inline .pdf-note-input{font-size:13px;line-height:1.5}}
+@media(pointer:fine){.pdf-note-inline .pdf-suggestion-body p,.pdf-note-inline .pdf-note-input{font-size:12px;line-height:1.5}}
 @media(pointer:coarse){.pdf-note-card.pdf-note-inline{--note-tool:36px}}
-.pdf-note-attach{display:inline-flex;align-items:center;justify-content:center;flex:none;width:26px;height:26px;border-radius:8px;color:var(--text-3)}
-.pdf-note-attach:hover:not(:disabled){color:var(--text);background:var(--bg-hover)}
+.pdf-note-attach{display:inline-flex;align-items:center;justify-content:center;flex:none;width:28px;height:28px;border-radius:5px;color:var(--text-2)}
+.pdf-note-attach:hover:not(:disabled){color:var(--text);background:var(--bg-muted)}
 @media(pointer:coarse){.pdf-note-attach{width:36px;height:36px}}
 
 /* The popover's send button matches the chat composer's; once the note is in the task it becomes a remove icon that takes it back out. */
-.note-send{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;border-radius:999px;background:var(--primary);color:#fff;font:500 12px/1 var(--sans);white-space:nowrap;transition:background-color .15s,color .15s,transform .1s}
+.note-send{display:inline-flex;align-items:center;justify-content:center;gap:4px;flex:none;width:28px;height:28px;padding:0;border-radius:50%;background:var(--primary);color:#fff;font:500 12px/1 var(--sans);white-space:nowrap;transition:background-color .15s,color .15s,transform .1s}
 .note-send:hover:not(:disabled){background:var(--primary-hover)}
 .note-send:active:not(:disabled){transform:scale(.94)}
 .note-send:disabled{opacity:1;background:var(--bg-active);color:var(--text-3)}
@@ -52,13 +63,13 @@
 .note-send[aria-pressed=true]:hover:not(:disabled){background:var(--accent-soft);color:var(--accent-hover)}
 .note-send[aria-pressed=true]:hover:not(:disabled) svg{opacity:1}
 .note-send:disabled .spinner,.note-send[aria-pressed=true] .spinner{border-color:var(--line-strong);border-top-color:var(--text-2)}
-.note-send.quiet:not([aria-pressed=true]){background:transparent;color:var(--text-3)}
+.note-send.quiet:not([aria-pressed=true]){background:transparent;color:var(--text-2)}
 .note-send.quiet:not([aria-pressed=true]):hover:not(:disabled){background:var(--primary);color:#fff}
-.note-send.quiet{width:26px;height:26px}
+.note-send.quiet{width:24px;height:24px}
 @media(pointer:coarse){.note-send,.note-send.quiet{width:36px;height:36px}}
 
 /* A new note is a single line that grows; the send button stays at its foot. */
-.pdf-note-card.pdf-note-compose{padding:8px 8px 8px 14px}
+.pdf-note-card.pdf-note-compose{padding:6px 6px 6px 12px}
 .pdf-note-compose .pdf-note-content{align-items:flex-end;gap:8px}
 .pdf-note-compose .pdf-suggestion-body{padding:3px 0}
 @media(pointer:coarse){.pdf-note-compose .pdf-suggestion-body{padding:6px 0}}

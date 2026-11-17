@@ -196,7 +196,7 @@ try {
   await expect(deletingCard).toBeVisible();
   await expect(deleted).toHaveCount(0);
   assert.equal(restores, restoresBefore + 1);
-  await page.locator('.note-selection-head span').click();
+  await page.locator('.side-tabs [data-task-home]').click();
   await page.keyboard.press('ControlOrMeta+z');
   await page.waitForTimeout(300);
   assert.equal(restores, restoresBefore + 1, 'A later ⌘Z must not replay an undone deletion');
@@ -299,7 +299,7 @@ try {
   await expect(taskCard.getByRole('button', { name: 'Cancel', exact: true })).toHaveCount(0);
   await expect(taskCard.getByRole('button', { name: 'Save', exact: true })).toHaveCount(0);
   await expect(send()).toBeDisabled();
-  await expect(page.locator('.task-notes-panel').getByRole('button', { name: 'Remove all from task', exact: true })).toBeDisabled();
+  await expect(page.locator('.manuscript-side-header').getByRole('button', { name: 'Remove all from task', exact: true })).toBeDisabled();
   await taskEditor.fill('   ');
   await expect(taskCard.getByRole('button', { name: 'Remove note 1 from task', exact: true })).toBeDisabled();
   await taskEditor.press('Escape');
@@ -639,7 +639,7 @@ try {
   assert.notEqual(backgrounds[0], backgrounds[1], 'Selected cards must have a distinct highlight');
   await expect(all()).toHaveAttribute('aria-pressed', 'mixed');
   await expect(group('Yellow')).toHaveAttribute('aria-pressed', 'mixed');
-  await expect(page.getByText('Added to task: 4', { exact: true })).toBeVisible();
+  await expect(page.locator('.side-tabs .count')).toHaveText('4');
   await page.reload(); await notesReady();
   await expect(instruction('Yellow')).toHaveValue('Explain the reasoning step by step.');
   await expect(instruction('Purple')).toHaveValue('Shorten this wording.');

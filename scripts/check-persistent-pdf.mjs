@@ -68,7 +68,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.server.address().port}`);
   await readable();
   await expect(page.locator('.task-grid')).toHaveClass(/layout-split/);
-  const original = await canvas.elementHandle();
+  let original = await canvas.elementHandle();
   for (const status of ['queued', 'waiting_input', 'building', 'failed', 'reviewing']) {
     task.status = status;
     task.error = status === 'failed' ? 'Compile failed' : null;
@@ -84,6 +84,37 @@ try {
     await expect(preview.getByRole('button', { name: 'Generate PDF comparison', exact: true })).toHaveCount(['building', 'failed'].includes(status) ? 1 : 0);
   }
   await expect(page.getByRole('button', { name: 'Generate PDF comparison', exact: true })).toHaveCount(0);
+  // Until a task has a review, its PDF takes every marking tool. Marks join
+  // the chat's unsent message, drawn on the PDF they were made on; undo takes
+  // them back, and a written note opens the chat with it.
+  const rail = preview.getByRole('toolbar', { name: 'Marking tools' });
+  await expect(rail.getByRole('button', { name: 'Note', exact: true })).toBeVisible();
+  const word = preview.locator('.page[data-page-number="1"] .textLayer span').filter({ hasText: /\S/ }).first();
+  const selectWord = () => word.evaluate(element => {
+    const range = document.createRange(); range.selectNodeContents(element);
+    const selection = document.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+  }).then(() => expect(preview.locator('.add-note')).toBeVisible());
+  const unsent = () => page.evaluate(() => JSON.parse(localStorage.getItem('papilot:review-notes:task') || '{"notes":[]}').notes);
+  await selectWord(); await rail.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(async () => (await unsent()).map(note => [note.kind, note.paper?.key, note.strip])).toEqual([['delete', 'baseline', 'paper:0']]);
+  await expect(preview.locator('.note-mark[data-kind="delete"]').first()).toBeVisible();
+  await rail.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect.poll(async () => (await unsent()).length).toBe(0);
+  await expect(preview.locator('.note-mark')).toHaveCount(0);
+  await rail.getByRole('button', { name: 'Select', exact: true }).click();
+  await selectWord(); await rail.getByRole('button', { name: 'Note', exact: true }).click();
+  const noteText = page.getByRole('textbox', { name: 'Edit note 1', exact: true });
+  await noteText.fill('Say this more plainly.'); await noteText.press('Enter');
+  await expect.poll(async () => (await unsent()).map(note => [note.comment, note.paper?.key])).toEqual([['Say this more plainly.', 'baseline']]);
+  await expect(page.getByLabel('Review feedback')).toContainText('Say this more plainly.');
+  await expect(preview.locator('.note-tag')).toHaveCount(1);
+  await rail.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect.poll(async () => (await unsent()).length).toBe(0);
+  await expect(preview.locator('.note-mark')).toHaveCount(0);
+  // Unsent notes resize the reader, which redraws its pages; compare the
+  // pages loaded from here on.
+  await readable(); original = await canvas.elementHandle();
   // A new, unavailable PDF must leave the successfully loaded pages intact.
   manuscript.build = { status: 'failed', key: 'broken', current: false, error: 'Compile failed' };
   await sync();
@@ -183,5 +214,5 @@ try {
   await expect(page.locator('.task-grid')).toHaveClass(/layout-split/);
   assert.equal(await page.evaluate(() => localStorage.getItem('papilot:layout')), null, 'An earlier saved view is cleared');
   assert.deepEqual(errors, []);
-  console.log('PASS: Persistent PDF across task states, no changes, failed replacement, review readiness/failure, PDF-mode escape, hidden Chat shortcuts/place retention, reload, and mobile');
+  console.log('PASS: Persistent PDF across task states, marking a task PDF before its review, no changes, failed replacement, review readiness/failure, PDF-mode escape, hidden Chat shortcuts/place retention, reload, and mobile');
 } finally { await browser.close(); await server.close(); }

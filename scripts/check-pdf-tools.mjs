@@ -63,6 +63,8 @@ await page.route('**/api/**', async route => {
   throw Error(`Unexpected fixture request ${url.pathname}`);
 });
 const rail = () => page.getByRole('toolbar', { name: 'Marking tools' });
+// The tools float as a bar inside the rail's gutter; the bar's edges are the toolbar's.
+const railBar = () => rail().locator('.rail-items');
 const tool = name => rail().getByRole('button', { name, exact: true });
 const words = () => page.locator('.page[data-page-number="1"] .textLayer span').filter({ hasText: /\S/ });
 async function selectText(index, release = true) {
@@ -94,7 +96,7 @@ try {
   await expect(rail().locator('.rail-separator')).toHaveCount(1);
   await expect(tool('Undo')).toBeDisabled(); await expect(tool('Redo')).toBeDisabled();
   assert.deepEqual(await rail().getByRole('button').evaluateAll(buttons => buttons.slice(-4).map(button => button.getAttribute('aria-label'))), ['Undo', 'Redo', 'Anchors', 'Add anchor']);
-  const railBox = await rail().boundingBox(), addBox = await tool('Add anchor').boundingBox();
+  const railBox = await railBar().boundingBox(), addBox = await tool('Add anchor').boundingBox();
   const bottomGap = railBox.y + railBox.height - addBox.y - addBox.height;
   assert.ok(bottomGap >= 0 && bottomGap < 12, 'Anchors follow history at the end of the rail');
   // Retracting the rail gives the width back to the PDF, keeps the selected
@@ -149,7 +151,7 @@ try {
   // Short windows scroll the tools while history stays visible and clickable.
   for (const height of [400, 320]) {
     await page.setViewportSize({ width: 1440, height });
-    const railBox = await settled(rail()), undoBox = await tool('Undo').boundingBox(), addBox = await tool('Add anchor').boundingBox();
+    const railBox = await settled(railBar()), undoBox = await tool('Undo').boundingBox(), addBox = await tool('Add anchor').boundingBox();
     const gap = railBox.y + railBox.height - addBox.y - addBox.height;
     assert.ok(gap >= 0 && gap < 12 && undoBox.y >= railBox.y);
     await tool('Undo').click(); await expect.poll(() => notes.length).toBe(0);

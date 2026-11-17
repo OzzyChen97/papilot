@@ -251,6 +251,48 @@ test("mouse drag selects visible PDF glyphs at desktop and narrow widths", async
     await page.evaluate(() => window.getSelection()?.removeAllRanges());
   }
 });
+test("double-click selects a word and a drag past a line's end stays on that line", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const line = page
+    .locator(".change .pdf-text-line")
+    .filter({ hasText: "Inserting text into a rope" })
+    .first();
+  const glyphs = line.locator(".pdf-glyph");
+  await glyphs
+    .first()
+    .evaluate((glyph) =>
+      glyph.scrollIntoView({ block: "center", behavior: "instant" }),
+    );
+  const text = (await line.textContent())!.trim();
+  // Whole pixels: Chromium may not start a drag selection at a fractional point.
+  const box = async (index: number) => (await glyphs.nth(index).boundingBox())!;
+  const inWord = await glyphs.evaluateAll((all) => {
+    let offset = 0;
+    const start = all.map((glyph) => glyph.textContent!).join("").indexOf("Inserting");
+    return all.findIndex((glyph) => (offset += glyph.textContent!.length) > start + 2);
+  });
+  const word = await box(inWord);
+  await page.mouse.dblclick(
+    Math.round(word.x + word.width / 2),
+    Math.round(word.y + word.height / 2),
+  );
+  expect(
+    (await page.evaluate(() => window.getSelection()?.toString()))?.trim(),
+  ).toBe("Inserting");
+  await page.evaluate(() => window.getSelection()?.removeAllRanges());
+  const first = await box(0),
+    last = (await glyphs.last().boundingBox())!,
+    y = Math.round(first.y + first.height / 2);
+  await page.mouse.move(Math.round(first.x + 1), y);
+  await page.mouse.down();
+  await page.mouse.move(Math.round(last.x + last.width + 60), y, { steps: 10 });
+  await page.mouse.up();
+  expect(
+    (await page.evaluate(() => window.getSelection()?.toString()))?.trim(),
+  ).toBe(text);
+});
 test("Copy reference preserves selection and adds file, lines and page", async ({
   page,
 }) => {

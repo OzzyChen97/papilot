@@ -1,34 +1,42 @@
-.task-commit{container:task-commit/inline-size;display:flex;flex-direction:column;gap:6px;min-width:0;width:100%;font:13px/1.5 var(--sans);color:var(--text)}
-.task-commit-compose{min-width:0;border:1px solid var(--line);border-radius:10px;background:var(--bg-subtle);transition:border-color .15s,background .15s}
-.task-commit-compose:focus-within{border-color:var(--line-hover);background:var(--bg)}
-.task-commit textarea{box-sizing:border-box;display:block;width:100%;min-height:42px;max-height:132px;margin:0;padding:11px 12px 5px;resize:none;border:0;border-radius:10px;background:transparent;color:var(--text);font:14px/22px var(--sans);box-shadow:none;outline:none}
+/* Saving a task's accepted changes: a filled commit-message field with the
+   branch, an AI message button and the actions in its bottom bar. Also
+   inlined into the review frame, which has the colour tokens but not the
+   radius ones, so radii are written out. */
+.task-commit{container:task-commit/inline-size;display:flex;flex-direction:column;gap:8px;min-width:0;width:100%;font:12px/1.45 var(--sans);color:var(--text)}
+.task-commit-compose{min-width:0;border:1px solid transparent;border-radius:5px;background:var(--bg-muted);transition:border-color .15s,background-color .15s}
+.task-commit-compose:hover{border-color:var(--line)}
+.task-commit-compose:focus-within{border-color:var(--accent);background:var(--bg)}
+.task-commit textarea{box-sizing:border-box;display:block;width:100%;min-height:28px;max-height:132px;margin:0;padding:6px 8px 2px;resize:none;border:0;border-radius:5px 5px 0 0;background:transparent;color:var(--text);font:12px/18px var(--sans);box-shadow:none;outline:none}
 .task-commit textarea:focus{border:0;box-shadow:none;outline:none}
 .task-commit textarea::placeholder{color:var(--text-3)}
-.task-commit-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:6px 8px 8px 12px}
-.task-commit .task-commit-branch{display:inline-flex;align-items:center;gap:5px;max-width:min(42%,260px);min-width:0;color:var(--text-3);font:11.5px/1.5 var(--mono,ui-monospace,monospace)}
+.task-commit-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;padding:2px 4px 4px 8px}
+.task-commit .task-commit-branch{display:inline-flex;align-items:center;gap:4px;max-width:min(42%,260px);min-width:0;color:var(--text-3);font:11px/1.45 var(--mono,ui-monospace,monospace)}
 .task-commit-branch svg{flex-shrink:0}
 .task-commit .task-commit-branch>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit}
-.task-commit-generate{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:28px;height:28px;margin-left:auto;padding:0;border:0;border-radius:6px;background:transparent;color:var(--text-3);cursor:pointer}
-.task-commit-generate:hover{background:var(--bg-hover);color:var(--text)}
+.task-commit-generate{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:24px;height:24px;margin-left:auto;padding:0;border:0;border-radius:5px;background:transparent;color:var(--text-2);cursor:pointer;transition:background-color .15s,color .15s}
+.task-commit-generate:hover:not(:disabled){background:var(--bg-active);color:var(--accent)}
 .task-commit .task-commit-generate[aria-busy="true"]{opacity:1}
-.task-commit-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:4px}
-.task-commit-actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:30px;padding:4px 10px;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text-2);font:500 12px/20px var(--sans);cursor:pointer;transition:background .15s,color .15s}
-.task-commit-actions button:hover:not(:disabled){background:var(--bg-hover);color:var(--text)}
-.task-commit-actions .task-commit-primary{padding-inline:11px;background:var(--primary);color:#fff;font-size:13px}
-.task-commit-actions .task-commit-primary:hover:not(:disabled){background:var(--primary-hover);color:#fff}
+.task-commit-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:8px}
+/* Secondary and primary buttons, 24px inside the field. */
+.task-commit-actions button{display:inline-flex;align-items:center;justify-content:center;gap:4px;height:24px;padding:0 8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text);font:500 12px/20px var(--sans);white-space:nowrap;cursor:pointer;transition:background-color .15s,border-color .15s,color .15s}
+.task-commit-actions button:hover:not(:disabled){border-color:var(--line-hover);background:var(--bg-muted);color:var(--text)}
+.task-commit-actions .task-commit-primary{border-color:transparent;background:var(--primary);color:#fff}
+.task-commit-actions .task-commit-primary:hover:not(:disabled){border-color:transparent;background:var(--primary-hover);color:#fff}
 .task-commit button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .task-commit button:disabled{opacity:.45;cursor:default}
-.task-commit .task-commit-hint{padding-inline:2px;color:var(--text-3);font-size:11px}
+.task-commit .task-commit-hint{margin:0;padding-inline:2px;color:var(--text-2);font-size:12px;line-height:1.5}
 .task-commit-error{margin:0;padding-inline:2px;color:var(--red);font-size:12px;overflow-wrap:anywhere}
-.task-commit-spinner{display:inline-block;box-sizing:border-box;flex-shrink:0;width:15px;height:15px;border:1.5px solid var(--accent-line);border-top-color:var(--accent);border-radius:50%;animation:task-commit-spin .8s linear infinite}
+.task-commit-spinner{display:inline-block;box-sizing:border-box;flex-shrink:0;width:14px;height:14px;border:1.5px solid var(--accent-line);border-top-color:var(--accent);border-radius:50%;animation:task-commit-spin .8s linear infinite}
 @keyframes task-commit-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.task-commit-spinner{animation:none}.task-commit-compose,.task-commit button{transition:none}}
-.review-complete:has(.task-commit){gap:3px 8px;padding:12px 14px;border-radius:12px}
-.review-complete:has(.task-commit)>strong{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600}
+.review-complete:has(.task-commit){gap:2px 8px;padding:12px;border-radius:8px}
+.review-complete:has(.task-commit)>strong{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500}
 .review-complete:has(.task-commit)>strong::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
-.review-complete:has(.task-commit)>span{font-size:12px;color:var(--text-3)}
+.review-complete:has(.task-commit)>span{font-size:11px;color:var(--text-3)}
 .review-complete-actions:has(.task-commit){width:100%;margin:8px 0 0}
 .task-delivery:has(.task-commit){align-items:stretch}
+/* On the chat's grey commit card the field is white, so it stays visible. */
+.task-delivery .task-commit-compose{background:var(--bg)}
 /* Papilot's next step floats at the top of the review while the author reads on. */
 .review-complete:has(>.review-complete-actions:not(:empty)){position:sticky;top:var(--paper-top,14px);z-index:6;transition:box-shadow .15s}
 :root[data-papilot-scrolled] .review-complete:has(>.review-complete-actions:not(:empty)){box-shadow:var(--float)}
@@ -37,23 +45,24 @@
   .task-commit-toolbar:has(.task-commit-alternative) .task-commit-actions{flex-basis:100%;padding-top:2px}
   .task-commit-toolbar:has(.task-commit-alternative) .task-commit-branch{max-width:calc(100% - 44px)}
 }
-@media(max-width:520px){.task-commit textarea{font-size:16px;line-height:24px}.task-commit-actions button{min-height:36px}.task-commit-generate{width:32px;height:32px}}
-.task-commit-preview summary{cursor:pointer}
-.task-commit-preview pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;padding:10px;background:var(--bg-subtle);border-radius:6px;font:12px/1.6 var(--mono,monospace)}
-.task-commit-preview{padding:8px 0;font-size:12px}
+@media(max-width:520px){.task-commit textarea{font-size:16px;line-height:24px;padding:8px 10px 2px}.task-commit-actions button{height:36px;padding:0 12px;font-size:13px}.task-commit-generate{width:36px;height:36px}.task-commit .task-commit-branch,.task-commit .task-commit-hint,.task-commit-error,.task-merge-status>span{font-size:13px}}
+.task-commit-preview summary{cursor:pointer;color:var(--text-2)}
+.task-commit-preview summary:hover{color:var(--text)}
+.task-commit-preview pre{margin:8px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;padding:8px 12px;background:var(--bg-muted);border-radius:8px;font:12px/20px var(--mono,monospace)}
+.task-commit-preview{padding:4px 0;font-size:12px}
 
 .task-commit.task-merge-status{flex-direction:row;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
 .task-merge-status>span{display:flex;align-items:center;gap:8px;min-width:0;color:var(--text-2);font-size:12px}
 .task-merge-status>span>svg{flex:none;color:var(--text-3)}
 .task-merge-status .task-commit-actions{flex:none}
-.review-complete:has(.task-merge-status){padding:10px 12px}
+.review-complete:has(.task-merge-status){padding:8px 12px}
 .review-complete:has(.task-merge-status)>strong,.review-complete:has(.task-merge-status)>span{display:none}
 .review-complete:has(.task-merge-status) .review-complete-actions{margin:0}
 .review-complete:has(.task-merge-status)+#review-lock{display:none}
-.review-complete:has(.task-save-result){padding:10px 12px;border-radius:10px}
+.review-complete:has(.task-save-result){padding:8px 12px;border-radius:8px}
 .review-complete:has(.task-save-result)>strong,.review-complete:has(.task-save-result)>span{display:none}
 .review-complete:has(.task-save-result) .review-complete-actions{margin:0;justify-content:flex-start}
-.task-save-result{display:inline-flex;align-items:center;gap:7px;min-width:0;overflow-wrap:anywhere}
+.task-save-result{display:inline-flex;align-items:center;gap:6px;min-width:0;font-size:12px;overflow-wrap:anywhere}
 .task-save-result>svg{flex:none;color:var(--green)}
 /* The result keeps room for a few words; actions that do not fit beside it
    move to their own line rather than squeezing it. */

@@ -1,19 +1,22 @@
 .file-diffs{display:grid;gap:8px;margin:4px 0 8px}
 .file-diffs header{display:flex;align-items:baseline;gap:8px;min-width:0;font-size:12px;color:var(--text-2)}
-.file-diff-path{font-family:var(--mono);white-space:nowrap}
-.file-diff-where{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-3)}
-.change-count{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px}
+.file-diff-path{font:12px var(--mono);color:var(--text);white-space:nowrap}
+.file-diff-where{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;color:var(--text-3)}
+.change-count{font:11px var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 .change-count ins{color:var(--green);text-decoration:none}.change-count del{color:var(--red);text-decoration:none}
-.tool-item pre.file-diff{margin:4px 0 0;padding:6px 0;max-height:320px;white-space:pre;overflow:auto;font-size:12px;line-height:1.5}
-.diff-line{display:block;padding:0 12px;min-width:max-content}
-.diff-line.add{background:var(--green-soft);color:var(--green)}
-.diff-line.del{background:var(--red-soft);color:var(--red)}
+/* Code and diffs: mono 12px/20px rows, soft green and red for added and removed. */
+.tool-item pre.file-diff{margin:4px 0 0;padding:4px 0;max-height:320px;white-space:pre;overflow:auto;font:12px/20px var(--mono)}
+.diff-line{display:block;padding:0 12px;min-width:max-content;color:var(--text)}
+.diff-line.add{background:var(--green-soft)}
+.diff-line.del{background:var(--red-soft)}
 .diff-line.hunk{color:var(--text-3);user-select:none}
-.change-summary{align-self:stretch;margin:6px 0 10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-md);background:var(--bg-subtle);font-size:13px}
-.change-summary>header{display:flex;align-items:center;gap:6px;margin-bottom:6px;color:var(--text-2)}
-.change-summary>header span{color:var(--text-3);font-size:12px}
+.change-summary{align-self:stretch;margin:4px 0 12px;padding:8px 12px 12px;border:0;border-radius:var(--r-md);background:var(--bg-muted);font-size:12px}
+.change-summary>header{display:flex;align-items:center;gap:6px;min-height:24px;margin-bottom:4px;font-weight:500;color:var(--text)}
+.change-summary>header svg{color:var(--text-2)}
+.change-summary>header span{font-size:11px;font-weight:400;color:var(--text-3)}
 .change-summary ul{list-style:none;margin:0;padding:0;display:grid;gap:4px}
-.change-summary li{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;align-items:baseline}
+.change-summary li{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;align-items:baseline}
 .change-where{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
-.change-page{margin-left:8px;color:var(--text-3);font-size:12px}
-.change-file{grid-column:1/-1;font:11.5px var(--mono);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.change-page{margin-left:8px;color:var(--text-3);font-size:11px}
+.change-file{grid-column:1/-1;font:11px var(--mono);color:var(--text-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:680px){.file-diffs header,.change-summary,.change-count,.file-diff-where,.change-page,.change-file,.change-summary>header span{font-size:13px}}

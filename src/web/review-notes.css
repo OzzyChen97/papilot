@@ -2,11 +2,11 @@
 .review-note-mark,.review-note-box{position:absolute;pointer-events:none;background:color-mix(in srgb,var(--accent) 20%,transparent);border-radius:2px}
 .review-note-box{border:1.5px solid var(--primary);background:color-mix(in srgb,var(--accent) 8%,transparent)}
 .review-region-capture{position:absolute;inset:0;pointer-events:auto;cursor:crosshair;touch-action:none}
-.review-note-tag{position:absolute;pointer-events:auto;background:var(--primary);color:#fff;border:0;border-radius:16px;padding:5px 10px;font:500 13px/1.4 var(--sans);cursor:pointer;box-shadow:0 2px 8px #0002}
-.review-note-tag{z-index:1;left:8px;min-width:24px;padding:3px 6px}
+/* Numbered pins, as on the manuscript's PDF. */
+.review-note-tag{position:absolute;z-index:1;left:8px;min-width:20px;height:20px;padding:0 6px;border:0;border-radius:999px;background:var(--primary);color:#fff;font:600 11px/20px var(--sans);text-align:center;cursor:pointer;pointer-events:auto;box-shadow:var(--shadow-xs)}
 .review-note-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.review-select-menu button:focus-visible,.review-note-tag:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
-.review-notes-empty{text-align:center;padding:8px 0;color:var(--text-2)}
+.review-select-menu button:focus-visible,.review-note-tag:focus-visible{outline:1px solid var(--accent);outline-offset:2px}
+.review-notes-empty{text-align:center;padding:8px 0;font-size:12px;color:var(--text-3)}
 .review-note-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
 .review-note-actions button{display:flex;flex-direction:column;align-items:center;gap:7px;min-height:68px;padding:10px 6px}
 /* Touch screens select PDF text with Papilot's highlight, handles and menu
@@ -17,7 +17,7 @@
 .select-handle::after{content:"";position:absolute;left:-5px;width:12px;height:12px;border-radius:50%;background:var(--primary)}
 .select-handle[data-end=from]::after{top:-11px}.select-handle[data-end=to]::after{bottom:-11px}
 .review-select-menu{position:fixed;z-index:19;transform:translateX(-50%);font-family:var(--sans);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation}
-.review-select-menu button{height:40px;padding:0 18px;border:0;border-radius:20px;background:var(--primary);color:#fff;font:500 15px/1 var(--sans);white-space:nowrap;box-shadow:0 4px 16px rgb(0 0 0/.25);cursor:pointer}
+.review-select-menu button{height:40px;padding:0 16px;border:0;border-radius:12px;background:var(--primary);color:#fff;font:500 15px/1 var(--sans);white-space:nowrap;box-shadow:var(--float);cursor:pointer}
 /* The review shares the manuscript's marking tools and keeps their geometry
    anchored to the displayed round and strip. */
 .review-note-mark[data-kind=delete]{background:linear-gradient(to bottom,transparent calc(54% - .75px),var(--red) calc(54% - .75px),var(--red) calc(54% + .75px),transparent calc(54% + .75px))}
@@ -32,7 +32,12 @@
 :root[data-review-tool=delete] .pdf-text ::selection{background:color-mix(in srgb,var(--red) 20%,transparent);text-decoration:line-through}
 /* A comment written beside its passage. */
 .review-select-menu.composing{-webkit-user-select:auto;user-select:auto}
-.review-comment{display:flex;align-items:flex-end;gap:6px;width:min(300px,80vw);padding:6px 6px 6px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg);box-shadow:0 6px 22px rgb(0 0 0/.22)}
-.review-comment textarea{flex:1;min-width:0;min-height:28px;max-height:140px;padding:5px 0;border:0;outline:0;resize:none;background:transparent;color:var(--text);font:14px/1.4 var(--sans);field-sizing:content}
-.review-select-menu .review-comment button{flex:none;width:30px;height:30px;padding:0;display:grid;place-items:center;border-radius:50%;box-shadow:none}
-.review-select-menu .review-comment button:disabled{opacity:.4;cursor:default}
+.review-comment{display:flex;align-items:flex-end;gap:6px;width:min(300px,80vw);padding:6px 6px 6px 12px;border:0;border-radius:12px;background:var(--raised);box-shadow:var(--float)}
+.review-comment textarea{flex:1;min-width:0;min-height:28px;max-height:140px;padding:5px 0;border:0;outline:0;resize:none;background:transparent;color:var(--text);font:13px/1.6 var(--sans);field-sizing:content}
+.review-comment textarea::placeholder{color:var(--text-3)}
+.review-select-menu .review-comment button{flex:none;width:32px;height:32px;padding:0;display:grid;place-items:center;border-radius:50%;box-shadow:none}
+.review-select-menu .review-comment button:disabled{opacity:1;background:var(--bg-active);color:var(--text-3);cursor:default}
+/* With a mouse the selection's action is a compact floating button and the
+   comment box a small popover; touch keeps the larger targets above. */
+@media(pointer:fine){.review-select-menu button{height:28px;padding:0 10px;border-radius:8px;font-size:12px}.review-comment{padding:4px 4px 4px 12px}.review-select-menu .review-comment button{width:28px;height:28px}}
+@media(pointer:coarse){.review-comment textarea{font-size:16px}}

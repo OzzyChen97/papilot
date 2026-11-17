@@ -11,15 +11,18 @@ import type { Strip, TextGlyph } from "../types.ts";
 import { language as viewerLanguage, t, type Language } from "./i18n.ts";
 let context: CanvasRenderingContext2D | null | undefined;
 const widths = new Map<string, number>();
-function width(text: string) {
+// Advance of `text` in the overlay font, in ems; marks that take no room give 0.
+function advance(text: string) {
   if (widths.has(text)) return widths.get(text)!;
   context ??= document.createElement("canvas").getContext("2d");
-  if (!context) return 1;
+  if (!context) return 0;
   context.font = '100px "Times New Roman", serif';
   const measured = context.measureText(text).width / 100;
   widths.set(text, measured);
-  return measured || 1;
+  return measured;
 }
+const width = (text: string) => advance(text) || 1;
+const cqw = (length: number, image: Strip) => `${(100 * length) / image.width}cqw`;
 function style(glyph: TextGlyph, image: Strip): CSSProperties {
   const [x0, y0, x1, y1] = glyph.rect,
     height = Math.max(y1 - y0, 0.1),
@@ -30,6 +33,49 @@ function style(glyph: TextGlyph, image: Strip): CSSProperties {
     fontSize: `${(100 * height) / image.width}cqw`,
     transform: `scaleX(${scaleX})`,
   };
+}
+// Pointer selection needs each line to be one block: Chromium often refuses to
+// start or extend a drag across neighbouring positioned boxes on one line, and
+// a word split into such boxes cannot be double-clicked. So a line is a single
+// positioned box whose glyphs are inline, each widened by letter-spacing to
+// reach the next glyph's place on the image. The box also reaches out to the
+// neighbouring lines and the text edges, so a drag over the blank space
+// between lines or past a line's end stays on that line instead of jumping.
+type Tile = { left: number; right: number; top: number; bottom: number };
+// Each box grows over blank space only, never over another line: down to the
+// next line below it, sideways to its neighbours within that band or the strip
+// edge, and up to the strip edge for the topmost lines.
+function tiles(lines: { rect: TextGlyph["rect"] }[], image: Strip): Tile[] {
+  const first = Math.min(...lines.map(({ rect }) => rect[1]));
+  return lines.map(({ rect: [x0, y0, x1, y1] }, i) => {
+    let below = image.height, left = 0, right = image.width;
+    lines.forEach(({ rect: [u0, v0, u1] }, j) => {
+      if (j !== i && u0 < x1 && x0 < u1 && v0 >= y1) below = Math.min(below, v0);
+    });
+    const above = y0 === first ? 0 : y0;
+    lines.forEach(({ rect: [u0, v0, u1, v1] }, j) => {
+      if (j === i || v0 >= below || v1 <= above) return;
+      if (u1 <= x0) left = Math.max(left, u1);
+      else if (u0 >= x1) right = Math.min(right, u0);
+    });
+    // A glyph box can overhang a tightly cropped strip, so nothing grows by a negative amount.
+    return { left: Math.max(0, x0 - left), right: Math.max(0, right - x1), top: Math.max(0, y0 - above), bottom: Math.max(0, below - y1) };
+  });
+}
+function lineStyle(line: { rect: TextGlyph["rect"]; chars: TextGlyph[] }, tile: Tile, image: Strip): CSSProperties {
+  const start = line.chars[0]?.rect[0] ?? line.rect[0],
+    [, y0, , y1] = line.rect;
+  return {
+    left: `${(100 * (start - tile.left)) / image.width}%`,
+    top: `${(100 * (y0 - tile.top)) / image.height}%`,
+    fontSize: cqw(Math.max(y1 - y0, 0.1), image),
+    padding: `${cqw(tile.top, image)} ${cqw(tile.right, image)} ${cqw(tile.bottom, image)} ${cqw(tile.left, image)}`,
+  };
+}
+// The room after a glyph up to the next one, spread over its characters.
+function spacing(glyph: TextGlyph, next: TextGlyph | undefined, size: number, image: Strip) {
+  const room = (next ? next.rect[0] : glyph.rect[2]) - glyph.rect[0] - advance(glyph.text) * size;
+  return cqw(room / Math.max([...glyph.text].length, 1), image);
 }
 // Glyph boxes are hundreds of positioned spans per strip. Building or dropping
 // them as strips cross the viewport stalled every scroll for 0.1–0.5 s, so
@@ -169,6 +215,7 @@ export const PdfStrip = memo(function PdfStrip({
       })),
     [image],
   );
+  const lineTiles = useMemo(() => (lines?.length ? tiles(lines, image) : []), [lines, image]);
   const edges = useMemo(
     () =>
       lines?.reduce(
@@ -185,11 +232,13 @@ export const PdfStrip = memo(function PdfStrip({
       lines?.map((line, i) => (
         <span className="pdf-text-line" key={i}>
           {detailed ? (
-            line.chars.map((glyph, j) => (
-              <span key={j} className="pdf-glyph" style={style(glyph, image)}>
-                {glyph.text}
-              </span>
-            ))
+            <span className="pdf-line-run" style={lineStyle(line, lineTiles[i], image)}>
+              {line.chars.map((glyph, j) => (
+                <span key={j} className="pdf-glyph" style={{ letterSpacing: spacing(glyph, line.chars[j + 1], line.rect[3] - line.rect[1], image) }}>
+                  {glyph.text}
+                </span>
+              ))}
+            </span>
           ) : (
             <span className="pdf-line-preview" style={style(line, image)}>
               {line.text}
@@ -198,7 +247,7 @@ export const PdfStrip = memo(function PdfStrip({
           {"\n"}
         </span>
       )),
-    [image, lines, detailed],
+    [image, lines, lineTiles, detailed],
   );
   return (
     <div

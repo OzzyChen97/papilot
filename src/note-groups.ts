@@ -20,7 +20,9 @@ export function parseGroupInstructions(value: unknown): GroupInstructions {
 // A deletion says what to do by itself, so its group needs no instruction for it.
 export const groupsWithoutInstructions = (notes: { group?: NoteGroup; comment: string; kind?: string }[], instructions: GroupInstructions) =>
   NOTE_GROUPS.filter(group => !instructions[group]?.trim() && notes.some(note => note.group && canonicalGroup(note.group) === group && !note.comment.trim() && note.kind !== 'delete'));
-export const GROUP_COLORS: Record<NoteGroup, string> = { yellow: '#eab308', blue: '#eab308', green: '#16a34a', purple: '#a855f7', orange: '#ea860c', red: '#e05260' };
+// The interface palette's own hues (theme.css), so a group's marks, dots and
+// swatches match its green, purple and red; yellow and orange sit between amber's.
+export const GROUP_COLORS: Record<NoteGroup, string> = { yellow: '#f5bd00', blue: '#f5bd00', green: '#14a35a', purple: '#8a46f0', orange: '#f5841f', red: '#e5482d' };
 export const GROUP_NAMES: Record<NoteGroup, string> = { yellow: 'Yellow', blue: 'Yellow', green: 'Green', purple: 'Purple', orange: 'Orange', red: 'Red' };
 export function noteGroups<T extends { group?: NoteGroup }>(notes: T[]) {
   return NOTE_GROUPS.flatMap(group => {
