@@ -224,7 +224,7 @@ html:is([lang=zh-CN],[lang=zh-Hant]) .hero .review-page :is(del,ins){white-space
 .app-rail>i,.rail-history>i,.m-tools>i{display:grid;flex:none;place-items:center;width:34px;height:34px;border-radius:9px;transition:background-color .2s,color .2s}
 .app-rail .ic,.m-tools .ic{width:18px;height:18px}
 .app-rail hr{flex:none;width:20px;height:1px;margin:5px 0;border:0;background:var(--line)}
-.rail-history{display:flex;flex-direction:column;gap:2px;margin-top:auto;padding-top:10px}
+.rail-history{display:flex;flex-direction:column;align-items:center;gap:2px;margin-top:auto;padding-top:10px}
 :is(.app-rail,.m-tools) .on{background:var(--accent-soft);color:var(--accent)}
 .app-body{display:grid;grid-template-columns:46px minmax(0,1fr) var(--side)}
 /* As the app does in a narrow window: the toolbar's controls lose their

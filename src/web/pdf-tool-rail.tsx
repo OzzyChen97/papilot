@@ -127,16 +127,14 @@ export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended,
           ? collapsed ? <><Icon name="toolNote" size={14}/><Icon name="chevronUp" size={14}/></> : <Icon name="chevronDown" size={16}/>
           : <Icon name={collapsed ? 'chevronRight' : 'chevronLeft'} size={16}/>}
       </button>
-      {mobile && !collapsed && <span className="rail-separator rail-collapse-separator" aria-hidden="true"/>}
       <div id={railId} className="rail-items" hidden={collapsed}>
       <div className="rail-tools">
-      {!collapsed && readingTools && <>{readingTools}<span className="rail-separator" aria-hidden="true"/></>}
+      {!collapsed && readingTools}
       {!collapsed && visibleTools.map(item => {
         const content = <><Icon name={item.icon} size={item.id === 'magic' ? 22 : 18}/>
           {item.id === 'magic' && locked !== null && <span className="rail-badge" aria-hidden="true">{slotKey(locked)}</span>}
           <span className="rail-tip" popover="manual" aria-hidden="true"><span className="rail-tip-title">{item.label}<kbd>{item.key}</kbd></span><span>{item.hint}</span></span></>;
         return <Fragment key={item.id}>
-          {(item.id === 'note' || item.id === 'select') && <span className="rail-separator" aria-hidden="true"/>}
           {/* The note tool doubles as its color picker: its underline shows the color. */}
           {item.id === 'note' && onGroup ? <GroupPicker value={group || null} disabled={disabled} onChange={group => onGroup!(group)}
             tool={{ label: item.label, pressed: tool === 'note', keys: item.key, content, onPress: () => { if (tool !== 'note') { onTool('note'); return false; } return !editing; } }}/>
