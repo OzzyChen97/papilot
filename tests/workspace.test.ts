@@ -150,7 +150,7 @@ class FakeCodex extends EventEmitter {
   close() { this.ready = false; }
 }
 
-function fixture(reviewHandler?: (method: string, route: string, body?: unknown) => Promise<any>, options: { file?: string; reviewUrl?: string; claude?: FakeCodex } = {}) {
+function fixture(reviewHandler?: (method: string, route: string, body?: unknown) => Promise<any>, options: { file?: string; reviewUrl?: string; claude?: FakeCodex; collaboration?: FakeCodex } = {}) {
   const store = new Store(options.file || ':memory:');
   const codex = new FakeCodex();
   const calls: { method: string; route: string; body?: unknown }[] = [];
@@ -163,7 +163,7 @@ function fixture(reviewHandler?: (method: string, route: string, body?: unknown)
     return summary;
   };
   const review: ReviewClient = { url: options.reviewUrl || 'http://unused', token: 'test', get: route => invoke('GET', route), post: (route, body) => invoke('POST', route, body) };
-  const workspace = new Workspace(store, codex as unknown as Codex, async () => review, options.claude ? { claude: options.claude as unknown as Codex } : {});
+  const workspace = new Workspace(store, codex as unknown as Codex, async () => review, { ...(options.claude ? { claude: options.claude as unknown as Codex } : {}), ...(options.collaboration ? { collaboration: options.collaboration as unknown as Codex } : {}) });
   const task: Task = { id: 'task-id', projectId: 'paper', name: 'p-task', title: 'Task', instructions: 'Edit the introduction.', worktree: '/unused', threadId: 'thread', turnId: null, model: null, status: 'reviewing', createdAt: 1, updatedAt: 1, feedbackCursor: 0, error: null, review: null };
   store.saveProject({ id: task.projectId, name: 'Paper', path: '/unused', createdAt: 1 });
   store.saveTask(task);
@@ -2722,7 +2722,7 @@ test('creating an AI review skill task persists its snapshot and queues review-o
     assert.equal((await f.workspace.createTask(input)).id, created.id);
     assert.equal(f.calls.filter(call => call.route === '/api/tasks').length, 1);
     await assert.rejects(f.workspace.createTask({ ...input, prepareReview: undefined, instructions: 'Edit it.' }), /Invalid task ID/);
-    for (const agent of AGENT_IDS) {
+    for (const agent of AGENT_IDS.filter(id => id !== 'collaboration')) {
       const task = await f.workspace.createTask({ ...input, id: `ai-review-client-${agent}`, agent });
       assert.equal(task.agent, agent);
       assert.equal(task.mode, 'review');
@@ -3491,4 +3491,114 @@ test('restart excludes an in-flight follow-up and rejects project removal or sta
     assert.equal(f.store.tasks().length, 1);
     assert.equal(f.store.runByKey('racing-followup'), undefined);
   } finally { feedbackGate.resolve(); copyGate.resolve(); f.close(); }
+});
+
+async function collaborationFixture() {
+  const collaboration = new FakeCodex(), f = fixture(undefined, { collaboration }), root = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-collaboration-workspace-'));
+  const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe' });
+  git('init'); fs.writeFileSync(path.join(root, 'main.tex'), 'Original text.'); git('add', '.'); git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '-m', 'Base');
+  f.store.updateTask(f.task.id, { agent: 'collaboration', threadId: null, worktree: root }); collaboration.ready = true; f.workspace.runtimes.collaboration.authenticated = true;
+  const run = await f.workspace.enqueue(f.task.id, 'Polish.', 'workflow-run', false, { reviewNotes: [{ where: 'main.tex', quote: 'Original text.', comment: 'Improve wording.' }] });
+  await tick(); await tick();
+  const complete = () => (f.workspace as any).notification({ method: 'turn/completed', params: { threadId: 'thread', turn: { id: 'turn-new', status: 'completed' } } }, 'collaboration');
+  const audit = () => (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'audit', params: { tool: 'workflow_audit', arguments: { outcomes: [{ id: run.id + ':1', status: 'unchanged', explanation: 'Already appropriate.', evidence: [{ file: 'main.tex', quote: 'Original text.' }] }] } } }, collaboration);
+  f.workspace.workflowGenerate = async (_executor, prompt) => { const data = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1)); return JSON.stringify({ verified: true, outcomes: data.outcomes.map((entry: any) => ({ id: entry.id, status: entry.status, reason: 'Verified.' })), issues: [] }); };
+  return { ...f, collaboration, root, run, complete, audit, close() { f.close(); fs.rmSync(root, { recursive: true, force: true }); } };
+}
+test('collaboration is hidden by default and its coordinator receives tools and the full annotation ledger', async () => {
+  const f = await collaborationFixture();
+  try {
+    assert.equal(f.workspace.snapshot().runtimes?.collaboration?.hidden, true);
+    const start = f.collaboration.calls.find(call => call.method === 'thread/start')!.params;
+    assert.deepEqual(start.dynamicTools.map((tool: any) => tool.name), ['workflow_delegate', 'workflow_audit', 'view_pdf']);
+    assert.match(start.developerInstructions, /sole editor/);
+    assert.match(f.collaboration.calls.find(call => call.method === 'turn/start')!.params.input[0].text, new RegExp(f.run.id + ':1'));
+    await assert.rejects(f.workspace.createTask({ id: 'another-task-12345', projectId: 'paper', title: 'Test', instructions: 'Edit', agent: 'collaboration' }), /Enable collaboration/);
+  } finally { f.close(); }
+});
+test('collaboration cannot publish automatically or manually without a final successful audit', async () => {
+  const f = await collaborationFixture();
+  try {
+    await f.complete(); assert.equal(f.store.task(f.task.id).status, 'failed');
+    assert.match(f.store.task(f.task.id).error!, /successful audit/);
+    await f.workspace.publish(f.task.id);
+    assert.equal(f.store.task(f.task.id).status, 'failed');
+    assert.match(f.store.task(f.task.id).error!, /successful audit/);
+    assert.equal(f.calls.some(call => call.route.endsWith('/publish')), false);
+  } finally { f.close(); }
+});
+test('collaboration publishes a verified result, retaining the audit across the run completion', async () => {
+  const f = await collaborationFixture();
+  try {
+    await f.audit(); assert.ok(f.store.runByKey(f.run.requestKey)?.workflowAudit);
+    let published = false; f.workspace.publish = async () => { published = true; };
+    await f.complete(); assert.equal(published, true);
+    assert.ok(f.store.runByKey(f.run.requestKey)?.workflowAudit);
+  } finally { f.close(); }
+});
+test('a rejected repeat audit and edits after audit invalidate collaboration publication', async () => {
+  for (const mode of ['rejected', 'edited']) {
+    const f = await collaborationFixture();
+    try {
+      await f.audit();
+      if (mode === 'edited') fs.appendFileSync(path.join(f.root, 'main.tex'), 'New text.');
+      else { f.workspace.workflowGenerate = async () => '{"verified":false,"outcomes":[],"issues":["Missing change"]}'; await f.audit(); assert.equal(f.store.runByKey(f.run.requestKey)?.workflowAudit, undefined); }
+      await f.complete(); assert.equal(f.store.task(f.task.id).status, 'failed');
+      assert.equal(f.calls.some(call => call.route.endsWith('/publish')), false);
+    } finally { f.close(); }
+  }
+});
+test('a paused or disconnected collaboration completion cannot publish after an asynchronous audit check', async () => {
+  for (const operation of ['pause', 'disconnect']) {
+    const f = await collaborationFixture(), gate = deferred<void>();
+    try {
+      (f.workspace as any).checkWorkflowAudit = () => gate.promise;
+      let published = false; f.workspace.publish = async () => { published = true; };
+      const completion = f.complete(); await tick();
+      if (operation === 'pause') await f.workspace.interrupt(f.task.id);
+      else (f.workspace as any).disconnected('collaboration', new Error('Disconnected'));
+      gate.resolve(); await completion; assert.equal(published, false);
+      assert.equal(f.store.task(f.task.id).status, 'interrupted');
+      assert.equal((f.workspace as any).active.has(f.task.id), false);
+    } finally { f.close(); }
+  }
+});
+test('late collaboration delegation results after pause are not delivered to its coordinator', async () => {
+  const f = await collaborationFixture(), gate = deferred<string>(); let workerSignal: AbortSignal | undefined;
+  try {
+    f.workspace.workflowGenerate = async (_executor, _prompt, signal) => { workerSignal = signal; return gate.promise; };
+    const work = (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'proposal', params: { tool: 'workflow_delegate', arguments: { executor: 'deepseek', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] } } }, f.collaboration);
+    await tick(); await f.workspace.interrupt(f.task.id); assert.equal(workerSignal?.aborted, true);
+    gate.resolve('Late result'); await work;
+    assert.equal(f.collaboration.replies.some(reply => reply.id === 'proposal'), false);
+  } finally { f.close(); }
+});
+test('collaboration build recovery cannot submit a persisted comparison without a current audit', async () => {
+  const f = await collaborationFixture();
+  try {
+    await f.complete();
+    f.store.updateTask(f.task.id, { status: 'building', pendingBuild: { requestId: 'recover-build', runs: [f.run.id], sendBack: false, restarts: 0 } });
+    assert.equal(await f.workspace.resumeBuild(f.task.id), true);
+    assert.equal(f.store.task(f.task.id).status, 'failed'); assert.equal(f.store.task(f.task.id).pendingBuild, null);
+    assert.equal(f.calls.some(call => call.route.endsWith('/publish')), false);
+  } finally { f.close(); }
+});
+test('an unconfirmed starting pause leaves the collaboration coordinator able to delegate', async () => {
+  const f = await collaborationFixture();
+  try {
+    const controller = (f.workspace as any).workflowStops.get(f.task.id);
+    f.store.updateTask(f.task.id, { turnId: null });
+    await assert.rejects(f.workspace.interrupt(f.task.id), /starting/);
+    assert.equal(controller.signal.aborted, false);
+    assert.equal((f.workspace as any).workflowStops.get(f.task.id), controller);
+  } finally { f.close(); }
+});
+test('late collaboration helper failures after pause do not answer the stopped turn', async () => {
+  const f = await collaborationFixture(); let fail!: (error: Error) => void;
+  try {
+    f.workspace.workflowGenerate = () => new Promise((_resolve, reject) => { fail = reject; });
+    const work = (f.workspace as any).toolCall(f.store.task(f.task.id), { id: 'failed-proposal', params: { tool: 'workflow_delegate', arguments: { executor: 'deepseek', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] } } }, f.collaboration);
+    await tick(); await f.workspace.interrupt(f.task.id); fail(new Error('Cancelled')); await work;
+    assert.equal(f.collaboration.replies.some(reply => reply.id === 'failed-proposal'), false);
+  } finally { f.close(); }
 });

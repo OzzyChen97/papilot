@@ -272,6 +272,9 @@ jobs:
       - name: writer-setup
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-writer-setup.mjs
+      - name: collaboration
+        if: ${{ !cancelled() }}
+        run: node --import tsx scripts/check-collaboration.mjs
       - name: pi-agent
         if: ${{ !cancelled() }}
         run: node --import tsx scripts/check-pi-agent.mjs

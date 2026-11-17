@@ -1477,5 +1477,9 @@
   "{n} task": "작업 {n}개",
   "{n} task failed.": "작업 {n}개 처리에 실패했습니다.",
   "Delete all": "모두 삭제",
-  "{done} of {total}": "{done} / {total}"
+  "{done} of {total}": "{done} / {total}",
+  "Collaboration mode": "협업 모드",
+  "Experiments": "실험 기능",
+  "Enable collaboration mode": "협업 모드 활성화",
+  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex가 OpenCode Go의 DeepSeek와 Antigravity의 Argon에 작업을 배분한 뒤 모든 주석을 확인합니다. 호스트에서 각 서비스에 로그인해야 합니다. 기본적으로 꺼져 있습니다."
 }

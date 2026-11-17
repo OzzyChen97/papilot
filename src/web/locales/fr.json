@@ -1477,5 +1477,9 @@
   "{n} task": "{n} tâche",
   "{n} task failed.": "{n} tâche a échoué.",
   "Delete all": "Tout supprimer",
-  "{done} of {total}": "{done} sur {total}"
+  "{done} of {total}": "{done} sur {total}",
+  "Collaboration mode": "Mode collaboratif",
+  "Experiments": "Fonctions expérimentales",
+  "Enable collaboration mode": "Activer le mode collaboratif",
+  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex répartit les tâches entre DeepSeek via OpenCode Go et Argon via Antigravity, puis vérifie chaque annotation. Une connexion à ces services sur l’hôte est requise. Désactivé par défaut."
 }

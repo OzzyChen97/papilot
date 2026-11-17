@@ -5963,5 +5963,25 @@
     "revision": "43e00ca9e1c9c5ca880c8270f4e694880451899a8ded220e9dabb2a4498ce91f",
     "textHash": "638a82e1af18343b000eb7a1690db38a44a87a31536ccb6b4496c6ae9265759d",
     "model": "codex"
+  },
+  "Collaboration mode": {
+    "revision": "9ddf3de0b24a3794bc742b6586418328b7e25b310462d2e1a90c0321c0ddd25c",
+    "textHash": "4d508f3744fdabc90e65d6e250796d264a93bee668a0d77fcbf638aa22470092",
+    "model": "codex"
+  },
+  "Experiments": {
+    "revision": "64231d48af6b65fdfe78437f832ba6d238319306faf11f19f47b3c2714eaebce",
+    "textHash": "c80cf22c586e7c73aa20b8d8d442df11ec1c88c594b77ece8c3299f840bae47a",
+    "model": "codex"
+  },
+  "Enable collaboration mode": {
+    "revision": "fe7c39e9ea74dc2bbedd046a9c9a70f57d78f09d47de8a56d2f5fa28fd48a217",
+    "textHash": "762130a1fcac56db85f02595ba9bb27eb78588ebb0bc06c83c2dd88e2d78c6b8",
+    "model": "codex"
+  },
+  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": {
+    "revision": "d5de48467817921a91f050adde9b38b40970ef0736a8a41f2dec881297623f85",
+    "textHash": "2470b31d2fa570573d57fa6dc174bb6f42fda4bdfac2aabea1eff847c799f17b",
+    "model": "codex"
   }
 }

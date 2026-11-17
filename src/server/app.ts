@@ -294,6 +294,12 @@ export async function buildApp(options: AppOptions) {
     store.savePreference('quick-notes', quickNotes);
     return { quickNotes: quickNotes || null };
   });
+  app.post('/api/collaboration', (request, reply) => {
+    const enabled = (request.body as any)?.enabled;
+    if (typeof enabled !== 'boolean') return reply.code(400).send({ error: 'Send enabled as true or false.' });
+    workspace.setCollaborationEnabled(enabled);
+    return { enabled };
+  });
   app.get('/api/indirect-changes', () => ({ indirectChanges: indirectChanges() }));
   const alternativePreferences = () => ({ noteAlternatives: store.preference<boolean>('note-alternatives') === true, noteAlternativeRange: noteAlternativeRange(store.preference('note-alternative-range')) });
   app.get('/api/note-alternatives', alternativePreferences);

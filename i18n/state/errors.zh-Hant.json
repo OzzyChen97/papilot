@@ -1443,5 +1443,125 @@
     "revision": "c03d3699dae0d7d66d1a097eb597e057f99b79e2655028e653acdfd1447e7b12",
     "textHash": "9806d142506a39c3efab1355fb430d6a8475f5a158c7db48d90f2433c8fc4a39",
     "model": "codex"
+  },
+  "Send enabled as true or false.": {
+    "revision": "66c932aac619b61c49865eb28c96f7f74bfbaf6f3b1d1b671f565ee595b3db93",
+    "textHash": "0a29dde9ab122df28e4259a2bb8ec4a73025d285d7fbc39fa58eb0e0b9a80d23",
+    "model": "codex"
+  },
+  "Provide source evidence as an array.": {
+    "revision": "95d6ba1885f5acabc6e53de968f3d8fa56979a56f940dc2a5dea0b9a2be2d6bc",
+    "textHash": "f349e1808a46187ec1b8975d9a03ddb4d3fe07434ba251295184d6e73f257982",
+    "model": "codex"
+  },
+  "Evidence must name a source file inside this task.": {
+    "revision": "c94abd41e38847e7b2d108cef1086ceb8bd93c0226b3c1c6468d3b8a42f00880",
+    "textHash": "28d65aa9f03f5d33d46302242b29c3750815b7ce91896844de674e28bc8bce68",
+    "model": "codex"
+  },
+  "Choose deepseek or argon.": {
+    "revision": "b3b0432622251d313b510a20bf77b6c0bf9571fee7d0125f503bde083eaec1ed",
+    "textHash": "c20739865a614b0f9e90e361fc5120a66452b5b2f4575b2e336f2b831812f59a",
+    "model": "codex"
+  },
+  "Provide unique annotation IDs.": {
+    "revision": "4d2040d18f8e6338b018cea38cab40c495c51aec1cfe0084a6f07ae33ea71f88",
+    "textHash": "5a7c8fceed8bea6626e13062463c2388fddbacd4cb2358cf89e8ae3b0aa532c8",
+    "model": "codex"
+  },
+  "Unknown annotation ID.": {
+    "revision": "eb48854257cbfd0d655432db7015a42e5b44354e3c75c6462fde4e644ed5651c",
+    "textHash": "2c8ad140d5b8609ab482770df2001c2d8eb6e081e545c9db3a89d5e915e8e638",
+    "model": "codex"
+  },
+  "Read the relevant source before delegating.": {
+    "revision": "73d7095452eb292d219a3b9ac83ef161d56998328ee8a552c0a4aa09c9239f7b",
+    "textHash": "6197219f6b9ec9063a1b65b91072d0b8b5f67d4dca94ef72984c0db730f88f94",
+    "model": "codex"
+  },
+  "Report an outcome for every annotation.": {
+    "revision": "cb1f31834554b03af63cd6972cb64e6dd351a8bc64778a0e2b783c7707ef6a80",
+    "textHash": "6e1abcb348442807d0c4cacc5bacc6c9647ad4f3e283ce2fad64a49d62a45d5d",
+    "model": "codex"
+  },
+  "Annotation IDs must be known and occur exactly once.": {
+    "revision": "d182f04265fcbadf75bf908fac7d7882d832f35e1719e96adcb4d9ad279d9334",
+    "textHash": "fb1179c3ade0eb040157ae6f34fc62f671fa4465d6549a6cf944c2af26c42cdd",
+    "model": "codex"
+  },
+  "Invalid annotation outcome.": {
+    "revision": "94f597e3c078360a8712951bd1891cf08af916fb4e1a2f392754a898f2f91662",
+    "textHash": "122787446318475430f3c12cf135c3f1e997bb9c6d0417cc61a6e177ac55ddc4",
+    "model": "codex"
+  },
+  "Resolved annotations require source evidence.": {
+    "revision": "146b19714ad1902a205a3630c2f0646881fd27b52b0af97a636daa6f94ca13ea",
+    "textHash": "722d90b5c5eab0ed61cf017416c391cf9626ad727bf8d086082a7accefc7bb8d",
+    "model": "codex"
+  },
+  "The independent audit returned incomplete outcomes. Retry the audit.": {
+    "revision": "f28d93950dd2c9a1f99e455d0a3dc3fc4f0ced0bd62b7cf21e9657983c0b86e5",
+    "textHash": "f5e6f72ead01da6f52956b6b07ff5e0eb202aecd0c46aabad183adcc9b27f8a5",
+    "model": "codex"
+  },
+  "The workflow was stopped.": {
+    "revision": "949a4286263d5f33758b0197764b8ca3e4a361941a45b966227bdee6521cffcc",
+    "textHash": "23acecf596bb8eb3d041f465b65244d5dddebe170c58c7fa7458641180964e56",
+    "model": "codex"
+  },
+  "The manuscript changed during the audit. Audit again.": {
+    "revision": "4ecfc08e63f826ff86aa8dd3111868e8acbc26a74ba47db9dbaa81a68a458fe8",
+    "textHash": "b3571a4ead6ce00770a1427687330112ae234f4032c0b665fce6b1aa3b755fcb",
+    "model": "codex"
+  },
+  "The workflow helper was stopped.": {
+    "revision": "2bc8fefc5dd9815924656566f2d0a7239a7defb02caa4c2e30ae4b645ca00e37",
+    "textHash": "c2a0312a3aa787dbbd76c377f04289200e336e4c9df544ab8b7bfb6848ee0faa",
+    "model": "codex"
+  },
+  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": {
+    "revision": "a6e02724fe138ba58ba6cb9f0e56381c0f0b5f00c353723e651ddd70bf2c8256",
+    "textHash": "9d0f8a18b8abaad9a996212785d65fe92b74d6b97429310fdc451acd78a5ee0b",
+    "model": "codex"
+  },
+  "Install and sign in to the required workflow agent on the Papilot host.": {
+    "revision": "9c54fb1168b0059ba74e12a7074d9f4f2566cc59a8e295b81ecdd7b88e132830",
+    "textHash": "f1568759744a2db505d67d58926dad6946832433d97286a3b13552d0ebc4bf10",
+    "model": "codex"
+  },
+  "DeepSeek must use an opencode-go/deepseek-* model.": {
+    "revision": "80bf1009786ff692acfdcdc4340adb70f94ed1da52f028c5ff3948488ac62f91",
+    "textHash": "b4c40628bae5123da13fe08482422f5817075c9da97f0108b99bf230f7531d31",
+    "model": "codex"
+  },
+  "The workflow helper disconnected.": {
+    "revision": "b87ee34b11d17df6b5c0c39bb9eb6c7511e26dbd699feb46ac2d04289f9fb1f6",
+    "textHash": "d7f12049917a7f04b06db65aff5096c7058d423c93c6e23c02717fc94bafe5be",
+    "model": "codex"
+  },
+  "Enable collaboration mode in Settings → About Papilot → Experiments first.": {
+    "revision": "bab740afea7af7b896e64758de0502ef886ee227b2b8bfb4db3e027e82b455b8",
+    "textHash": "f036f07ae341d4c4abe0cc35844d257cede7eccc01a3186b61a47dd230275e53",
+    "model": "codex"
+  },
+  "Choose Codex for an AI review. Collaboration mode edits annotations.": {
+    "revision": "a2cca693d814d8f4bedd3f5b8b5bc3e4fc5631fea14c0d3a3bd5fd84093de07f",
+    "textHash": "44a5449e21eb8f32b0d8d4d09931405f2062b64468eedbf7656d33bbea078df1",
+    "model": "codex"
+  },
+  "Enable collaboration mode before selecting it.": {
+    "revision": "7e618c3662489bc36f230c10adb54f7c50e2a698748a3e054b20b3a08c7be431",
+    "textHash": "43498fc1da50d2a3b789d1f21f8c370c6e0d11a743385b8712a7852380c39250",
+    "model": "codex"
+  },
+  "The workflow is no longer active.": {
+    "revision": "7ec202bfa9ff2abb3eb9990ddd455337747c8bb3739851903055a818c009661e",
+    "textHash": "ab7f1471d506fd769038b623f40c0b7442b22f7ea92d2dbf93179b24ac878ec7",
+    "model": "codex"
+  },
+  "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": {
+    "revision": "494dd3da84bcf5e267506dbc41e43b6995896a9190c1962e6162806eaec989a1",
+    "textHash": "aef8c6158a3ee55d8da15be9e88c3ac1292b76386eac7336456ef942334b02db",
+    "model": "codex"
   }
 }

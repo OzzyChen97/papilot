@@ -1477,5 +1477,9 @@
   "{n} task": "{n} 件のタスク",
   "{n} task failed.": "{n} 件のタスクの処理に失敗しました。",
   "Delete all": "すべて削除",
-  "{done} of {total}": "{done} / {total}"
+  "{done} of {total}": "{done} / {total}",
+  "Collaboration mode": "協調モード",
+  "Experiments": "実験的な機能",
+  "Enable collaboration mode": "協調モードを有効にする",
+  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex が OpenCode Go 経由の DeepSeek と Antigravity 経由の Argon に作業を振り分け、すべての注釈を確認します。ホストで各サービスへのログインが必要です。既定では無効です。"
 }

@@ -1477,5 +1477,9 @@
   "{n} task": "{n} 個任務",
   "{n} task failed.": "{n} 個任務處理失敗。",
   "Delete all": "全部刪除",
-  "{done} of {total}": "{done} / {total}"
+  "{done} of {total}": "{done} / {total}",
+  "Collaboration mode": "協作模式",
+  "Experiments": "實驗功能",
+  "Enable collaboration mode": "啟用協作模式",
+  "Codex coordinates DeepSeek through OpenCode Go and Argon through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex 透過 OpenCode Go 呼叫 DeepSeek、透過 Antigravity 呼叫 Argon，並逐一檢查註解。需在主機登入這些服務。預設關閉。"
 }
