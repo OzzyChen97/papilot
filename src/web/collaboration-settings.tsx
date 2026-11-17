@@ -21,12 +21,13 @@ export function CollaborationSettings({ enabled, online, runtimes, load, save }:
   const id = useId();
   const [saving, setSaving] = useState(false), [error, setError] = useState('');
   const [routes, setRoutes] = useState<CollaborationRoutes | null>(null);
+  // Roles show only while enabled; turning it on returns them with the saved settings.
   useEffect(() => {
-    if (!online) return;
+    if (!online || !enabled || routes) return;
     let current = true;
     load().then(settings => { if (current) setRoutes(settings.routes); }, error => { if (current) setError(errorText(error instanceof Error ? error.message : String(error))); });
     return () => { current = false; };
-  }, [online]);
+  }, [online, enabled]);
   async function change(update: { enabled?: boolean; routes?: CollaborationRoutes }) {
     const previous = routes;
     if (update.routes) setRoutes(update.routes);
