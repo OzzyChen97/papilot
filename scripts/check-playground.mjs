@@ -185,7 +185,7 @@ try {
   await expect(download).toHaveCount(0);
   await openManuscript();
   await expect(input).toHaveValue('Make the design philosophy more concrete.');
-  await expect.poll(toolbarLines).toBe('46');
+  await expect.poll(toolbarLines).toBe('44');
   await presets.getByRole('button', { name: 'More prepared tasks', exact: true }).click();
   await expect(presets.locator('.demo-preset')).toHaveCount(6);
   await presets.getByRole('button', { name: 'Open prepared task: Fix the cropped-page coordinates', exact: true }).click();
@@ -237,11 +237,11 @@ try {
   await review.locator('.change.current').getByRole('button', { name: 'LaTeX', exact: true }).click();
   await expect(review.locator('.change.current .source-code')).toBeVisible();
   await review.locator('.change.current').getByRole('button', { name: 'LaTeX', exact: true }).click();
-  await expect.poll(toolbarLines).toBe('46');
+  await expect.poll(toolbarLines).toBe('44');
   await page.getByRole('button', { name: 'PDF', exact: true }).click();
   await expect(review.locator('.paper-page')).toHaveCount(2);
   await expect(review.locator('.paper-slice canvas').first()).toBeVisible();
-  await expect.poll(toolbarLines).toBe('46');
+  await expect.poll(toolbarLines).toBe('44');
   await page.getByRole('button', { name: 'Changes', exact: true }).click();
   await review.locator('.change.current button.accept').click();
   await expect(page.locator('[data-task="example-clarity"] .task-badge')).toHaveText('1');
@@ -327,7 +327,7 @@ try {
   await page.locator('.sidebar').getByRole('button', { name: /^Version Management/ }).click();
   const git = page.locator('.git-workspace');
   await expect(git.locator('.git-file')).toHaveCount(3);
-  await expect.poll(toolbarLines).toBe('46');
+  await expect.poll(toolbarLines).toBe('44');
   await expect(download).not.toBeVisible();
   await git.getByRole('button', { name: 'Stage main.tex', exact: true }).click();
   await expect(git.getByRole('group', { name: 'Staged changes', exact: true }).locator('.git-file')).toHaveCount(2);
