@@ -1449,16 +1449,6 @@
     "textHash": "b2711fac794660b3c3b5140aebce5061f3f2b20e351a59723831bc2f96e9d8b7",
     "model": "manual"
   },
-  "Choose a folder smaller than 64 MB.": {
-    "revision": "280386233ab10f79289ca38fff9ca1908e0728a77bbe87d183eb76f00ad06982",
-    "textHash": "1151073c8b4bd07c6b8ac974c15acabfc09a5d00a5f5e00852284af65781b5ac",
-    "model": "gemini-4-argon-medium"
-  },
-  "Choose between 1 and 5,000 files.": {
-    "revision": "70140bc8389b053ab22abdf80411d07ba149a8bc9e1cef5e103f67f3b1c84a62",
-    "textHash": "01e70e363a591754ce71414e7e2edf8eea6c09fed6d11f4d01b1242c542917f2",
-    "model": "gemini-4-argon-medium"
-  },
   "Send enabled as true or false.": {
     "revision": "9ad798ebe64d93a4f0a81e63ae1e67c493f25d653e83c0934252232918430790",
     "textHash": "a36160d851e129994b7f003474c507f6de30106172922d1191dcff1b66c405d3",
@@ -1529,21 +1519,6 @@
     "textHash": "e9bc38bfbb66dbb9fe795ec2efdb0f54c0142050060024c3abdffcf519e64567",
     "model": "codex"
   },
-  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": {
-    "revision": "fef9f5651e147baab5f21a3d109509dd70fd34dbddda9c5549b6c1c72d640674",
-    "textHash": "c380e01567eb0da27d720234ad2b1084fb3ef87309448445812e830ebd83e307",
-    "model": "codex"
-  },
-  "Install and sign in to the required workflow agent on the Papilot host.": {
-    "revision": "3f6aedcc0fa00e9f6e8fb43dd0d7fb81f92ade1ee91e9c1b1dd713277bb7da77",
-    "textHash": "49c22723070410ee9ecca89441342979f1bed44ab1dc35acbd89ed063bf9dc8c",
-    "model": "codex"
-  },
-  "DeepSeek must use an opencode-go/deepseek-* model.": {
-    "revision": "96c969f5cad990e3e90e1af32d4a0cb96188a66ac21e9d031936bfdde8d28b00",
-    "textHash": "27fb7523df197a181b2d8da45f27c9adeae181c56bc773179bafa9ba0227a616",
-    "model": "codex"
-  },
   "The workflow helper disconnected.": {
     "revision": "24df3ebbe149da9586b0f21bb1b6d6f1875bfc6573339c2a10d2118d4a41b90e",
     "textHash": "041d1c1ffd3bee63127cd6d7fa61da0491a206b3a44135ce7c781b5ee9fa37d7",
@@ -1584,14 +1559,24 @@
     "textHash": "e0fb4f41a9a3dd9d2e7a6ab2646ecd39863f49d4369c2b69732ff5a51c201f15",
     "model": "codex"
   },
-  "Choose deepseek, gemini or codex.": {
-    "revision": "b13436cb8acf96e317a90c751bd14b52a910896037fe00aeb055827d547beba1",
-    "textHash": "0ad1ff854cee00d71ddb522188bf6671a04350e3af6c7e62af41e0a89ec1cda1",
-    "model": "codex"
-  },
   "Codex could not apply isolated workflow permissions.": {
     "revision": "705d3bfa7a79948957f011ba9e4b7919bcf4d5f52e5530692d44fa8e29aee4cf",
     "textHash": "d89b685d457e97c368f9f5a8ace50f9274f35e953654a1568542bfda30e679bf",
     "model": "codex"
+  },
+  "Choose a supported worker for each collaboration role.": {
+    "revision": "cfb331a9f496739a33d41caaf0805ab6e76a47d2709bf9eaca81692a374eef36",
+    "textHash": "e6dcfedd90fec398fd9948d6ba55b4d9ac2013a2370a4caa9374b9e68d943e02",
+    "model": "gemini-4-argon-medium"
+  },
+  "Choose the quick, polish or rigorous role.": {
+    "revision": "aabc9147db3175e0b95d098d78d83678b5ddff369290c11d60f039eb167b6e8e",
+    "textHash": "ea34588a174ceffd792c082a37a1c424924268adf1cac40c98d189a9cd76c2e7",
+    "model": "gemini-4-argon-medium"
+  },
+  "Send enabled or routes.": {
+    "revision": "b27a9e149131f1c320c4a02c92ec872886e6444b8442177bbdab6f8d0f39f9ea",
+    "textHash": "921b03ddde945ede9c0a0d67e50b2499a45cec03b4e2d9145dd7bb16520f29cb",
+    "model": "gemini-4-argon-medium"
   }
 }

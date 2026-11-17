@@ -375,8 +375,6 @@
   "Drop one folder or LaTeX ZIP file.": "Solte uma pasta ou um arquivo ZIP do LaTeX.",
   "No files found in this folder.": "Nenhum arquivo encontrado nesta pasta.",
   "Papilot cannot read this folder.": "O Papilot não consegue ler esta pasta.",
-  "Choose a folder smaller than 64 MB.": "Escolha uma pasta menor que 64 MB.",
-  "Choose between 1 and 5,000 files.": "Escolha entre 1 e 5.000 arquivos.",
   "Send enabled as true or false.": "Envie enabled como true ou false.",
   "Provide source evidence as an array.": "Forneça as evidências do código-fonte como uma matriz.",
   "Evidence must name a source file inside this task.": "As evidências devem indicar um arquivo-fonte desta tarefa.",
@@ -391,9 +389,6 @@
   "The workflow was stopped.": "O fluxo de trabalho foi interrompido.",
   "The manuscript changed during the audit. Audit again.": "O manuscrito mudou durante a verificação. Verifique novamente.",
   "The workflow helper was stopped.": "A sessão auxiliar do fluxo de trabalho foi interrompida.",
-  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": "Instale o OpenCode e conecte o OpenCode Go no anfitrião do Papilot e tente novamente.",
-  "Install and sign in to the required workflow agent on the Papilot host.": "Instale o agente necessário no anfitrião do Papilot e inicie sessão.",
-  "DeepSeek must use an opencode-go/deepseek-* model.": "O DeepSeek deve usar um modelo opencode-go/deepseek-*.",
   "The workflow helper disconnected.": "A sessão auxiliar do fluxo de trabalho foi desconectada.",
   "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Primeiro ative o modo colaborativo em Configurações → Sobre o Papilot → Recursos experimentais.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Escolha o Codex para uma revisão por IA. O modo colaborativo aplica alterações conforme as anotações.",
@@ -402,6 +397,8 @@
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "O modo colaborativo exige uma verificação bem-sucedida do código-fonte final antes da publicação. Continue a tarefa para verificar todas as anotações.",
   "Delegated edits must stay within the selected source files.": "As alterações delegadas devem se limitar aos arquivos-fonte selecionados.",
   "The source changed while merging delegated edits. Retry the delegation.": "O código-fonte mudou durante a mesclagem das alterações delegadas. Delegue a tarefa novamente.",
-  "Choose deepseek, gemini or codex.": "Escolha DeepSeek, Gemini ou Codex.",
-  "Codex could not apply isolated workflow permissions.": "O Codex não conseguiu aplicar as permissões de isolamento do fluxo de trabalho."
+  "Codex could not apply isolated workflow permissions.": "O Codex não conseguiu aplicar as permissões de isolamento do fluxo de trabalho.",
+  "Choose a supported worker for each collaboration role.": "Escolha um trabalhador compatível para cada função de colaboração.",
+  "Choose the quick, polish or rigorous role.": "Escolha a função rápida, de refinamento ou rigorosa.",
+  "Send enabled or routes.": "Envie enabled ou routes."
 }

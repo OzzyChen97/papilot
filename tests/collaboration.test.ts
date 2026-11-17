@@ -5,9 +5,9 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow, sourceEvidence, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate } from '../src/server/collaboration.ts';
+import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow as delegateTo, sourceEvidence, workflowInstructions, workflowItem, workflowNotes, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate, type WorkflowWorker } from '../src/server/collaboration.ts';
 import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts';
-import { AGENT_IDS, type RuntimeStatus } from '../src/shared.ts';
+import { AGENT_IDS, collaborationRoutes, validRoutes, type CollaborationRole, type CollaborationRoutes, type RuntimeStatus } from '../src/shared.ts';
 
 function paper() {
   const root = fs.realpathSync.native(fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-workflow-test-')));
@@ -17,8 +17,16 @@ function paper() {
 }
 const notes = workflowNotes([{ id: 'message', meta: { notes: [{ where: 'main.tex', quote: 'First', comment: 'Polish first.' }, { where: 'main.tex', quote: 'Second', comment: 'Check second.' }] } }], 'Edit');
 const signal = () => new AbortController().signal;
+const routes: CollaborationRoutes = {
+  quick: { agent: 'opencode', model: 'opencode-go/deepseek-v4.1-flash', effort: 'max' },
+  polish: { agent: 'antigravity', model: 'gemini-4-argon', effort: 'high' },
+  rigorous: { agent: 'codex', model: 'task-codex-model', effort: 'xhigh' },
+};
+const auditor: WorkflowWorker = { agent: 'codex', model: 'task-codex-model', effort: 'high' };
+const delegateWorkflow = (root: string, list: typeof notes, args: any, generate: WorkflowGenerate, abort: AbortSignal, current: () => boolean = () => true) =>
+  delegateTo(root, list, args, generate, abort, current, (role: CollaborationRole) => routes[role]);
 const outcomes = () => notes.map(note => ({ id: note.id, status: 'unchanged', explanation: 'Already correct.', evidence: [{ file: 'main.tex', quote: note.quote }] }));
-const verified: WorkflowGenerate = async (_executor, prompt) => {
+const verified: WorkflowGenerate = async (_worker, prompt) => {
   const data = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1));
   return JSON.stringify({ verified: true, outcomes: data.outcomes.map((entry: any) => ({ id: entry.id, status: entry.status, reason: 'Checked the source.' })), issues: [] });
 };
@@ -30,6 +38,15 @@ test('workflow choices require explicit host enablement, even for saved selectio
   assert.equal(chosenAgent('collaboration', offeredAgents({ codex: ready, collaboration: { ...ready, hidden: true } }), { codex: ready }), 'codex');
   assert.equal(noAgent(Object.fromEntries(AGENT_IDS.filter(id => id !== 'collaboration').map(id => [id, { ...ready, installed: false }]))), true);
 });
+test('timeline entries name the role, worker, notes and outcome instead of the raw reply', () => {
+  const reply = { role: 'quick', worker: 'OpenCode (flash, max reasoning effort)', status: 'applied', appliedFiles: ['main.tex'], conflicts: [], summary: 'Fixed the typo.' };
+  const delegate = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'quick', annotationIds: ['message:1', 'message:3'] }, contentItems: [{ text: JSON.stringify(reply) }] });
+  assert.equal(delegate.text, 'workflow_delegate · quick');
+  assert.equal(delegate.detail, 'OpenCode (flash, max reasoning effort)\nNotes: 1, 3\nResult: applied (main.tex)\nFixed the typo.');
+  const failed = workflowItem({ tool: 'workflow_delegate', arguments: { role: 'polish', annotationIds: ['message:2'], instruction: 'Polish.' }, contentItems: [{ text: 'Antigravity does not offer gemini-x on the Papilot host.' }] });
+  assert.equal(failed.detail, 'Notes: 2\nPolish.\nAntigravity does not offer gemini-x on the Papilot host.');
+  assert.match(workflowItem({ tool: 'workflow_audit', arguments: { outcomes: [{}, {}] }, contentItems: [{ text: JSON.stringify({ verified: true, report: '{}' }) }] }).detail!, /^Verified\./);
+});
 test('annotation ledger retains repeated notes separately and provides a request for plain tasks', () => {
   assert.deepEqual(notes.map(note => note.id), ['message:1', 'message:2']);
   assert.equal(workflowNotes([], 'Explain')[0].comment, 'Explain');
@@ -38,38 +55,38 @@ test('parallel edits to different words in the same line are merged by the progr
   const f = paper(), releases: (() => void)[] = [], copies: string[] = [];
   const original = 'First paragraph. Second paragraph. Existing uncommitted text.\n';
   fs.writeFileSync(path.join(f.root, 'main.tex'), original);
-  const generate: WorkflowGenerate = async (executor, _prompt, _signal, _model, edit) => {
+  const generate: WorkflowGenerate = async (worker, _prompt, _signal, edit) => {
     assert.ok(edit); copies.push(edit.cwd); assert.deepEqual(edit.files, ['main.tex']);
-    const file = path.join(edit.cwd, 'main.tex');
-    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(executor === 'deepseek' ? 'First' : 'Second', executor === 'deepseek' ? 'Updated first' : 'Updated second'));
+    const file = path.join(edit.cwd, 'main.tex'), quick = worker.agent === 'opencode';
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(quick ? 'First' : 'Second', quick ? 'Updated first' : 'Updated second'));
     await new Promise<void>(resolve => releases.push(resolve)); return 'Edited the assigned annotation.';
   };
   try {
-    const jobs = notes.map((note, i) => delegateWorkflow(f.root, notes, { executor: i ? 'gemini' : 'deepseek', annotationIds: [note.id], instruction: note.comment, sources: [{ file: 'main.tex', quote: note.quote }] }, generate, signal()));
+    const jobs = notes.map((note, i) => delegateWorkflow(f.root, notes, { role: i ? 'polish' : 'quick', annotationIds: [note.id], instruction: note.comment, sources: [{ file: 'main.tex', quote: note.quote }] }, generate, signal()));
     assert.equal(releases.length, 2); assert.notEqual(copies[0], copies[1]);
     assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), original);
     releases.forEach(release => release());
     const replies = await Promise.all(jobs); assert.ok(replies.every(reply => reply.status === 'applied'));
     assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Updated first paragraph. Updated second paragraph. Existing uncommitted text.\n');
     assert.ok(copies.every(copy => !fs.existsSync(copy)));
-    await assert.rejects(delegateWorkflow(f.root, notes, { executor: 'deepseek', annotationIds: ['unknown'] }, generate, signal()), /Unknown/);
-    await assert.rejects(delegateWorkflow(f.root, notes, { executor: 'deepseek', annotationIds: [notes[0].id], instruction: 'Edit', sources: [{ file: 'main.tex', quote: 'stale source' }] }, generate, signal()), /no longer matches/);
+    await assert.rejects(delegateWorkflow(f.root, notes, { role: 'quick', annotationIds: ['unknown'] }, generate, signal()), /Unknown/);
+    await assert.rejects(delegateWorkflow(f.root, notes, { role: 'quick', annotationIds: [notes[0].id], instruction: 'Edit', sources: [{ file: 'main.tex', quote: 'stale source' }] }, generate, signal()), /no longer matches/);
   } finally { f.close(); }
 });
-const delegateArgs = { executor: 'gemini', annotationIds: [notes[0].id], instruction: 'Edit first.', sources: [{ file: 'main.tex', quote: 'First' }] };
-test('Codex edits use the same isolated merge route and inherit only the task Codex model', async () => {
-  assert.deepEqual((WORKFLOW_TOOLS[0].inputSchema.properties as { executor: { enum: string[] } }).executor.enum, ['deepseek', 'gemini', 'codex']);
-  for (const executor of ['codex', 'gemini', 'deepseek']) {
+const delegateArgs = { role: 'polish', annotationIds: [notes[0].id], instruction: 'Edit first.', sources: [{ file: 'main.tex', quote: 'First' }] };
+test('every role uses the same isolated merge route with its configured worker', async () => {
+  assert.deepEqual((WORKFLOW_TOOLS[0].inputSchema.properties as { role: { enum: string[] } }).role.enum, ['quick', 'polish', 'rigorous']);
+  for (const role of ['rigorous', 'polish', 'quick'] as CollaborationRole[]) {
     const f = paper(); let copy = '';
     try {
-      const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, executor }, async (worker, _prompt, _signal, model, edit) => {
-        assert.equal(worker, executor); assert.equal(model, executor === 'codex' ? 'task-codex-model' : undefined);
+      const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, role }, async (worker, _prompt, _signal, edit) => {
+        assert.deepEqual(worker, routes[role]);
         assert.ok(edit); copy = edit.cwd; assert.notEqual(copy, fs.realpathSync(f.root));
         assert.equal(copy, fs.realpathSync.native(copy), 'workers use the native path identity, including Windows short-name expansion');
         const file = path.join(copy, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Checked'));
         assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^First/); return 'Checked the annotation.';
-      }, signal(), () => true, 'task-codex-model');
-      assert.equal(result.executor, executor); assert.equal(result.status, 'applied'); assert.deepEqual(result.appliedFiles, ['main.tex']);
+      }, signal());
+      assert.equal(result.role, role); assert.match(result.worker, new RegExp(routes[role].model!)); assert.equal(result.status, 'applied'); assert.deepEqual(result.appliedFiles, ['main.tex']);
       assert.match(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), /^Checked/); assert.equal(fs.existsSync(copy), false);
     } finally { f.close(); }
   }
@@ -78,7 +95,7 @@ test('duplicate source excerpts share one snapshot file and case aliases cannot 
   const f = paper();
   try {
     let called = false;
-    const generate: WorkflowGenerate = async (_e, _p, _s, _m, edit) => { called = true; assert.deepEqual(edit!.files, ['main.tex']); return 'Unchanged'; };
+    const generate: WorkflowGenerate = async (_w, _p, _s, edit) => { called = true; assert.deepEqual(edit!.files, ['main.tex']); return 'Unchanged'; };
     await delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [{ file: 'main.tex', quote: 'First' }, { file: './main.tex', quote: 'Second' }] }, generate, signal());
     assert.equal(called, true); called = false;
     if (fs.existsSync(path.join(f.root, 'MAIN.TEX'))) {
@@ -90,7 +107,7 @@ test('duplicate source excerpts share one snapshot file and case aliases cannot 
 test('overlapping edits return a conflict without overwriting the first integrated edit', async () => {
   const f = paper(), releases: (() => void)[] = [];
   let calls = 0;
-  const generate: WorkflowGenerate = async (_executor, _prompt, _signal, _model, edit) => {
+  const generate: WorkflowGenerate = async (_worker, _prompt, _signal, edit) => {
     const file = path.join(edit!.cwd, 'main.tex');
     fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', calls++ ? 'Overlapping' : 'Integrated'));
     await new Promise<void>(resolve => releases.push(resolve)); return 'Done';
@@ -108,7 +125,7 @@ test('overlapping edits return a conflict without overwriting the first integrat
 test('coordinator edits made while a worker runs are retained by three-way merge', async () => {
   const f = paper();
   try {
-    const result = await delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+    const result = await delegateWorkflow(f.root, notes, delegateArgs, async (_w, _p, _s, edit) => {
       const file = path.join(edit!.cwd, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Improved'));
       fs.appendFileSync(path.join(f.root, 'main.tex'), 'New coordinator text.\n'); return 'Edited';
     }, signal());
@@ -126,7 +143,7 @@ test('source changes and cancellation during asynchronous merging prevent stale 
         }
         return mkdtemp(...args);
       }) as typeof mkdtemp;
-      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_w, _p, _s, edit) => {
         const file = path.join(edit!.cwd, 'main.tex'); fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('First', 'Improved'));
         fs.writeFileSync(path.join(f.root, 'main.tex'), current); return 'Edited';
       }, controller.signal));
@@ -137,7 +154,7 @@ test('source changes and cancellation during asynchronous merging prevent stale 
 test('clean files are applied while conflicted files and deleted targets are retained', async () => {
   const f = paper(); fs.writeFileSync(path.join(f.root, 'other.tex'), 'Other text.');
   try {
-    const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_e, _p, _s, _m, edit) => {
+    const result = await delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_w, _p, _s, edit) => {
       fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Worker version.'); fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Improved other text.');
       fs.unlinkSync(path.join(f.root, 'main.tex')); return 'Edited both.';
     }, signal());
@@ -150,7 +167,7 @@ test('a failed atomic replacement rolls back files already integrated by the sam
   const before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), rename = fs.renameSync;
   try {
     fs.renameSync = (from, to) => { if (String(to) === path.join(fs.realpathSync(f.root), 'other.tex')) throw new Error('Simulated write failure'); return rename(from, to); };
-    await assert.rejects(delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_e, _p, _s, _m, edit) => {
+    await assert.rejects(delegateWorkflow(f.root, notes, { ...delegateArgs, sources: [...delegateArgs.sources, { file: 'other.tex', quote: 'Other' }] }, async (_w, _p, _s, edit) => {
       fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Improved.'); fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Improved other.'); return 'Edited both.';
     }, signal()), /Simulated write failure/);
     assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), before); assert.equal(fs.readFileSync(path.join(f.root, 'other.tex'), 'utf8'), 'Other text.');
@@ -170,7 +187,7 @@ test('cancelled and stale runs never integrate late edits', async () => {
     const f = paper(), controller = new AbortController(); let current = true, copy = '';
     const before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8');
     try {
-      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_w, _p, _s, edit) => {
         copy = edit!.cwd; fs.writeFileSync(path.join(copy, 'main.tex'), 'Late edit.');
         if (mode === 'cancel') controller.abort(); else current = false;
         return 'Edited';
@@ -183,7 +200,7 @@ test('workers cannot integrate extra files, deleted files or symlink outputs', a
   for (const mode of ['extra', 'deleted', 'symlink']) {
     const f = paper(), before = fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8');
     try {
-      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+      await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_w, _p, _s, edit) => {
         const file = path.join(edit!.cwd, 'main.tex');
         if (mode === 'extra') fs.writeFileSync(path.join(edit!.cwd, 'other.tex'), 'Out of scope');
         else { fs.unlinkSync(file); if (mode === 'symlink') fs.symlinkSync(path.join(f.root, 'main.tex'), file); }
@@ -197,7 +214,7 @@ test('a task source replaced by a symlink during delegation cannot be overwritte
   const f = paper(), outside = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-worker-outside-'));
   fs.writeFileSync(path.join(outside, 'other.tex'), 'Protected');
   try {
-    await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_e, _p, _s, _m, edit) => {
+    await assert.rejects(delegateWorkflow(f.root, notes, delegateArgs, async (_w, _p, _s, edit) => {
       fs.writeFileSync(path.join(edit!.cwd, 'main.tex'), 'Worker edit');
       fs.unlinkSync(path.join(f.root, 'main.tex')); fs.symlinkSync(path.join(outside, 'other.tex'), path.join(f.root, 'main.tex')); return 'Edited';
     }, signal()), /selected source files/);
@@ -214,70 +231,74 @@ test('evidence rejects path escapes, symlinks and stale text', () => {
 test('audit enforces exact coverage and independent verification, including unresolved notes', async () => {
   const f = paper();
   try {
-    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes().slice(0, 1) }, verified, signal()), /every annotation/);
-    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: [outcomes()[0], outcomes()[0]] }, verified, signal()), /exactly once/);
-    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes().map(entry => ({ ...entry, evidence: [] })) }, verified, signal()), /source evidence/);
-    const result = await auditWorkflow(f.root, notes, { outcomes: outcomes() }, verified, signal()); assert.equal(result.verified, true);
+    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes().slice(0, 1) }, verified, signal(), auditor), /every annotation/);
+    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: [outcomes()[0], outcomes()[0]] }, verified, signal(), auditor), /exactly once/);
+    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes().map(entry => ({ ...entry, evidence: [] })) }, verified, signal(), auditor), /source evidence/);
+    const result = await auditWorkflow(f.root, notes, { outcomes: outcomes() }, verified, signal(), auditor); assert.equal(result.verified, true);
     fs.appendFileSync(path.join(f.root, 'main.tex'), 'Later edit.'); assert.notEqual((await workflowSnapshot(f.root)).fingerprint, result.fingerprint);
     const blocked = outcomes(); blocked[1] = { ...blocked[1], status: 'blocked', evidence: [], explanation: 'Need a missing reference.' };
-    assert.equal((await auditWorkflow(f.root, notes, { outcomes: blocked }, verified, signal())).verified, true);
-    const rejected: WorkflowGenerate = async (_executor, prompt) => JSON.stringify({ ...JSON.parse(await verified('codex', prompt, signal())), verified: false, issues: ['First annotation is missed.'] });
-    assert.equal((await auditWorkflow(f.root, notes, { outcomes: outcomes() }, rejected, signal())).verified, false);
-    const mutate: WorkflowGenerate = async (executor, prompt, signal) => { const result = await verified(executor, prompt, signal); fs.writeFileSync(path.join(f.root, 'new.tex'), 'Untracked change'); return result; };
-    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes() }, mutate, signal()), /changed during/);
+    assert.equal((await auditWorkflow(f.root, notes, { outcomes: blocked }, verified, signal(), auditor)).verified, true);
+    const rejected: WorkflowGenerate = async (worker, prompt) => JSON.stringify({ ...JSON.parse(await verified(worker, prompt, signal())), verified: false, issues: ['First annotation is missed.'] });
+    assert.equal((await auditWorkflow(f.root, notes, { outcomes: outcomes() }, rejected, signal(), auditor)).verified, false);
+    const disagrees: WorkflowGenerate = async (worker, prompt) => { const report = JSON.parse(await verified(worker, prompt, signal())); report.outcomes[0].status = 'addressed'; return 'Here is the audit:\n```json\n' + JSON.stringify(report) + '\n```'; };
+    assert.equal((await auditWorkflow(f.root, notes, { outcomes: outcomes() }, disagrees, signal(), auditor)).verified, false, 'a different verdict is a finding');
+    const wrapped: WorkflowGenerate = async (worker, prompt) => 'Audit complete. ' + await verified(worker, prompt, signal()) + ' Done.';
+    assert.equal((await auditWorkflow(f.root, notes, { outcomes: outcomes() }, wrapped, signal(), auditor)).verified, true);
+    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes() }, async () => 'No JSON here.', signal(), auditor), /incomplete outcomes/);
+    const mutate: WorkflowGenerate = async (worker, prompt, signal) => { assert.deepEqual(worker, auditor); const result = await verified(worker, prompt, signal); fs.writeFileSync(path.join(f.root, 'new.tex'), 'Untracked change'); return result; };
+    await assert.rejects(auditWorkflow(f.root, notes, { outcomes: outcomes() }, mutate, signal(), auditor), /changed during/);
   } finally { f.close(); }
 });
 class Helper extends EventEmitter {
   ready = false; cwd = ''; closed = false; calls: any[] = [];
-  models = ['opencode-go/deepseek-v4.1-flash', 'gemini-3.8-flash', 'gemini-4-argon', 'claude-sonnet-4-6'];
+  models: { model: string; supportedReasoningEfforts?: { reasoningEffort: string }[] }[] = [{ model: 'opencode-go/deepseek-v4.1-flash' }, { model: 'gemini-3.8-flash' }, { model: 'gemini-4-argon', supportedReasoningEfforts: ['low', 'medium', 'high'].map(reasoningEffort => ({ reasoningEffort })) }];
   async start() { this.ready = true; }
   async request(method: string, params: any): Promise<any> {
     this.calls.push({ method, params });
-    if (method === 'model/list') return { data: this.models.map(model => ({ model })) };
+    if (method === 'model/list') return { data: this.models };
     if (method === 'thread/start') { this.cwd = params.cwd; return { thread: { id: 'helper' } }; }
     if (method === 'turn/start') setImmediate(() => { this.emit('notification', { method: 'item/completed', params: { threadId: 'helper', item: { type: 'agentMessage', text: 'Proposal' } } }); this.emit('notification', { method: 'turn/completed', params: { threadId: 'helper', turn: { status: 'completed' } } }); });
     return { turn: { id: 'turn' } };
   }
   respond() {} reject() {} close() { this.closed = true; this.ready = false; }
 }
-test('native helper pins Go, uses disposable read-only cwd, closes it, and rejects other providers', async () => {
+const call = (helper: Helper, method: string) => helper.calls.find(entry => entry.method === method)?.params;
+test('native helpers use the configured model and effort in a disposable read-only cwd', async () => {
+  for (const worker of [routes.quick, routes.polish]) {
+    const helper = new Helper();
+    assert.equal(await runWorkflowHelper(worker, 'Fix text', signal(), undefined, () => helper), 'Proposal');
+    assert.equal(call(helper, 'thread/start').model, worker.model); assert.equal(call(helper, 'thread/start').sandbox, 'read-only');
+    assert.equal(call(helper, 'turn/start').effort, worker.effort);
+    assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
+  }
   const helper = new Helper();
-  assert.equal(await runWorkflowHelper('deepseek', 'Fix text', signal(), undefined, undefined, () => helper), 'Proposal');
-  const start = helper.calls.find(call => call.method === 'thread/start').params;
-  assert.equal(start.model, 'opencode-go/deepseek-v4.1-flash'); assert.equal(start.sandbox, 'read-only'); assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
-  const previous = process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL;
-  try { process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = 'deepseek/deepseek-v4'; await assert.rejects(runWorkflowHelper('deepseek', 'Fix', signal(), undefined, undefined, () => new Helper()), /must use an opencode-go/); }
-  finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL; else process.env.PAPILOT_COLLABORATION_DEEPSEEK_MODEL = previous; }
+  await runWorkflowHelper({ agent: 'antigravity', model: null, effort: null }, 'Polish', signal(), undefined, () => helper);
+  assert.equal(call(helper, 'thread/start').model, undefined, 'no model uses the runtime default'); assert.equal(call(helper, 'turn/start').effort, undefined);
 });
-test('Gemini helpers default to Flash and allow an explicit available Gemini model', async () => {
-  const previous = process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
-  try {
-    delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
-    for (const model of ['gemini-3.8-flash', 'gemini-4-argon']) {
-      if (model !== 'gemini-3.8-flash') process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model;
-      const helper = new Helper();
-      assert.equal(await runWorkflowHelper('gemini', 'Polish', signal(), undefined, undefined, () => helper), 'Proposal');
-      const start = helper.calls.find(call => call.method === 'thread/start').params;
-      assert.equal(start.model, model); assert.equal(start.sandbox, 'read-only');
-      assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
-    }
-  } finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL; else process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = previous; }
+test('unavailable models and efforts fail without a fallback or model turn', async () => {
+  for (const [worker, error] of [[{ agent: 'antigravity', model: 'gemini-missing', effort: null }, /does not offer gemini-missing/], [{ agent: 'antigravity', model: 'gemini-4-argon', effort: 'max' }, /does not support max/]] as const) {
+    const helper = new Helper();
+    await assert.rejects(runWorkflowHelper(worker, 'Polish', signal(), undefined, () => helper), error);
+    assert.equal(helper.calls.some(entry => entry.method === 'thread/start'), false); assert.equal(helper.closed, true);
+  }
 });
-test('missing or non-Gemini polishing models fail without a fallback or model turn', async () => {
-  const previous = process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
-  try {
-    for (const model of [undefined, 'gemini-missing', 'claude-sonnet-4-6']) {
-      if (model) process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = model; else delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL;
-      const helper = new Helper(); helper.models = ['gemini-4-argon', 'claude-sonnet-4-6'];
-      await assert.rejects(runWorkflowHelper('gemini', 'Polish', signal(), undefined, undefined, () => helper), /model is unavailable/);
-      assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); assert.equal(helper.closed, true);
-    }
-  } finally { if (previous === undefined) delete process.env.PAPILOT_COLLABORATION_GEMINI_MODEL; else process.env.PAPILOT_COLLABORATION_GEMINI_MODEL = previous; }
+test('saved routes default to Codex with the task model and reject unknown workers', () => {
+  assert.deepEqual(collaborationRoutes(undefined), { quick: { agent: 'codex', model: null, effort: null }, polish: { agent: 'codex', model: null, effort: null }, rigorous: { agent: 'codex', model: null, effort: null } });
+  assert.deepEqual(collaborationRoutes(routes), routes);
+  assert.deepEqual(collaborationRoutes({ ...routes, quick: { agent: 'shell', model: 'x', effort: null }, rigorous: { agent: 'codex', model: ' ', effort: 'xhigh' } }).quick, { agent: 'codex', model: null, effort: null });
+  assert.equal(collaborationRoutes({ rigorous: { agent: 'codex', model: null, effort: 'xhigh' } }).rigorous.effort, null, 'a Codex worker without a model inherits the task effort');
+  assert.equal(validRoutes(routes), true);
+  assert.equal(validRoutes({ ...routes, polish: { agent: 'claude', model: null, effort: null } }), false);
+  assert.equal(validRoutes({ quick: routes.quick }), false);
+  const instructions = workflowInstructions(collaborationRoutes({ ...routes, rigorous: { agent: 'codex', model: null, effort: null } }));
+  assert.match(instructions, /quick: .*OpenCode \(opencode-go\/deepseek-v4\.1-flash, max reasoning effort\)/);
+  assert.match(instructions, /polish: .*Antigravity \(gemini-4-argon, high reasoning effort\)/);
+  assert.match(instructions, /rigorous: .*Codex \(the task's model\)/);
 });
 test('stopping a native helper closes its process and ignores late results', async () => {
   const helper = new Helper(), controller = new AbortController();
   helper.request = async (method, params) => { if (method === 'model/list') return { data: [] }; if (method === 'thread/start') { helper.cwd = params.cwd; return { thread: { id: 'helper' } }; } if (method === 'turn/start') controller.abort(); return {}; };
-  await assert.rejects(runWorkflowHelper('codex', 'Audit', controller.signal, undefined, undefined, () => helper), /stopped/);
+  await assert.rejects(runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, () => helper), /stopped/);
   assert.equal(helper.closed, true); assert.equal(fs.existsSync(helper.cwd), false);
 });
 test('a Codex editor rejects a runtime that keeps host writable roots before starting a turn', async () => {
@@ -288,7 +309,7 @@ test('a Codex editor rejects a runtime that keeps host writable roots before sta
     return result;
   };
   try {
-    await assert.rejects(runWorkflowHelper('codex', 'Edit', signal(), 'task-codex-model', { cwd: f.root, files: ['main.tex'] }, () => helper), /isolated workflow permissions/);
+    await assert.rejects(runWorkflowHelper(routes.rigorous, 'Edit', signal(), { cwd: f.root, files: ['main.tex'] }, () => helper), /isolated workflow permissions/);
     assert.equal(helper.calls.some(call => call.method === 'turn/start'), false); assert.equal(helper.closed, true);
     assert.equal(fs.existsSync(f.root), true, 'the delegation owns snapshot cleanup');
   } finally { f.close(); }
@@ -297,7 +318,7 @@ test('Codex helpers reject enabled MCP names that native overrides cannot addres
   for (const enabled of [true, false]) {
     const helper = new Helper(), request = helper.request.bind(helper);
     helper.request = async (method, params) => method === 'config/read' ? { config: { mcp_servers: { 'dot.name': { enabled } } } } : request(method, params);
-    const work = runWorkflowHelper('codex', 'Audit', signal(), undefined, undefined, () => helper);
+    const work = runWorkflowHelper(auditor, 'Audit', signal(), undefined, () => helper);
     if (enabled) { await assert.rejects(work, /isolated workflow permissions/); assert.equal(helper.calls.some(call => call.method === 'thread/start'), false); }
     else { assert.equal(await work, 'Proposal'); assert.equal(helper.calls.find(call => call.method === 'thread/start').params.sandbox, 'read-only'); }
     assert.equal(helper.closed, true);
@@ -307,7 +328,7 @@ test('a delayed installation probe cannot start a helper after cancellation', as
   const helper = new Helper(), controller = new AbortController(); let resolve!: (value: boolean) => void, starts = 0;
   const runtime = Object.assign(helper, { detect: () => new Promise<boolean>(done => { resolve = done; }) });
   runtime.start = async () => { starts++; helper.ready = true; };
-  const work = runWorkflowHelper('codex', 'Audit', controller.signal, undefined, undefined, () => runtime);
+  const work = runWorkflowHelper(auditor, 'Audit', controller.signal, undefined, () => runtime);
   controller.abort(); await assert.rejects(work, /stopped/); resolve(true); await new Promise(done => setImmediate(done));
   assert.equal(starts, 0); assert.equal(helper.ready, false);
 });
@@ -316,8 +337,8 @@ test('an ignored evidence file is included in the audit fingerprint and sources 
   try {
     fs.writeFileSync(path.join(f.root, '.gitignore'), 'generated.tex\n'); fs.writeFileSync(path.join(f.root, 'generated.tex'), 'Generated text.');
     const entries = outcomes().map(entry => ({ ...entry, evidence: [{ file: 'generated.tex', quote: 'Generated' }] }));
-    const check: WorkflowGenerate = async (executor, prompt, signal) => { const data = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1)); assert.deepEqual(Object.keys(data.sources), ['generated.tex']); assert.equal(data.outcomes[0].evidence[0].source, undefined); return verified(executor, prompt, signal); };
-    const result = await auditWorkflow(f.root, notes, { outcomes: entries }, check, signal());
+    const check: WorkflowGenerate = async (worker, prompt, signal) => { const data = JSON.parse(prompt.slice(prompt.indexOf('\n') + 1)); assert.deepEqual(Object.keys(data.sources), ['generated.tex']); assert.equal(data.outcomes[0].evidence[0].source, undefined); return verified(worker, prompt, signal); };
+    const result = await auditWorkflow(f.root, notes, { outcomes: entries }, check, signal(), auditor);
     fs.writeFileSync(path.join(f.root, 'generated.tex'), 'Changed text.');
     assert.notEqual((await workflowSnapshot(f.root, result.files)).fingerprint, result.fingerprint);
   } finally { f.close(); }
@@ -326,8 +347,8 @@ test('audit binds the quoted source bytes to the fingerprint before asking the v
   const f = paper();
   try {
     let called = false;
-    const generate: WorkflowGenerate = async (executor, prompt, signal) => { called = true; return verified(executor, prompt, signal); };
-    const work = auditWorkflow(f.root, notes, { outcomes: outcomes() }, generate, signal());
+    const generate: WorkflowGenerate = async (worker, prompt, signal) => { called = true; return verified(worker, prompt, signal); };
+    const work = auditWorkflow(f.root, notes, { outcomes: outcomes() }, generate, signal(), auditor);
     fs.writeFileSync(path.join(f.root, 'main.tex'), 'Different text without the requested quotations.');
     await assert.rejects(work, /no longer matches/); assert.equal(called, false);
   } finally { f.close(); }

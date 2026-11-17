@@ -1,4 +1,4 @@
-import { WORKFLOW_TOOLS, workflowInstructions, workflowNotes, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, type WorkflowGenerate } from './collaboration.ts';
+import { WORKFLOW_TOOLS, workflowInstructions, workflowItem, workflowNotes, delegateWorkflow, auditWorkflow, workflowSnapshot, runWorkflowHelper, type WorkflowGenerate, type WorkflowWorker } from './collaboration.ts';
 import { aiReviewInstructions, parseAiReview, reviewPrompt, saveReviewText, type ReviewSnapshot } from './ai-review.ts';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFile } from 'node:child_process';
@@ -36,7 +36,7 @@ import { noteOptionsSummary, preparedNoteOptionsInstructions, readPreparedNoteOp
 import { notesInstructions, reviewNotesInstructions, summarizeNotes } from '../notes.ts';
 import { canonicalGroup, groupsWithoutInstructions, parseGroupInstructions, type GroupInstructions } from '../note-groups.ts';
 import { commitChanges, conflictMarkers, gitCommit, gitRemote, gitStatus, mergeConflicts, mergeInProgress } from './manuscript.ts';
-import { AGENT_IDS, usesCodex, isTaskReviewNote } from '../shared.ts';
+import { AGENT_IDS, usesCodex, isTaskReviewNote, collaborationRoutes, type CollaborationRole, type CollaborationRoutes, type CollaborationSettings } from '../shared.ts';
 import type { Task, TaskPermissions, Run, TimelineItem, PendingRequest, RuntimeStatus, Snapshot, PendingReview, PendingBuild, AgentModel, Usage, AgentId, MessageMeta, FeedbackSummary, BuildFailure, Annotation, NoteSummary, TaskReconciliation, TaskCommitReview, PageView, ToolPlace } from '../shared.ts';
 
 const execute = promisify(execFile);
@@ -138,6 +138,19 @@ export class Workspace extends EventEmitter {
     if (enabled) void this.refreshAgent('collaboration').then(() => this.schedule(), error => {
       this.runtimes.collaboration.error = errorText(error); this.runtimes.collaboration.connected = false; this.emit('change');
     });
+  }
+  get collaborationRoutes(): CollaborationRoutes { return collaborationRoutes(this.store.preference('collaboration-routes')); }
+  collaborationSettings(): CollaborationSettings { return { enabled: this.collaborationEnabled, routes: this.collaborationRoutes }; }
+  setCollaborationRoutes(routes: CollaborationRoutes) { this.store.savePreference('collaboration-routes', collaborationRoutes(routes)); this.emit('change'); }
+  // The coordinator's model and reasoning effort, also used by Codex workers
+  // without their own model and by the final audit.
+  private coordinator(task: Task): WorkflowWorker {
+    const models = this.runtimes.collaboration.models, model = task.model ? models.find(model => model.id === task.model) : models.find(model => model.isDefault);
+    return { agent: 'codex', model: task.model || null, effort: task.effort || model?.defaultEffort || null };
+  }
+  private workflowWorker(task: Task, role: CollaborationRole): WorkflowWorker {
+    const route = this.collaborationRoutes[role];
+    return route.agent === 'codex' && !route.model ? this.coordinator(task) : route;
   }
   private workflowNotesFor(task: Task, run: Run) {
     const items = this.store.items(task.id);
@@ -787,7 +800,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       // Codex threads get the view_pdf tool when they start, and keep it when resumed.
       const scope = task.mode === 'review' ? [] : await this.reviewScope(task), codex = usesCodex(this.agentOf(task));
       let viewPdf = task.mode !== 'review' && codex && (task.threadId ? Boolean(task.viewPdf) : !this.noViewPdf);
-      const options = (tool: boolean) => ({ cwd: task.worktree, approvalPolicy: 'on-request', sandbox: 'workspace-write', ...permissions?.thread, ...reviewer, config: { web_search: 'live', 'sandbox_workspace_write.network_access': true }, developerInstructions: this.instructions(task, scope, tool) + (this.agentOf(task) === 'collaboration' ? '\n\n' + workflowInstructions : ''), ...(task.model ? { model: task.model } : {}) });
+      const options = (tool: boolean) => ({ cwd: task.worktree, approvalPolicy: 'on-request', sandbox: 'workspace-write', ...permissions?.thread, ...reviewer, config: { web_search: 'live', 'sandbox_workspace_write.network_access': true }, developerInstructions: this.instructions(task, scope, tool) + (this.agentOf(task) === 'collaboration' ? '\n\n' + workflowInstructions(this.collaborationRoutes) : ''), ...(task.model ? { model: task.model } : {}) });
       let result;
       if (task.threadId) result = await agent.request('thread/resume', { ...options(viewPdf), threadId: task.threadId, excludeTurns: true });
       else {
@@ -957,7 +970,8 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         if (typeof item.kind === 'string') entry.tool = { kind: item.kind, ...(item.target ? { target: String(item.target) } : {}), ...(item.lines ? { lines: String(item.lines) } : {}), ...(item.place && typeof item.place === 'object' ? { place: item.place as ToolPlace } : {}) };
       }
       if (item.type === 'dynamicToolCall') {
-        if (item.tool !== VIEW_PDF) { entry.type = 'tool'; entry.text = item.tool || ''; }
+        if (agent === 'collaboration' && (item.tool === 'workflow_delegate' || item.tool === 'workflow_audit')) Object.assign(entry, { type: 'tool' }, workflowItem(item));
+        else if (item.tool !== VIEW_PDF) { entry.type = 'tool'; entry.text = item.tool || ''; }
         else { entry.type = 'pdf'; entry.text = viewedPlaces(item.arguments); }
         if (item.success === false) entry.status = 'failed';
       }
@@ -1074,8 +1088,8 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         const notes = this.workflowNotesFor(task, run);
         this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
         const result = tool === 'workflow_delegate'
-          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()), task.model)
-          : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, task.model);
+          ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, () => Boolean(current()), role => this.workflowWorker(task, role))
+          : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, this.coordinator(task));
         if (!current() || controller.signal.aborted) return;
         if ('fingerprint' in result && result.verified && result.fingerprint) {
           const saved = this.store.runByKey(run.requestKey)!;

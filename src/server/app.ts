@@ -1,5 +1,5 @@
 import { isNoteGroup } from '../note-groups.ts';
-import { noteAlternativeRange, NOTE_ALTERNATIVE_RANGES } from '../shared.ts';
+import { noteAlternativeRange, NOTE_ALTERNATIVE_RANGES, validRoutes } from '../shared.ts';
 import Fastify from 'fastify';
 import compress from '@fastify/compress';
 import { registerImportUpload } from './import-upload.ts';
@@ -299,11 +299,15 @@ export async function buildApp(options: AppOptions) {
     store.savePreference('quick-notes', quickNotes);
     return { quickNotes: quickNotes || null };
   });
+  app.get('/api/collaboration', () => workspace.collaborationSettings());
   app.post('/api/collaboration', (request, reply) => {
-    const enabled = (request.body as any)?.enabled;
-    if (typeof enabled !== 'boolean') return reply.code(400).send({ error: 'Send enabled as true or false.' });
-    workspace.setCollaborationEnabled(enabled);
-    return { enabled };
+    const { enabled, routes } = (request.body as any) || {};
+    if (enabled === undefined && routes === undefined) return reply.code(400).send({ error: 'Send enabled or routes.' });
+    if (enabled !== undefined && typeof enabled !== 'boolean') return reply.code(400).send({ error: 'Send enabled as true or false.' });
+    if (routes !== undefined && !validRoutes(routes)) return reply.code(400).send({ error: 'Choose a supported worker for each collaboration role.' });
+    if (routes !== undefined) workspace.setCollaborationRoutes(routes);
+    if (enabled !== undefined) workspace.setCollaborationEnabled(enabled);
+    return workspace.collaborationSettings();
   });
   app.get('/api/indirect-changes', () => ({ indirectChanges: indirectChanges() }));
   const alternativePreferences = () => ({ noteAlternatives: store.preference<boolean>('note-alternatives') === true, noteAlternativeRange: noteAlternativeRange(store.preference('note-alternative-range')) });

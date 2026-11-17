@@ -1,41 +1,55 @@
 # Collaboration mode
 
-An opt-in experiment for editing many PDF annotations with the existing Codex app-server. It is hidden by default. Open **Settings → About Papilot → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
+An opt-in experiment for editing many PDF annotations with several agents at once. It is hidden by default. Open **Settings → About Papilot → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
 
-Codex plans the work by annotation intent and source span. Simple edits go to DeepSeek through **OpenCode Go**; prose polishing goes to Gemini through Antigravity (Gemini 3.8 Flash by default); reasoning, factual checks, references and formatting go to independent Codex workers using the task's selected Codex model. The coordinator handles planning, ambiguous scope and conflicts. The final audit uses another independent, read-only Codex session. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
+Codex is the coordinator. It plans the work by annotation intent and source span, sends each piece to the worker configured for its role, resolves conflicts and finishes with an independent audit. Pick the coordinator's model and reasoning effort in the task's model picker, as for a Codex task. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
 
 ![Collaboration mode in the experimental settings](assets/collaboration-desktop.png)
 
 [Mobile, dark theme](assets/collaboration-mobile-dark.png) · [Mobile, Simplified Chinese](assets/collaboration-mobile-zh-CN.png)
 
-## Host setup
+## Roles and workers
 
-Sign in to Codex as usual. Install OpenCode on the machine running Papilot, open its TUI, and use `/connect` to select **OpenCode Go** and enter your Go key. Check `/models` for a DeepSeek model. This experiment defaults to `opencode-go/deepseek-v4.1-flash`. `PAPILOT_COLLABORATION_DEEPSEEK_MODEL` can select another available `opencode-go/deepseek-*` model; other providers are rejected. OpenCode owns the credentials. Papilot does not read or copy its key. Go account billing settings, including optional extra usage, still apply.
+Below the switch, each role has a worker and, when the model offers it, a reasoning effort:
 
-Install and sign in to `agy` for Gemini. The default is `gemini-3.8-flash`. `PAPILOT_COLLABORATION_GEMINI_MODEL` can select another available `gemini-*` catalog ID, including Argon when the account offers it. Use Papilot’s grouped model ID (for example `gemini-4-argon`, without an effort suffix). An unavailable selection fails explicitly; it does not switch models. `PAPILOT_OPENCODE_BIN` and `PAPILOT_AGY_BIN` override CLI paths. `PAPILOT_AGY_PROXY` applies the configured HTTP proxy only to Antigravity. Restart the Papilot host after changing environment variables.
+| Role | Work |
+| --- | --- |
+| **Quick edits** | Simple, unambiguous edits: typos, word choice, consistent terms and small LaTeX fixes |
+| **Polishing** | Clarity, flow and tone of a passage without changing its claims |
+| **Checks and reasoning** | Mathematical reasoning, factual claims, references, citations and formatting |
 
-See [OpenCode Go setup](https://opencode.ai/docs/console/go/) and [Antigravity CLI](https://antigravity.google/docs/cli/headless). No Pi installation is needed.
+A worker can be any model of **Codex**, **Antigravity** (`agy`) or **OpenCode** found on the Papilot host. By default every role uses Codex with the coordinator's model and effort (**Same as coordinator**), so the mode works with Codex alone. The coordinator is told which worker runs each role. Changes apply to the next delegation, including in running tasks.
+
+For example, to send quick edits to DeepSeek and polishing to Gemini:
+
+1. Install OpenCode, open its TUI, use `/connect` to add a provider (such as **OpenCode Go** or a DeepSeek API key) and check `/models`. OpenCode owns the credentials; Papilot does not read or copy them, and the provider's billing settings apply.
+2. Install and sign in to `agy`.
+3. Select **Reconnect** in **Settings → Agents**, then choose the models under **Quick edits** and **Polishing**, for example `opencode-go/deepseek-v4.1-flash` at **Max** and `gemini-4-argon` at **High**.
+
+A chosen model must still be offered by the host when a worker starts; otherwise the delegation fails with an explicit error instead of switching models, and the coordinator handles that work itself after explaining why. `PAPILOT_OPENCODE_BIN` and `PAPILOT_AGY_BIN` override CLI paths. `PAPILOT_AGY_PROXY` applies an HTTP proxy only to Antigravity.
+
+See [OpenCode providers](https://opencode.ai/docs/providers/) and [Antigravity CLI](https://antigravity.google/docs/cli/headless).
 
 ## Editing and final verification
 
 Each worker receives an isolated copy of the selected source files and edits that copy with its native file tools. The main task directory is never the worker’s workspace. Commands, network tools and MCP operations are denied; edits outside the selected files, symbolic links and file creation/deletion are rejected before integration.
 
-Codex workers use native `apply_patch` with a sandbox limited to their copied workspace. Host writable roots, network access, shell tools, nested agents, hooks, apps and plugins are disabled. Configured MCP servers are disabled individually; if an enabled server name contains a dot, rename or disable that server on the host before using this mode because Codex's native override syntax cannot isolate it safely. An editing worker never replaces the separate final audit.
+Codex workers use native `apply_patch` with a sandbox limited to their copied workspace. Host writable roots, network access, shell tools, nested agents, hooks, apps and plugins are disabled. Configured MCP servers are disabled individually; if an enabled server name contains a dot, rename or disable that server on the host before using this mode because Codex's native override syntax cannot isolate it safely. Antigravity workers may write only the copied files and cannot run commands, open URLs or use MCP. OpenCode workers may read and edit only the copied files. An editing worker never replaces the separate final audit.
 
 Papilot compares the worker’s base snapshot, current task source and worker result using the review engine’s existing three-way merge. Its word-level fallback can combine independent edits even on the same line. Workers run concurrently; only the short integration step is serialized. Source files are checked again before atomic replacement, so newer edits are preserved. The program returns which files were applied; Codex does not copy or reapply those changes.
 
-If edits overlap, the conflicted task file stays unchanged. The tool returns the current version, worker version and merge candidate for Codex to reconcile against the latest source. Other clean files are still integrated. Delegation is limited to existing text files; broader file creation, deletion or restructuring stays with Codex.
+If edits overlap, the conflicted task file stays unchanged. The tool returns the current version, worker version and merge candidate for the coordinator to reconcile against the latest source. Other clean files are still integrated. Delegation is limited to existing text files; broader file creation, deletion or restructuring stays with the coordinator.
 
 Audit and publication wait for all delegated edits to finish. Starting another delegation invalidates the previous audit; no new delegate can start while an audit is running. Paused, disconnected or superseded runs cannot integrate late worker results.
 
-Every note in the conversation up to the current turn has a stable message/index ID. The `workflow_audit` tool requires exactly one outcome per ID: addressed, unchanged with evidence, or blocked with an explanation. It verifies that quoted evidence exists, then opens a fresh Codex session to check the claims against the integrated sources and diff. Shared source files are included only once. Blocked notes remain unresolved and must be reported to the author.
+Every note in the conversation up to the current turn has a stable message/index ID. The `workflow_audit` tool requires exactly one outcome per ID: addressed, unchanged with evidence, or blocked with an explanation. It verifies that quoted evidence exists, then opens a fresh Codex session, using the coordinator's model and effort, to check the claims against the integrated sources and diff. Shared source files are included only once. Blocked notes remain unresolved and must be reported to the author.
 
-A successful audit is saved with a fingerprint of tracked and untracked files plus all cited evidence, including ignored source files. Editing these files invalidates it. Both automatic publication and the manual comparison action require a current successful audit. A missing or failed audit holds the task for continuation. For layout changes, Codex is instructed to use the existing `view_pdf` tool before auditing; source-level coverage alone does not prove the PDF looks right. Papilot still compiles and publishes its normal review afterward.
+A successful audit is saved with a fingerprint of tracked and untracked files plus all cited evidence, including ignored source files. Editing these files invalidates it. Both automatic publication and the manual comparison action require a current successful audit. A missing or failed audit holds the task for continuation. For layout changes, the coordinator is instructed to use the existing `view_pdf` tool before auditing; source-level coverage alone does not prove the PDF looks right. Papilot still compiles and publishes its normal review afterward.
 
-Pausing, disconnecting or closing Papilot cancels outstanding helpers and discards late results. Helpers have a ten-minute request deadline. If an executor is missing, signed out or unavailable, the tool reports the error and Codex may handle that work itself after explaining the fallback. It never switches DeepSeek to a different provider. The audit is model-assisted review, not a proof of mathematical correctness.
+Pausing, disconnecting or closing Papilot cancels outstanding workers and discards late results. If a worker is missing, signed out or unavailable, the tool reports the error and the coordinator may handle that work itself after explaining the fallback. The audit is model-assisted review, not a proof of mathematical correctness.
 
 ## Development checks
 
-`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, isolated edits, automatic same-line merging, conflicts, provider restrictions, source evidence, cancellation, complete annotation accounting, failed/stale audits and publication. The UI check exercises enable/disable, persistence, errors and keyboard interaction on desktop and mobile layouts.
+`tests/collaboration.test.ts` and the collaboration cases in `tests/workspace.test.ts` use fake native runtimes and disposable Git repositories. They cover hidden selection, role routing and saved settings, isolated edits, automatic same-line merging, conflicts, unavailable models and efforts, source evidence, cancellation, complete annotation accounting, failed/stale audits and publication. `tests/collaboration-codex.test.ts` runs the installed native Codex runtime against a local canned endpoint. The UI check exercises enable/disable, worker and effort selection, persistence, errors and keyboard interaction on desktop and mobile layouts.
 
 The settings disclosure follows Modern Web Guidance `accordion` and `html` using native `details`/`summary`; `checkbox` and `forms` preserve native input behavior, visible labels and error feedback.

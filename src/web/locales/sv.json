@@ -1474,7 +1474,6 @@
   "Collaboration mode": "Samarbetsläge",
   "Experiments": "Experimentella funktioner",
   "Enable collaboration mode": "Aktivera samarbetsläge",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex samordnar DeepSeek via OpenCode Go och Gemini via Antigravity och kontrollerar sedan varje anteckning. Kräver inloggning till tjänsterna på värddatorn. Av som standard.",
   "Add anchor": "Lägg till ankare",
   "Anchors": "Ankare",
   "Edit anchor: {name}": "Redigera ankare: {name}",
@@ -1501,5 +1500,13 @@
   "Folders on the computer running Papilot": "Mappar på datorn som kör Papilot",
   "Open": "Öppna",
   "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
-  "Browse…": "Bläddra…"
+  "Browse…": "Bläddra…",
+  "Checks and reasoning": "Kontroller och resonemang",
+  "Clarity and flow of passages": "Tydlighet och flyt i textavsnitt",
+  "Codex assigns annotations to the workers below and checks every one before publishing.": "Codex tilldelar kommentarer till medarbetarna nedan och kontrollerar varje kommentar före publicering.",
+  "Math, facts, references and formatting": "Matematik, fakta, referenser och formatering",
+  "Polishing": "Finputsning",
+  "Quick edits": "Snabba ändringar",
+  "Same as coordinator": "Samma som koordinator",
+  "Typos, word choice and small LaTeX fixes": "Stavfel, ordval och mindre LaTeX-korrigeringar"
 }

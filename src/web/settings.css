@@ -254,3 +254,4 @@
 
 .workflow-experiments > summary { cursor: pointer; color: var(--text-3); padding-block: .75rem; }
 .workflow-experiments .settings-name { display: inline-flex; align-items: center; min-block-size: 44px; cursor: pointer; }
+.collaboration-route .settings-effort { border-top: 0; padding-top: 0; }

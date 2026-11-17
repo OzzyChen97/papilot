@@ -375,8 +375,6 @@
   "Drop one folder or LaTeX ZIP file.": "1つのフォルダまたはLaTeXのZIPファイルをドロップしてください。",
   "No files found in this folder.": "このフォルダにファイルが見つかりませんでした。",
   "Papilot cannot read this folder.": "Papilot はこのフォルダーを読み取れません。",
-  "Choose a folder smaller than 64 MB.": "64 MB 未満のフォルダを選択してください。",
-  "Choose between 1 and 5,000 files.": "1〜5,000 個のファイルを選択してください。",
   "Send enabled as true or false.": "enabled に true または false を指定してください。",
   "Provide source evidence as an array.": "ソースの根拠を配列で指定してください。",
   "Evidence must name a source file inside this task.": "根拠には、このタスク内のソースファイルを指定してください。",
@@ -391,9 +389,6 @@
   "The workflow was stopped.": "ワークフローを停止しました。",
   "The manuscript changed during the audit. Audit again.": "チェック中に原稿が変更されました。再度チェックしてください。",
   "The workflow helper was stopped.": "ワークフローの補助セッションを停止しました。",
-  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": "Papilot ホストに OpenCode をインストールして OpenCode Go に接続し、再試行してください。",
-  "Install and sign in to the required workflow agent on the Papilot host.": "Papilot ホストで必要なワークフローエージェントをインストールし、ログインしてください。",
-  "DeepSeek must use an opencode-go/deepseek-* model.": "DeepSeek には opencode-go/deepseek-* モデルを使用してください。",
   "The workflow helper disconnected.": "ワークフローの補助セッションが切断されました。",
   "Enable collaboration mode in Settings → About Papilot → Experiments first.": "まず設定 → Papilot について → 実験的な機能で協調モードを有効にしてください。",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "AI レビューには Codex を選択してください。協調モードは注釈に基づく編集用です。",
@@ -402,6 +397,8 @@
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "協調モードでは公開前に最終ソースのチェックに合格する必要があります。タスクを続行して、すべての注釈を確認してください。",
   "Delegated edits must stay within the selected source files.": "委任した編集は選択したソースファイル内に限定してください。",
   "The source changed while merging delegated edits. Retry the delegation.": "委任した編集のマージ中にソースが変更されました。委任をやり直してください。",
-  "Choose deepseek, gemini or codex.": "DeepSeek、Gemini、Codex のいずれかを選択してください。",
-  "Codex could not apply isolated workflow permissions.": "Codex でワークフローの隔離権限を適用できませんでした。"
+  "Codex could not apply isolated workflow permissions.": "Codex でワークフローの隔離権限を適用できませんでした。",
+  "Choose a supported worker for each collaboration role.": "各コラボレーションロールに対してサポートされているワーカーを選択してください。",
+  "Choose the quick, polish or rigorous role.": "quick、polish、または rigorous のいずれかのロールを選択してください。",
+  "Send enabled or routes.": "enabled または routes を送信してください。"
 }

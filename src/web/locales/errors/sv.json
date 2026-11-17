@@ -375,8 +375,6 @@
   "Drop one folder or LaTeX ZIP file.": "Släpp en mapp eller en LaTeX-ZIP-fil.",
   "No files found in this folder.": "Inga filer hittades i den här mappen.",
   "Papilot cannot read this folder.": "Papilot kan inte läsa den här mappen.",
-  "Choose a folder smaller than 64 MB.": "Välj en mapp som är mindre än 64 MB.",
-  "Choose between 1 and 5,000 files.": "Välj mellan 1 och 5 000 filer.",
   "Send enabled as true or false.": "Skicka enabled som true eller false.",
   "Provide source evidence as an array.": "Ange källbelägg som en array.",
   "Evidence must name a source file inside this task.": "Beläggen måste ange en källfil inom den här uppgiften.",
@@ -391,9 +389,6 @@
   "The workflow was stopped.": "Arbetsflödet stoppades.",
   "The manuscript changed during the audit. Audit again.": "Manuskriptet ändrades under kontrollen. Kontrollera igen.",
   "The workflow helper was stopped.": "Arbetsflödets hjälpsession stoppades.",
-  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": "Installera OpenCode och anslut OpenCode Go på Papilot-värddatorn och försök igen.",
-  "Install and sign in to the required workflow agent on the Papilot host.": "Installera den agent som krävs på Papilot-värddatorn och logga in.",
-  "DeepSeek must use an opencode-go/deepseek-* model.": "DeepSeek måste använda en opencode-go/deepseek-*-modell.",
   "The workflow helper disconnected.": "Arbetsflödets hjälpsession kopplades från.",
   "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Aktivera först samarbetsläget under Inställningar → Om Papilot → Experimentella funktioner.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Välj Codex för AI-granskning. samarbetsläget redigerar utifrån anteckningar.",
@@ -402,6 +397,8 @@
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "Samarbetsläget kräver en godkänd kontroll av den slutliga källtexten före publicering. Fortsätt uppgiften för att kontrollera alla anteckningar.",
   "Delegated edits must stay within the selected source files.": "Delegerade ändringar måste begränsas till de valda källfilerna.",
   "The source changed while merging delegated edits. Retry the delegation.": "Källtexten ändrades medan de delegerade ändringarna slogs samman. Delegera uppgiften igen.",
-  "Choose deepseek, gemini or codex.": "Välj DeepSeek, Gemini eller Codex.",
-  "Codex could not apply isolated workflow permissions.": "Codex kunde inte tillämpa behörigheterna för isolering av arbetsflödet."
+  "Codex could not apply isolated workflow permissions.": "Codex kunde inte tillämpa behörigheterna för isolering av arbetsflödet.",
+  "Choose a supported worker for each collaboration role.": "Välj en arbetare som stöds för varje samarbetsroll.",
+  "Choose the quick, polish or rigorous role.": "Välj rollen quick, polish eller rigorous.",
+  "Send enabled or routes.": "Skicka enabled eller routes."
 }

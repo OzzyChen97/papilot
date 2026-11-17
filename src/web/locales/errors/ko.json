@@ -375,8 +375,6 @@
   "Drop one folder or LaTeX ZIP file.": "하나의 폴더 또는 LaTeX ZIP 파일을 끌어다 놓으세요.",
   "No files found in this folder.": "이 폴더에 파일이 없습니다.",
   "Papilot cannot read this folder.": "Papilot이 이 폴더를 읽을 수 없습니다.",
-  "Choose a folder smaller than 64 MB.": "64 MB 미만의 폴더를 선택하세요.",
-  "Choose between 1 and 5,000 files.": "1개에서 5,000개 사이의 파일을 선택하세요.",
   "Send enabled as true or false.": "enabled는 true 또는 false여야 합니다.",
   "Provide source evidence as an array.": "소스 근거를 배열로 제공하세요.",
   "Evidence must name a source file inside this task.": "근거는 이 작업 안의 소스 파일을 가리켜야 합니다.",
@@ -391,9 +389,6 @@
   "The workflow was stopped.": "워크플로가 중지되었습니다.",
   "The manuscript changed during the audit. Audit again.": "검사 중 원고가 변경되었습니다. 다시 검사하세요.",
   "The workflow helper was stopped.": "워크플로 보조 세션이 중지되었습니다.",
-  "Install OpenCode and connect OpenCode Go on the Papilot host, then retry.": "Papilot 호스트에 OpenCode를 설치하고 OpenCode Go에 연결한 다음 다시 시도하세요.",
-  "Install and sign in to the required workflow agent on the Papilot host.": "Papilot 호스트에 필요한 워크플로 에이전트를 설치하고 로그인하세요.",
-  "DeepSeek must use an opencode-go/deepseek-* model.": "DeepSeek는 opencode-go/deepseek-* 모델을 사용해야 합니다.",
   "The workflow helper disconnected.": "워크플로 보조 세션의 연결이 끊어졌습니다.",
   "Enable collaboration mode in Settings → About Papilot → Experiments first.": "먼저 설정 → Papilot 정보 → 실험 기능에서 협업 모드를 활성화하세요.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "AI 검토에는 Codex를 선택하세요. 협업 모드는 주석에 따른 수정용입니다.",
@@ -402,6 +397,8 @@
   "Collaboration mode needs a successful audit of the final source before publication. Continue the task to check all annotations.": "협업 모드는 게시 전에 최종 소스 검사를 통과해야 합니다. 작업을 계속하여 모든 주석을 확인하세요.",
   "Delegated edits must stay within the selected source files.": "위임한 수정은 선택한 소스 파일 내에서만 이루어져야 합니다.",
   "The source changed while merging delegated edits. Retry the delegation.": "위임한 수정을 병합하는 동안 소스가 변경되었습니다. 다시 위임하세요.",
-  "Choose deepseek, gemini or codex.": "DeepSeek, Gemini 또는 Codex를 선택하세요.",
-  "Codex could not apply isolated workflow permissions.": "Codex가 워크플로 격리 권한을 적용하지 못했습니다."
+  "Codex could not apply isolated workflow permissions.": "Codex가 워크플로 격리 권한을 적용하지 못했습니다.",
+  "Choose a supported worker for each collaboration role.": "각 협업 역할에 대해 지원되는 워커를 선택하세요.",
+  "Choose the quick, polish or rigorous role.": "quick, polish 또는 rigorous 역할을 선택하세요.",
+  "Send enabled or routes.": "enabled 또는 routes를 전송하세요."
 }

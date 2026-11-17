@@ -1474,7 +1474,6 @@
   "Collaboration mode": "Modo colaborativo",
   "Experiments": "Recursos experimentais",
   "Enable collaboration mode": "Ativar o modo colaborativo",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "O Codex coordena o DeepSeek pelo OpenCode Go e o Gemini pelo Antigravity e verifica cada anotação. É necessário entrar nesses serviços no host. Desativado por padrão.",
   "Add anchor": "Adicionar âncora",
   "Anchors": "Âncoras",
   "Edit anchor: {name}": "Editar âncora: {name}",
@@ -1501,5 +1500,13 @@
   "Folders on the computer running Papilot": "Pastas do computador que executa o Papilot",
   "Open": "Abrir",
   "/Users/you/papers/my-paper": "/Users/you/papers/my-paper",
-  "Browse…": "Procurar…"
+  "Browse…": "Procurar…",
+  "Checks and reasoning": "Verificações e raciocínio",
+  "Clarity and flow of passages": "Clareza e fluidez dos trechos",
+  "Codex assigns annotations to the workers below and checks every one before publishing.": "O Codex atribui anotações aos trabalhadores abaixo e verifica cada uma antes de publicar.",
+  "Math, facts, references and formatting": "Matemática, fatos, referências e formatação",
+  "Polishing": "Refinamento",
+  "Quick edits": "Edições rápidas",
+  "Same as coordinator": "Igual ao coordenador",
+  "Typos, word choice and small LaTeX fixes": "Erros de digitação, escolha de palavras e pequenas correções de LaTeX"
 }

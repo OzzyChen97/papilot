@@ -194,11 +194,6 @@
     "textHash": "001a51a407db9f9a06e80c066482a107a6c1bbfb7027859805bb39564b80ae6a",
     "model": "codex"
   },
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": {
-    "revision": "ca5d180de4d4fe6f9ca40ceb8937c0651c0c720b0ab712079889b6cb9d4c6165",
-    "textHash": "3ec3a463db0d99802642b600b14bbcee4049e8133be3fe24b5c4ca97572990ae",
-    "model": "codex"
-  },
   "Add anchor": {
     "revision": "411b429e85e09c2c954f42cfa74916f23f1f770eb6263594a76523f9c3f70d49",
     "textHash": "775ec01bf44e8e4077e55dc26eeaef64ca6e43e7f72823c31402a58e88127b45",

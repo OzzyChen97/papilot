@@ -262,7 +262,6 @@
   "Archive all tasks…": "归档全部任务…",
   "Delete all archived tasks?": "删除全部归档任务？",
   "Experiments": "实验功能",
-  "Codex coordinates DeepSeek through OpenCode Go and Gemini through Antigravity, then checks every annotation. Requires their host sign-ins. Off by default.": "Codex 通过 OpenCode Go 调用 DeepSeek、通过 Antigravity 调用 Gemini，并逐条检查批注。需要在主机登录这些服务。默认关闭。",
   "Collaboration mode": "协作模式",
   "Enable collaboration mode": "启用协作模式",
   "Add anchor": "添加锚点",

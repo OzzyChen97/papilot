@@ -59,17 +59,17 @@ test('native Codex workers edit snapshots without inherited tools, network or wr
   };
   const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 45000);
   let copy = '';
-  const generate: WorkflowGenerate = async (executor, prompt, signal, model, edit) => {
+  const generate: WorkflowGenerate = async (worker, prompt, signal, edit) => {
     copy = edit!.cwd;
     assert.equal(copy, fs.realpathSync.native(copy), 'the native sandbox must see expanded Windows paths');
-    const summary = await runWorkflowHelper(executor, prompt, signal, model, edit, factory);
+    const summary = await runWorkflowHelper(worker, prompt, signal, edit, factory);
     assert.equal(fs.readFileSync(path.join(paper, 'main.tex'), 'utf8'), original, 'the worker has not edited the task');
     assert.equal(fs.readFileSync(path.join(copy, 'main.tex'), 'utf8'), 'Checked text.\n');
     return summary;
   };
   try {
     const notes = [{ id: 'note:1', where: 'main.tex', quote: 'Original text.', comment: 'Check the text.' }];
-    const result = await delegateWorkflow(paper, notes, { executor: 'codex', annotationIds: ['note:1'], instruction: 'Check the text.', sources: [{ file: 'main.tex', quote: 'Original text.' }] }, generate, controller.signal, () => true, selected);
+    const result = await delegateWorkflow(paper, notes, { role: 'rigorous', annotationIds: ['note:1'], instruction: 'Check the text.', sources: [{ file: 'main.tex', quote: 'Original text.' }] }, generate, controller.signal, () => true, () => ({ agent: 'codex', model: selected, effort: null }));
     assert.equal(result.status, 'applied'); assert.deepEqual(result.appliedFiles, ['main.tex']);
     assert.equal(fs.readFileSync(path.join(paper, 'main.tex'), 'utf8'), 'Checked text.\n');
     assert.equal(fs.readFileSync(protectedFile, 'utf8'), 'Protected.\n'); assert.equal(fs.existsSync(marker), false);
