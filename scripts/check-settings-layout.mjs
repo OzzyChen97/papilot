@@ -80,6 +80,19 @@ try {
         const label = `${language}/${width}/${name}`;
         if (overflow.length) await page.screenshot({ path: `test-results/settings-overflow-${language}-${width}-${name}.png` });
         assert.deepEqual(overflow, [], label);
+        if (language === 'en' && name === 'general' && [320, 1280].includes(width)) {
+          const slider = page.locator('.settings-effort input[type="range"]');
+          for (const colorScheme of ['light', 'dark']) {
+            await page.emulateMedia({ colorScheme });
+            await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+            await slider.focus();
+            // The native hit target sits above the drawn track and thumb;
+            // a text-field focus fill would hide both while using the keyboard.
+            await expect(slider).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+            await page.screenshot({ animations: 'disabled', path: `test-results/settings-slider-${width}-${colorScheme}.png` });
+          }
+          await page.emulateMedia({ colorScheme: 'light' });
+        }
         if (name === 'review') {
           const alternatives = page.locator('.settings-note-options');
           await expect(alternatives.getByRole('slider', { name: await alternatives.locator('label').innerText(), exact: true })).toHaveCount(1);
