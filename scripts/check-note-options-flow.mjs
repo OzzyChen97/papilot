@@ -100,6 +100,11 @@ try {
       await page.goto(origin);
       await frame().getByRole('button', { name: 'Show note 1: Improve note 1.', exact: true }).click();
       await expect(comparison('a-current-v1')).toBeVisible();
+      // A detailed strip lays each line's glyphs out in a row over its image.
+      await expect.poll(() => comparison('a-current-v1').locator('.pdf-line-run').first().evaluate(run => {
+        const [first, second] = [...run.children].map(glyph => glyph.getBoundingClientRect());
+        return getComputedStyle(run).position === 'absolute' && second.left > first.left;
+      })).toBe(true);
       failPreview = true; version++; changed(); await sync();
       await expect(comparison('a-current-v2')).toBeVisible();
       await tab('Alternative a').click();

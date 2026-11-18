@@ -1329,6 +1329,9 @@ body.resizing iframe{pointer-events:none}
 .note-option-comparison .pdf-text { position: absolute; inset: 0; overflow: hidden; color: transparent; user-select: text; -webkit-user-select: text; cursor: text; line-height: 1; }
 .note-option-comparison .pdf-text-line { white-space: pre; }
 .note-option-comparison .pdf-glyph, .note-option-comparison .pdf-line-preview { position: absolute; font-family: "Times New Roman", serif; font-weight: normal; line-height: 1; white-space: pre; transform-origin: 0 0; color: transparent; }
+/* A detailed line: one box, its glyphs inline (see engine PdfStrip). */
+.note-option-comparison .pdf-line-run { position: absolute; font-family: "Times New Roman", serif; font-weight: normal; font-kerning: none; font-variant-ligatures: none; line-height: 1; white-space: pre; color: transparent; }
+.note-option-comparison .pdf-line-run > .pdf-glyph { position: static; font: inherit; transform: none; }
 .note-option-comparison .pdf-glyph::selection, .note-option-comparison .pdf-line-preview::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); color: transparent; }
 
 .note-comparison-context { position: relative; width: 100%; max-height: 72px; overflow: hidden; }
