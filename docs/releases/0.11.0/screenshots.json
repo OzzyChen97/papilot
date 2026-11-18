@@ -1,0 +1,43 @@
+{
+  "sourceCommit": "248a9abbd1ad02cafd277622f8211d1dfabaa020",
+  "sourceVersion": "0.11.0",
+  "capture": "Built workspace in Chromium, English, light theme. Disposable example papers and demo account data; no live model calls or authenticated Overleaf session.",
+  "images": [
+    {
+      "file": "images/writer.png",
+      "view": "Papilot Writer provider setup",
+      "fixture": "scripts/check-writer-setup.mjs"
+    },
+    {
+      "file": "images/overleaf.png",
+      "view": "Overleaf coauthors and conflict resolution",
+      "fixture": "scripts/check-overleaf.mjs"
+    },
+    {
+      "file": "images/templates.png",
+      "view": "New paper template gallery",
+      "catalog": "https://papilot.ai/universe/v1/index.json"
+    },
+    {
+      "file": "images/experiments.png",
+      "view": "PhiTeX and collaboration settings with sample availability and enabled choices",
+      "fixture": "scripts/check-writer-setup.mjs"
+    },
+    {
+      "file": "images/crop-editor.png",
+      "view": "Mobile crop margins",
+      "fixture": "scripts/check-pdf-crop.mjs",
+      "paper": "examples/playground-paper/preview/main.pdf"
+    },
+    {
+      "file": "images/crop-reading.png",
+      "view": "Mobile reading after cropping",
+      "fixture": "scripts/check-pdf-crop.mjs",
+      "paper": "examples/playground-paper/preview/main.pdf"
+    }
+  ],
+  "reused": {
+    "file": "../../assets/readme-showcase/hero.png",
+    "view": "Existing canvas interface illustration"
+  }
+}
