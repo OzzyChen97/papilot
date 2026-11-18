@@ -263,7 +263,9 @@ try {
   await expect(personalCard.getByText('Revise n1.', { exact: true })).toBeVisible();
   const quoteMobile = personalCard.getByRole('button', { name: 'Include note 1 in this task', exact: true });
   await expect(quoteMobile).toHaveAttribute('aria-pressed', 'true');
-  await quoteMobile.click();
+  // The selected button scales in. Retrying its click must not scroll the
+  // already-visible card's anchor offscreen while waiting for that animation.
+  await quoteMobile.click({ scroll: 'none' });
   await expect(quoteMobile).toHaveAttribute('aria-pressed', 'false');
   await expect(page.locator('.new-task-panel [data-note]')).toHaveCount(0);
   const cardBox = await personalCard.boundingBox(), pdfBox = await page.locator('.pdf-container').boundingBox();
