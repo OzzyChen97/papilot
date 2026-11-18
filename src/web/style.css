@@ -674,6 +674,9 @@ body.resizing iframe{pointer-events:none}
 @container (max-width:380px){html:not([lang^=zh]) .side-tabs>button:not([aria-selected=true]) .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
 @container (max-width:310px){.side-tabs>button:not([aria-selected=true]) .tab-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
 .side-tabs>button{display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;flex-shrink:0;border-radius:var(--r);font-size:12px;font-weight:500;color:var(--text-3);transition:background-color .15s,color .15s}
+.side-tabs>[data-task-home]{flex-shrink:1;min-width:min-content;height:auto;min-height:28px;padding-block:2px}
+.side-tabs>[data-task-home] .tab-label{min-width:0;white-space:normal;line-height:1.2}
+.side-tabs>[data-task-home]>svg,.side-tabs>[data-task-home]>.count{flex-shrink:0}
 .side-tabs>button:hover{background:transparent;color:var(--text-2)}
 .side-tabs>button[aria-selected=true]{background:transparent;color:var(--text)}
 /* The notes added to the task: a count badge, so it doesn't read as part of the name. */
@@ -708,7 +711,9 @@ body.resizing iframe{pointer-events:none}
 .note-selection-head{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%}
 .note-select-all{padding:4px 0;color:var(--text-2);font:inherit;white-space:nowrap}
 .note-select-all:hover:not(:disabled){color:var(--text)}
-.side-header-actions{display:flex;align-items:center;flex-shrink:0}
+.side-header-actions>.note-select-all{min-height:28px;padding:4px 8px;border-radius:var(--r);line-height:1.2;white-space:normal}
+.side-header-actions>.note-select-all:hover:not(:disabled){background:var(--bg-hover)}
+.side-header-actions{display:flex;align-items:center;flex:0 1 auto;min-width:0;max-width:46%}
 .side-header-actions[hidden]{display:none}
 .notes-panel>.note-section:first-of-type{margin-top:0}
 .notes-panel .note-card{position:relative;isolation:isolate;transition:background-color .15s,border-color .15s}
@@ -869,7 +874,7 @@ body.resizing iframe{pointer-events:none}
 .action-menu{position:fixed;inset:auto;margin:0;padding:6px;min-width:210px;max-width:min(380px,calc(100vw - 16px));border:0;border-radius:var(--r-lg);background:var(--menu-bg);color:var(--menu-text);box-shadow:var(--menu-shadow);font-size:12px}
 .action-menu:popover-open{display:flex;flex-direction:column;gap:1px;animation:menu-in .14s var(--ease)}
 .action-menu>button,.action-menu>a{display:flex;align-items:center;gap:8px;min-height:28px;padding:4px 8px;border-radius:var(--r);text-align:left;text-decoration:none;color:inherit}
-.action-menu>button:hover:not(:disabled),.action-menu>a:hover,.action-menu>button:focus-visible,.action-menu>a:focus-visible{background:var(--primary);outline:none;color:#fff}
+.action-menu>button:hover:not(:disabled),.action-menu>a:hover,.action-menu>button:focus-visible,.action-menu>a:focus-visible{--menu-text:#fff;--menu-text-2:#fff;--menu-text-3:#fff;background:var(--menu-selection);outline:none;color:var(--menu-text)}
 .action-menu>button>svg,.action-menu>a>svg{color:var(--menu-text-2)}
 .action-menu>.danger-text{color:var(--red)}
 .action-menu>.danger-text>svg{color:currentColor}
@@ -896,7 +901,7 @@ body.resizing iframe{pointer-events:none}
 .paper-menu{min-width:280px}
 .menu-item-row{display:flex;align-items:center;gap:2px}
 .menu-item-row>button{display:flex;align-items:center;gap:8px;flex:1;min-width:0;min-height:32px;padding:4px 8px;border-radius:var(--r);text-align:left}
-.menu-item-row>button:hover,.menu-item-row>button:focus-visible{background:var(--primary);outline:none;color:#fff}
+.menu-item-row>button:hover:not(:disabled),.menu-item-row>button:focus-visible{--menu-text:#fff;--menu-text-2:#fff;--menu-text-3:#fff;background:var(--menu-selection);outline:none;color:var(--menu-text)}
 .menu-item-row .menu-check{flex-shrink:0}
 .menu-item-row .paper-actions{flex:0 0 28px;min-height:28px;justify-content:center;padding:0;width:28px;height:28px;margin-right:3px;color:var(--menu-text-2)}
 .menu-item-row:hover .paper-actions,.menu-item-row:focus-within .paper-actions{color:var(--menu-text)}
@@ -1275,7 +1280,7 @@ body.resizing iframe{pointer-events:none}
 .note-review-scope { display: inline-flex; align-items: center; gap: 0; margin-left: 6px; padding: 2px; border-radius: 6px; background: var(--bg-muted); }
 .note-review-scope button { display: inline-flex; align-items: center; gap: 4px; height: 20px; border: 0; border-radius: 5px; padding: 0 8px; background: transparent; color: var(--text-2); font: inherit; font-size: 11px; font-weight: 500; white-space: nowrap; cursor: pointer; }
 .note-review-scope button:hover { color: var(--text); }
-.note-review-scope button[aria-pressed="true"] { color: var(--text); background: var(--raised); box-shadow: 0 0 0 1px var(--line); }
+.note-review-scope button[aria-pressed="true"] { color: var(--text); background: var(--thumb); box-shadow: 0 0 0 1px var(--line); }
 .note-review-scope button:focus-visible { outline: 1px solid var(--accent); outline-offset: 1px; }
 /* The drawer's header: the note's options as a segmented control, the pager
    and the choice's actions, over a full-bleed rule. */
@@ -1286,7 +1291,7 @@ body.resizing iframe{pointer-events:none}
 .note-option-loading .spinner { width: 12px; height: 12px; }
 .note-option-tab { position: relative; flex-shrink: 0; min-height: 24px; padding: 0 8px; border: 0; border-radius: 5px; background: transparent; color: var(--text-2); font: inherit; font-size: 12px; white-space: nowrap; }
 .note-option-tab:hover:not(:disabled) { color: var(--text); }
-.note-option-tab[aria-selected="true"] { background: var(--raised); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+.note-option-tab[aria-selected="true"] { background: var(--thumb); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
 .note-option-tab[data-rejected="true"] .note-option-label { text-decoration: line-through; color: var(--text-3); }
 .note-option-content { display: flex; flex-direction: column; min-height: 50px; overflow: auto; padding: 0; background: var(--note-folder); }
 .note-option-label { display: flex; align-items: center; gap: 6px; font-weight: 500; }
@@ -1312,6 +1317,7 @@ body.resizing iframe{pointer-events:none}
 .note-option-comment textarea:focus-visible, .note-option-comment textarea:focus { border-color: var(--accent); background: var(--bg); }
 .note-option-comment textarea::placeholder { color: var(--text-3); }
 .note-option-comment .icon-button { width: 24px; height: 24px; }
+@media(pointer:coarse){.note-option-comment textarea{font-size:16px;min-height:44px}.note-option-comment .icon-button{min-width:44px;min-height:44px}}
 .note-options button:disabled { opacity: .5; cursor: default; }
 
 .note-option-comparison { --pdf-filter: var(--review-filter); --pdf-page: var(--review-page); min-height: 50px; max-height: 200px; overflow: auto; overscroll-behavior: contain; flex: 1 1 auto; padding: 6px 0 10px; background: var(--pdf-page); }

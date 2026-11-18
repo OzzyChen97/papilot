@@ -1703,8 +1703,6 @@ export function ReviewApp({
           {/* Batch decisions cover only undecided changes; accepted,
               rejected and commented changes keep their state. A single
               undecided change is decided from its own bar. */}
-          {/* The two batch decisions exclude each other, so they share one
-              segmented control. */}
           {undecided.length > 1 && (batch.length > 0 || !changes) && (
             <div className="batch-decisions">
               {batch.length > 0 && (

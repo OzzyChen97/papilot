@@ -14,8 +14,8 @@ const origin = `http://127.0.0.1:${server.server.address().port}`;
 const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHANNEL || 'chrome', headless: true });
 fs.mkdirSync('test-results', { recursive: true });
 try {
-  for (const width of [1440, 390]) {
-    const page = await browser.newPage({ locale: 'en-US', viewport: { width, height: 900 } });
+  for (const width of [1440, 390, 320]) {
+    const page = await browser.newPage({ locale: 'en-US', viewport: { width, height: 900 }, hasTouch: width <= 390, isMobile: width <= 390 });
     page.setDefaultTimeout(15000);
     const errors = [], writes = [], previews = [], undone = new Set();
     page.on('pageerror', error => errors.push(error.message));
@@ -100,6 +100,36 @@ try {
       await page.goto(origin);
       await frame().getByRole('button', { name: 'Show note 1: Improve note 1.', exact: true }).click();
       await expect(comparison('a-current-v1')).toBeVisible();
+      // Selected segments must rise above their groove in both themes, including
+      // the host's scope switch beside the embedded viewer's controls.
+      for (const colorScheme of ['dark', 'light']) {
+        await page.emulateMedia({ colorScheme });
+        await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+        for (const segment of [tab('Original a'), page.locator('.note-review-scope button[aria-pressed="true"]')]) {
+          await expect.poll(() => segment.evaluate(element => {
+            const lightness = color => color.match(/[\d.]+/g).slice(0, 3).reduce((sum, value, index) => sum + Number(value) * [0.2126, 0.7152, 0.0722][index], 0);
+            return lightness(getComputedStyle(element).backgroundColor) > lightness(getComputedStyle(element.parentElement).backgroundColor);
+          })).toBe(true);
+        }
+        await page.screenshot({ path: `test-results/note-options-selected-${colorScheme}-${width}.png` });
+      }
+      if (width <= 390) {
+        await drawer.getByRole('button', { name: 'Comment on Original a', exact: true }).click();
+        const comment = drawer.getByRole('textbox', { name: 'Comment on Original a', exact: true });
+        await expect(comment).toBeVisible();
+        assert.ok(await comment.evaluate(element => parseFloat(getComputedStyle(element).fontSize) >= 16), 'touch comments must not trigger focus zoom');
+        const close = drawer.getByRole('button', { name: 'Close comment', exact: true });
+        const target = await close.boundingBox();
+        assert.ok(target.width >= 44 && target.height >= 44, 'comment dismissal needs a finger-sized target');
+        assert.ok(await drawer.evaluate(element => element.scrollWidth <= element.clientWidth), 'comment controls must fit narrow drawers');
+        await comment.fill('Keep the original wording.');
+        await page.screenshot({ path: `test-results/note-options-comment-${width}.png` });
+        await close.click();
+        await expect(comment).toBeHidden();
+        await drawer.getByRole('button', { name: 'Comment on Original a', exact: true }).click();
+        await expect(comment).toHaveValue('Keep the original wording.');
+        await close.click();
+      }
       // A detailed strip lays each line's glyphs out in a row over its image.
       await expect.poll(() => comparison('a-current-v1').locator('.pdf-line-run').first().evaluate(run => {
         const [first, second] = [...run.children].map(glyph => glyph.getBoundingClientRect());

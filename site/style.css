@@ -228,8 +228,8 @@ html:is([lang=zh-CN],[lang=zh-Hant]) .hero .review-page :is(del,ins){white-space
 .tb-badge{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--button);color:#fff;font:600 11px/18px var(--sans);font-style:normal;text-align:center}
 .tb-decide{display:flex;flex:none;align-items:center;gap:6px}
 .tb-count{margin-right:4px;color:var(--text);font-variant-numeric:tabular-nums}
-.tb-pill{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 6px 0 10px;border:1px solid var(--line);border-radius:999px;background:var(--bg);box-shadow:0 1px 3px rgb(0 0 0/.05);color:var(--text)}
-.tb-pill b{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bg-muted);color:var(--text-2);font:500 11.5px/18px var(--sans);text-align:center}
+.tb-action{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text)}
+.tb-action b{min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bg-muted);color:var(--text-2);font:500 11.5px/18px var(--sans);text-align:center}
 .tb-accept .ic{color:var(--accept)}
 .tb-reject .ic{color:var(--reject)}
 /* The PDF's marking tools, in a rail at its left edge. */
@@ -245,7 +245,7 @@ html:is([lang=zh-CN],[lang=zh-Hant]) .hero .review-page :is(del,ins){white-space
 @container (max-width:920px){
   .app-tb .tb-label{display:none}
   .app-tb .tb-seg>b{padding:0 8px}
-  .tb-pill{padding:0 4px 0 9px}
+  .tb-action{padding:0 4px 0 9px}
 }
 @media(min-width:721px){@container (max-width:600px){
   .app-rail{display:none}
@@ -854,7 +854,7 @@ html:is([lang=zh-CN],[lang=zh-Hant]) .hero .review-page :is(del,ins){white-space
   .app-tb{height:44px;padding:0 8px}
   :is(.app-tb.side,.tb-sidebar,.app-tb .tb-run,.app-tb .tb-label){display:none}
   .app-tb .tb-seg>b{padding:0 8px}
-  .tb-pill{padding:0 4px 0 9px}
+  .tb-action{padding:0 4px 0 9px}
   .app-body{grid-template-columns:minmax(0,1fr)}
   .app-rail{display:none}
   .app-pdf{padding:14px 12px 0}

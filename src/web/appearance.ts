@@ -68,6 +68,7 @@ export function appearanceVariables(appearance: Appearance, mode: ColorMode): Re
     '--accent-soft': !custom && !customAccent ? (dark ? '#1c3a57' : '#e5f3ff') : mix(bg, activeAccent, .11),
     '--accent-line': !custom && !customAccent ? (dark ? '#2e5f8c' : '#b3dbff') : mix(bg, activeAccent, .3),
     '--primary': accent, '--primary-hover': customAccent ? mix(accent, '#000000', .18) : (dark ? '#2496f2' : '#0a76d1'),
+    '--menu-selection': mix(accent, '#000000', .16),
     '--ring': `0 0 0 1px ${activeAccent}`,
     '--pdf-filter': darkPaper ? 'invert(.84) hue-rotate(180deg)' : 'none',
     '--pdf-page': darkPaper ? '#292929' : '#ffffff',

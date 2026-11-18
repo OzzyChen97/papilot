@@ -292,6 +292,7 @@ try {
   const editTaskNote = () => taskCard.getByRole('button', { name: 'Edit note 1', exact: true });
   const taskText = () => taskCard.locator('.note-edit-trigger');
   const taskEditor = taskCard.getByRole('textbox', { name: 'Edit note 1', exact: true });
+  await expect(page.locator('.manuscript-side-header').getByRole('button', { name: 'Remove all from task', exact: true })).toHaveText('Remove all from task');
   await editTaskNote().focus(); await page.keyboard.press('Enter');
   await expect(taskEditor).toBeFocused();
   await expect(taskEditor).toHaveValue('Revise n1.');

@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { chromium, expect } from './playwright.mjs';
+import { selectOption } from './select.mjs';
 import { checkPdfLifecycle } from './check-pdf-lifecycle.mjs';
 
 // A plain file server, with no Papilot server, route mocking or API handlers.
@@ -66,6 +67,33 @@ try {
   await expect(banner.getByRole('button')).toHaveCount(5);
   await expect(page.getByText('Playground', { exact: true })).toHaveCount(0);
   await expect(page.locator('.task-row')).toHaveCount(3);
+  // Hover and keyboard focus must keep every part of a menu command legible.
+  for (const colorScheme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
+    await page.getByRole('button', { name: 'Research Tools', exact: true }).click();
+    const command = page.locator('.paper-tools-menu').getByRole('menuitem', { name: /^Reference check/ });
+    for (const input of ['pointer', 'keyboard']) {
+      if (input === 'pointer') await command.hover();
+      else { await page.mouse.move(0, 0); await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Research Tools', exact: true }).press('ArrowDown'); }
+      if (input === 'keyboard') await expect(command).toBeFocused();
+      const colors = await command.evaluate(element => {
+        const luminance = color => color.match(/[\d.]+/g).slice(0, 3).map(value => {
+          const channel = Number(value) / 255;
+          return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        const background = luminance(getComputedStyle(element).backgroundColor);
+        return [element, ...element.querySelectorAll('svg, .menu-detail, .menu-hint')].map(child => {
+          const foreground = luminance(getComputedStyle(child).color);
+          return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+        });
+      });
+      assert.ok(colors.length >= 3 && colors.every(contrast => contrast >= 4.5), `${colorScheme} ${input}: menu labels, icons and details retain contrast`);
+      await page.screenshot({ path: `test-results/menu-${colorScheme}-${input}.png` });
+    }
+    await page.keyboard.press('Escape');
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
   const modelMenu = page.getByRole('dialog', { name: 'Agent settings', exact: true });
   const modelTrigger = page.getByRole('button', { name: 'Agent settings', exact: true });
   await expect(modelTrigger).toContainText('GPT-6 Astra');
@@ -124,6 +152,28 @@ try {
   await expect(input).toHaveValue('Make the design philosophy more concrete.');
   await expect(page.locator('.task-row')).toHaveCount(3);
   fs.mkdirSync('test-results', { recursive: true });
+  await page.getByRole('separator', { name: 'Resize manuscript panel', exact: true }).press('End');
+  let currentLocale = 'en';
+  const translated = (locale, text) => locale === 'en' ? text : JSON.parse(fs.readFileSync(`src/web/locales/${locale}.json`, 'utf8'))[text];
+  for (const locale of ['de', 'fr', 'en']) {
+    await page.getByRole('button', { name: translated(currentLocale, 'Settings'), exact: true }).click();
+    await selectOption(page.getByRole('combobox', { name: translated(currentLocale, 'Language'), exact: true }), locale);
+    await page.getByRole('dialog', { name: translated(locale, 'Settings'), exact: true }).getByRole('button', { name: translated(locale, 'Close'), exact: true }).click();
+    currentLocale = locale;
+    const remove = page.getByRole('button', { name: translated(locale, 'Remove all from task'), exact: true });
+    await expect(remove).toHaveText(translated(locale, 'Remove all from task'));
+    const header = page.locator('.manuscript-side-header');
+    await expect.poll(() => header.evaluate(element => {
+      const tabs = element.querySelector('.side-tabs').getBoundingClientRect();
+      const tab = element.querySelector('[data-task-home]').getBoundingClientRect();
+      const button = element.querySelector('.note-select-all').getBoundingClientRect();
+      const box = element.getBoundingClientRect();
+      return box.width >= 298 && box.width <= 300 && tab.left >= tabs.left && tab.right <= tabs.right + 1 && button.top >= box.top && button.bottom <= box.bottom && button.right <= box.right;
+    }), { message: `${locale}: the current tab, badge and full action label fit a 300px side panel` }).toBe(true);
+    await page.screenshot({ path: `test-results/task-note-action-${locale}.png` });
+  }
+  await page.getByRole('separator', { name: 'Resize manuscript panel', exact: true }).press('Enter');
+  await expect(page.getByRole('button', { name: 'Remove all from task', exact: true })).toHaveText('Remove all from task');
   await page.getByRole('button', { name: 'Remove all from task', exact: true }).click();
   await page.screenshot({ path: 'test-results/playground-desktop.png' });
   const presets = page.getByRole('region', { name: 'Prepared tasks', exact: true });
@@ -233,6 +283,16 @@ try {
   await modelMenu.getByRole('combobox').press('Escape');
   const review = page.frameLocator('iframe.review-frame');
   await expect(review.locator('.change')).toHaveCount(2);
+  const acceptBatch = review.locator('.batch-decisions .accept-all'), rejectBatch = review.locator('.batch-decisions .reject-all');
+  await expect(acceptBatch).toBeVisible();
+  await expect(rejectBatch).toBeVisible();
+  for (const button of [acceptBatch, rejectBatch]) {
+    assert.equal(await button.getAttribute('aria-pressed'), null, 'batch decisions are commands');
+    await expect(button).toHaveCSS('border-top-style', 'solid');
+    assert.ok(await button.evaluate(element => parseFloat(getComputedStyle(element).borderTopWidth) > 0));
+  }
+  const acceptBox = await acceptBatch.boundingBox(), rejectBox = await rejectBatch.boundingBox();
+  assert.ok(rejectBox.x > acceptBox.x + acceptBox.width, 'each batch command has its own boundary');
   await expect(review.locator('.change.current .side.before img').first()).toBeVisible();
   await review.locator('.change.current').getByRole('button', { name: 'LaTeX', exact: true }).click();
   await expect(review.locator('.change.current .source-code')).toBeVisible();

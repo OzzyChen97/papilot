@@ -144,7 +144,7 @@ function compactReviewFrame(doc: Document, reserve: number, lead: number, change
       .change-head .link{height:36px;padding:0 8px}
       .change-head .source-toggle{width:36px}
       .change-head .dock{display:flex;position:fixed;z-index:6;left:50%;right:auto;transform:translateX(-50%);width:min(352px,calc(100% - 20px));bottom:calc(max(10px,env(safe-area-inset-bottom)) + var(--papilot-bottom-rail,0px));margin:0;transition:bottom .16s cubic-bezier(.2,0,0,1)}
-      .change-head .actions{display:flex;width:100%;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:4px;padding:4px;border-radius:12px;background:var(--raised);box-shadow:var(--float)}
+      .change-head .actions{display:flex;width:100%;flex-wrap:nowrap;align-items:center;justify-content:space-between;gap:4px;padding:4px;border-radius:12px;background:var(--raised);box-shadow:var(--shadow-sm)}
       .change-head .actions>*{order:initial!important}
       .change-head .actions button{flex:1 1 auto;min-width:0;height:40px;gap:6px;padding:0 8px;font-size:13px}
       .change-head .actions .nav{flex:0 0 36px;width:36px;min-width:36px;height:40px;padding:0}

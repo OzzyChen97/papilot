@@ -21,7 +21,7 @@
   --green:#14a35a;--green-soft:#e6f6ec;--purple:#8a46f0;--purple-soft:#f2ebfe;--red:#e5482d;--red-soft:#fdede9;--red-line:#f8c4b8;
   --amber:#f5a524;--amber-soft:#fff5e0;--amber-line:#fcd99a;--amber-text:#a15c00;
   --danger:#e5482d;--danger-hover:#cc3b22;
-  /* Elevation: controls, cards, then floating toolbars, popovers and dialogs. */
+  /* Elevation: controls, floating toolbars, then popovers and dialogs. */
   --shadow-xs:0 0 0 .5px rgb(0 0 0/.15),0 1px 3px rgb(0 0 0/.1);
   --shadow-sm:0 0 .5px rgb(0 0 0/.18),0 3px 8px rgb(0 0 0/.1),0 1px 3px rgb(0 0 0/.1);
   --float:0 0 .5px rgb(0 0 0/.12),0 10px 16px rgb(0 0 0/.12),0 2px 5px rgb(0 0 0/.15);
@@ -29,6 +29,8 @@
   /* Menus, tooltips and toasts float above the panels. */
   --menu-bg:var(--raised);--menu-text:var(--text);--menu-text-2:var(--text-2);--menu-text-3:var(--text-3);--menu-line:var(--line);--menu-hover:var(--bg-hover);
   --menu-shadow:var(--float);
+  /* White menu labels and details need more contrast than the primary fill. */
+  --menu-selection:#0974ca;
   --scrim:rgb(0 0 0/.32);
   --scroll-thumb:rgb(0 0 0/.12);--scroll-hover:rgb(0 0 0/.2);--scroll-active:rgb(0 0 0/.34);
   --pdf-filter:none;--pdf-page:#ffffff;

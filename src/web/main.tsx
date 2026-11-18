@@ -928,7 +928,7 @@ function TaskNotes({ notes, currentKey, actions, onShow, controller, cards, head
   return <section ref={panel} className="task-notes-panel" aria-label={t('Notes in this task')}>
     {/* Beside the panel's tabs, whose count already says how many notes the task has; phones hide that header. */}
     {chosen.length > 0 && (headerSlot
-      ? createPortal(<button type="button" className="icon-button" aria-label={t('Remove all from task')} title={t('Remove all from task')} disabled={selectionLocked} onClick={() => putBack(chosen)}><Icon name="minus" size={16}/></button>, headerSlot)
+      ? createPortal(<button type="button" className="note-select-all" disabled={selectionLocked} onClick={() => putBack(chosen)}>{t('Remove all from task')}</button>, headerSlot)
       : <div className="note-selection-head"><span>{t('Added to task: {n}', { n: chosen.length })}</span><button type="button" className="note-select-all" disabled={selectionLocked} onClick={() => putBack(chosen)}>{t('Remove all from task')}</button></div>)}
     {noteGroups(notes).map(({ group, entries }) => {
       const selected = entries.filter(({ note }) => actions.selection.has(note.id));

@@ -234,32 +234,24 @@ kbd {
   background: var(--bg-muted);
   color: var(--text);
 }
-/* Accept all and Reject all exclude each other: one segmented control, its
-   halves split by a thin rule, the hovered half raised like a selection. */
+/* Batch decisions are commands, distinct from the segmented view switches. */
 .batch-decisions {
   display: inline-flex;
   flex-shrink: 0;
-  padding: 2px;
-  border-radius: 6px;
-  background: var(--bg-muted);
+  gap: 4px;
 }
 .batch-decisions .accept-all,
 .batch-decisions .reject-all {
-  height: 24px;
-  padding: 0 9px;
-  border: 0;
+  min-height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
   border-radius: 5px;
-  background: transparent;
+  background: var(--bg);
   color: var(--text);
 }
-.batch-decisions .accept-all + .reject-all {
-  background: linear-gradient(var(--line-strong), var(--line-strong)) left center / 1px 12px no-repeat;
-}
-.batch-decisions .accept-all:hover:not(:disabled),
-.batch-decisions .reject-all:hover:not(:disabled),
-.batch-decisions > button:focus-visible {
-  background: var(--thumb, var(--bg));
-  box-shadow: 0 0 0 1px var(--line);
+.batch-decisions > button:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--line-hover);
 }
 /* How many undecided changes the batch decides. */
 .batch-count {

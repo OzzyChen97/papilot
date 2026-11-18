@@ -230,6 +230,27 @@ try {
   await expect(tabs.getByRole('tab', { name: 'intro.tex' }), 'the clicked passage opens its file').toBeAttached();
   await tabs.getByRole('tab', { name: 'New task' }).click();
   await expect(panel).toBeHidden();
+  // A selected task with notes must stay readable beside an open file tab.
+  await page.getByRole('separator', { name: 'Resize manuscript panel', exact: true }).press('End');
+  await rail.getByRole('button', { name: 'Sticky note', exact: true }).click();
+  await word('herons').click();
+  const note = page.getByRole('dialog', { name: 'PDF note 1', exact: true });
+  await note.getByRole('textbox').fill('Explain the change.');
+  await note.getByRole('textbox').press('Enter');
+  await page.keyboard.press('Escape');
+  const removeAll = page.getByRole('button', { name: 'Remove all from task', exact: true });
+  await expect(removeAll).toBeVisible();
+  const taskTab = tabs.getByRole('tab', { name: 'New task', exact: false });
+  await taskTab.click();
+  await expect.poll(() => taskTab.evaluate(element => {
+    const parent = element.getBoundingClientRect();
+    const children = [...element.children].map(child => child.getBoundingClientRect());
+    return children.every((box, index) => box.width > 0 && box.left >= parent.left && box.right <= parent.right && (index === 0 || box.left >= children[index - 1].right));
+  }), { message: 'the task icon, label and note count do not collapse or overlap next to a source tab' }).toBe(true);
+  await shot('narrow-task-notes');
+  await removeAll.click();
+  await rail.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.getByRole('separator', { name: 'Resize manuscript panel', exact: true }).press('Enter');
   await tabs.getByRole('tab', { name: 'intro.tex' }).click();
   await expect(field).toBeVisible();
 
