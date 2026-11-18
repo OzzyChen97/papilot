@@ -357,5 +357,8 @@
   "{percent}% used": "已用 {percent}%",
   "{sections} and {n} more": "{sections} 等 {n} 处",
   "{tokens} of {window} tokens": "{tokens} / {window} 个 token",
-  "§{number} {title}": "§{number} {title}"
+  "§{number} {title}": "§{number} {title}",
+  "Experiments": "实验功能",
+  "Collaboration mode": "协作模式",
+  "Enable collaboration mode": "启用协作模式"
 }

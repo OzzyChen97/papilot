@@ -1568,5 +1568,18 @@
   "{title} PDF change review": "{title} PDF-Änderungsüberprüfung",
   "{tokens} of {window} tokens": "{tokens} von {window} Tokens",
   "{used}% used": "{used} % verbraucht",
-  "§{number} {title}": "§{number} {title}"
+  "§{number} {title}": "§{number} {title}",
+  "Collaboration mode": "Kooperationsmodus",
+  "Experiments": "Experimentelle Funktionen",
+  "Enable collaboration mode": "Kooperationsmodus aktivieren",
+  "Checks and reasoning": "Prüfung und Schlussfolgerung",
+  "Clarity and flow of passages": "Klarheit und Lesefluss von Textpassagen",
+  "Codex assigns annotations to the workers below and checks every one before publishing.": "Codex weist die Anmerkungen den unten aufgeführten Workern zu und prüft jede einzelne vor der Veröffentlichung.",
+  "Math, facts, references and formatting": "Mathematik, Fakten, Referenzen und Formatierung",
+  "Polishing": "Feinschliff",
+  "Quick edits": "Schnelle Korrekturen",
+  "Same as coordinator": "Wie Koordinator",
+  "Typos, word choice and small LaTeX fixes": "Tippfehler, Wortwahl und kleine LaTeX-Korrekturen",
+  "Stop worker": "Worker stoppen",
+  "Stopped": "Gestoppt"
 }

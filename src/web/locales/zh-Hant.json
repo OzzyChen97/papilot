@@ -1568,5 +1568,18 @@
   "{title} PDF change review": "{title} PDF 變更審閱",
   "{tokens} of {window} tokens": "{tokens} / {window} 個 token",
   "{used}% used": "已使用 {used}%",
-  "§{number} {title}": "§{number} {title}"
+  "§{number} {title}": "§{number} {title}",
+  "Collaboration mode": "協作模式",
+  "Experiments": "實驗功能",
+  "Enable collaboration mode": "啟用協作模式",
+  "Checks and reasoning": "檢查與推理",
+  "Clarity and flow of passages": "段落清晰度與流暢度",
+  "Codex assigns annotations to the workers below and checks every one before publishing.": "Codex 會將標註指派給下方的工作代理，並在發布前逐一檢查。",
+  "Math, facts, references and formatting": "數學、事實、參考文獻與格式",
+  "Polishing": "潤飾",
+  "Quick edits": "快速修改",
+  "Same as coordinator": "與協調者相同",
+  "Typos, word choice and small LaTeX fixes": "錯別字、遣詞用字與小型 LaTeX 修正",
+  "Stop worker": "停止工作程序",
+  "Stopped": "已停止"
 }

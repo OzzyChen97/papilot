@@ -1568,5 +1568,18 @@
   "{title} PDF change review": "Granskning av PDF-ändringar för {title}",
   "{tokens} of {window} tokens": "{tokens} av {window} token",
   "{used}% used": "{used} % använt",
-  "§{number} {title}": "§{number} {title}"
+  "§{number} {title}": "§{number} {title}",
+  "Collaboration mode": "Samarbetsläge",
+  "Experiments": "Experimentella funktioner",
+  "Enable collaboration mode": "Aktivera samarbetsläge",
+  "Checks and reasoning": "Kontroller och resonemang",
+  "Clarity and flow of passages": "Tydlighet och flyt i textavsnitt",
+  "Codex assigns annotations to the workers below and checks every one before publishing.": "Codex tilldelar kommentarer till medarbetarna nedan och kontrollerar varje kommentar före publicering.",
+  "Math, facts, references and formatting": "Matematik, fakta, referenser och formatering",
+  "Polishing": "Finputsning",
+  "Quick edits": "Snabba ändringar",
+  "Same as coordinator": "Samma som koordinator",
+  "Typos, word choice and small LaTeX fixes": "Stavfel, ordval och mindre LaTeX-korrigeringar",
+  "Stop worker": "Stoppa arbetare",
+  "Stopped": "Stoppad"
 }
