@@ -265,7 +265,7 @@ If the agent recommends editing the paper, review its diagnosis and select **Sta
 
 ## Sync with Overleaf
 
-**Sync with Overleaf**, with the Overleaf icon on the second row of the opening page, imports a project and keeps it in sync. Paste its project link and sign in when prompted. With a paper open, the same shortcut below the new-task composer opens its sync settings.
+**Sync with Overleaf**, with the Overleaf icon on the second row of the empty opening page, imports a project and keeps it in sync. Paste its project link and sign in when prompted. With a paper open, use the paper menu to open its sync settings.
 
 ![Overleaf sync status and conflict controls](assets/canvas-consistency/overleaf-panel.png)
 

@@ -84,7 +84,7 @@ await context.route('**/api/**', routeApi);
 
 try {
   await page.goto(origin);
-  const homeSync = page.locator('.home-integrations').getByRole('button', { name: 'Sync with Overleaf', exact: true });
+  const homeSync = page.locator('.home .home-integrations').getByRole('button', { name: 'Sync with Overleaf', exact: true });
   for (const colorScheme of ['light', 'dark']) {
     await page.emulateMedia({ colorScheme });
     await expect(page.locator('html')).toHaveAttribute('data-theme', colorScheme);
@@ -134,7 +134,10 @@ try {
   await ordinaryImport.getByRole('button', { name: 'Open paper', exact: true }).click();
   await expect(ordinaryImport).toBeHidden();
   assert.equal(await page.evaluate(() => localStorage.getItem('papilot:overleaf-import')), null);
-  await homeSync.click();
+  await expect(page.locator('.new-task-panel')).toBeVisible();
+  await expect(page.locator('.new-task-panel').getByRole('button', { name: /^(Sync with Overleaf|Overleaf sync)/ })).toHaveCount(0);
+  await page.locator('.project-switcher').click();
+  await page.getByRole('menuitem', { name: 'Sync with Overleaf…', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Sync with Overleaf' });
   await expect(dialog).toBeVisible();
   // Signed out in a browser: a session cookie signs in.
