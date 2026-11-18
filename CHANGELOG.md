@@ -4,8 +4,14 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ## [Unreleased]
 
+## [0.11.0] - Unreleased
+
+Write with Papilot Writer, sync with Overleaf, and annotate and review on a redesigned PDF canvas. This release is in preparation.
+
 ### Added
 
+- **Papilot Writer.** Use the built-in writing agent with manuscript search, outline and reference tools, a paper map derived from compilation, and a breakdown of the context sent to the model. Review file edits inline and locate changes by section or PDF passage. Connect ChatGPT or GitHub Copilot through sign-in, or add a model provider's API key in Writer's setup. Writer keeps its credentials separate from the native Pi CLI; Claude in Writer requires an Anthropic API key. Model access and usage remain with your provider. ([#166](https://github.com/PapilotAI/papilot/pull/166), [#180](https://github.com/PapilotAI/papilot/pull/180))
+- **Select comments by section.** In **My notes → Add to task**, choose a section to collect its comments and nested subsections into a new task. Existing selections stay selected, and individual comments can still be removed before sending. Section choices require a compiled outline or PDF bookmarks. ([#176](https://github.com/PapilotAI/papilot/pull/176))
 - **Compile with PhiTeX (experimental).** Turn on **Compile with PhiTeX** in **Settings → Experiments** to compile papers with [PhiTeX](https://phitex.org), an incremental TeX compiler that writes pdfLaTeX's PDF and rebuilds only what an edit affects. Papilot keeps a working folder per paper so each build continues from PhiTeX's state of the previous one: on a 26-page example paper, a build after a one-word edit took 1.0 s instead of 3.7 s with latexmk. SyncTeX, diagnostics and the paper map work as with latexmk. Install PhiTeX on the computer running Papilot; LuaLaTeX papers keep using latexmk. See [limitations](docs/guide.md#compile-with-phitex-experimental).
 - **Sync papers with Overleaf in real time.** Link a paper to an Overleaf project, or import one with **Keep in sync with Overleaf** on, and Papilot keeps the folder and the project in step while it runs: your applied changes reach coauthors within about a second through Overleaf's real-time editing service, and theirs arrive in your files and PDF, merged character by character when both edit at once. New, renamed, moved and deleted files and folders follow both ways, binary files sync whole, and reconnecting replays what both sides did meanwhile. After time apart, files merge from the version both sides last shared; where both changed the same passage, Overleaf's text stays and **Use mine** puts yours back. Sign in through Overleaf's own page in the desktop app (Google and institutional logins included) or with a session cookie in a browser; free accounts and self-hosted servers work, and sharing links join the project. The Overleaf panel names the project at the top, and **Change…** beside it moves the paper to another project after the same comparison. An **Overleaf** row under Version Management shows the state and who is on Overleaf now, with the file each person is in; the source editor marks the words each coauthor wrote since your last commit in their colour, with their name on hover, and shows their cursors. Imports use Overleaf's main document and compiler, edits follow Overleaf's track-changes mode, build output, hidden files, secrets and Git-ignored new files stay local, and syncing pauses while Git merges or when the paper folder is missing. Unreadable folders never trigger remote deletions, binary edits made during downloads are saved for **Use mine**, expired sign-ins recover in place, and changing accounts reconnects linked papers with the new permissions.
 - Add the hidden **Collaboration mode** experiment in **Settings → Experiments**. Codex coordinates annotation edits: it sends quick edits, polishing, and checks and reasoning to the worker chosen for each role, from any Codex, Antigravity or OpenCode model on the host, with its reasoning effort. Default-model workers honor the selected effort, and OpenCode workers retain custom provider settings. Papilot automatically merges isolated edits; the coordinator resolves conflicts and a separate Codex audit checks every annotation before publishing. Each delegation in the chat shows its worker's steps as they happen and what it changed, and a running worker can be stopped on its own until its result is integrated. See [setup and limitations](docs/annotation-routing.md).
@@ -24,6 +30,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Changed
 
+- Shorten the **Delete task** dialog to one line. It says what is lost and what stays: unaccepted edits and comments are lost, accepted changes stay in your manuscript.
 - Show the Mac app icon beside the name at the top of the README, and link the Discord server from the homepage header and footer.
 - Redraw the homepage's app windows, the README showcase and the social preview in the canvas interface: the PDF on a grey canvas with the marking tools in a floating bar, a change outlined in blue with its count, history and PDF buttons in the toolbar, notes numbered in the page margin, full-width chat messages and the composer's agent and model.
 - **A new Papilot icon.** Navy and blue capsules split by a coral line replace the pen nib in the desktop app, browser tabs, the home-screen icon, the workspace, Settings, Papilot Writer's agent icon (now in full colour), the Mac installer and the website. In the dark theme the workspace and Settings draw the navy capsules light, and at 16 to 32 px a three-stripe cut keeps the mark legible.
@@ -52,6 +59,9 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- **MiKTeX source locations work on Windows.** Match Windows paths in SyncTeX output so edits map to the PDF instead of appearing unmapped after a successful compilation. ([#172](https://github.com/PapilotAI/papilot/pull/172), [#171](https://github.com/PapilotAI/papilot/issues/171))
+- **PDF navigation survives applied edits.** Refresh Contents, page counts and search when an agent's changes replace the manuscript PDF, while preserving zoom and reading position. ([#181](https://github.com/PapilotAI/papilot/pull/181), [#178](https://github.com/PapilotAI/papilot/issues/178))
+- **Save a fully reviewed paused task.** Apply and commit remain available without restarting the agent once every change is reviewed; unfinished merge reviews still need to be resolved. ([#173](https://github.com/PapilotAI/papilot/pull/173))
 - Finish preparing a review as soon as its main PDF comparison is ready. Alternative wording previews load in the background without delaying review, application or commit; obsolete preview errors no longer interfere with later decisions.
 - Keep new PDF notes and their TeX locations responsive while grouping comments by section. Reuse the outline and existing assignments for each PDF version, and read only pages containing new or moved marks.
 - Keep the Overleaf project-picker heading on one line beside search, including Chinese labels; let controls wrap when space is limited.
@@ -68,10 +78,6 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 - **Task titles and commit messages generate on native Windows with MCP servers configured.** Codex runs your MCP servers, such as the Codex app's `node_repl`, in the folder of each one-off conversation that writes a title or commit message, and Papilot never ended those conversations. Windows could not remove the folder, so task titles failed to generate and **Generate commit message** reported `EPERM`. Papilot now ends each one-off conversation when it finishes, so on every platform those MCP servers stop instead of running until Codex restarts. ([#186](https://github.com/PapilotAI/papilot/pull/186))
 
 - Keep PDF page jumps when a pending panel resize reapplies Fit width, instead of restoring the page shown before the jump. ([#195](https://github.com/PapilotAI/papilot/pull/195))
-
-### Changed
-
-- Shorten the **Delete task** dialog to one line. It says what is lost and what stays: unaccepted edits and comments are lost, accepted changes stay in your manuscript.
 
 ## [0.10.4] - 2026-11-14
 
@@ -620,7 +626,10 @@ The first release on npm.
 - A Git panel to diff files, commit the chosen ones, and fetch, pull or push.
 - Remote access through Tailscale, and a background service on macOS.
 
-[Unreleased]: https://github.com/PapilotAI/papilot/compare/v0.10.2...HEAD
+[Unreleased]: https://github.com/PapilotAI/papilot/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/PapilotAI/papilot/compare/v0.10.4...v0.11.0
+[0.10.4]: https://github.com/PapilotAI/papilot/compare/v0.10.3...v0.10.4
+[0.10.3]: https://github.com/PapilotAI/papilot/compare/v0.10.2...v0.10.3
 [0.10.2]: https://github.com/PapilotAI/papilot/compare/v0.10.1...v0.10.2
 [0.10.1]: https://github.com/PapilotAI/papilot/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/PapilotAI/papilot/compare/v0.9.4...v0.10.0
