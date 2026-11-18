@@ -32,6 +32,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 - Selecting text in **Changes** works as it does in the PDF: a drag can cross lines and blank space without jumping to the end of the passage, a double-click selects a word and a triple-click a line, and the selection reads as one band per line.
 - Simplify PDF reading controls: remove back/forward history buttons and their separator, align the outline bookmark, anchor numbers and **+** in one compact column, and show a corner delete button on hover or keyboard focus. Phones also show **+** for direct anchor creation. Deletion keeps the current reading position and moves keyboard focus to the next anchor or **+**. Contents, page controls and internal links remain available.
 - Keep the PDF toolbar's collapse control at the top. Collapsing leaves a floating pen button in the same place to reopen it, clear of review headings and change controls. Research Tools uses a book icon.
+- Highlight newly sent tasks with a soft row background, removing the left accent stripe and flashing outline.
 
 - Show common AI conference templates before theses, with conference cards, compact search and a GitHub **Contribute** link. Retry catalog failures without losing a draft; **Blank** stays available, and late template links respect an explicit choice.
 
