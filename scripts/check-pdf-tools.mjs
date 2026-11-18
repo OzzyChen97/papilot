@@ -100,7 +100,7 @@ try {
   const bottomGap = railBox.y + railBox.height - addBox.y - addBox.height;
   assert.ok(bottomGap >= 0 && bottomGap < 12, 'Anchors follow history at the end of the rail');
   // Retracting the rail gives the width back to the PDF, keeps the selected
-  // tool and keyboard shortcuts, and remembers the preference on reload.
+  // tool and keyboard shortcuts. Reopening the page starts expanded.
   const collapse = () => tool('Collapse marking tools'), expand = () => tool('Expand marking tools');
   const expandedWidth = (await settled(page.locator('.pdf-container'))).width;
   const toggleBox = await collapse().boundingBox();
@@ -122,8 +122,12 @@ try {
   await expand().click();
   await expect(tool('Hand')).toHaveAttribute('aria-pressed', 'true');
   await collapse().click();
+  await page.evaluate(() => localStorage.setItem('papilot:pdf-tools-collapsed', 'true'));
   await page.reload();
   await words().first().waitFor();
+  await expect(collapse()).toHaveAttribute('aria-expanded', 'true');
+  await expect(rail().getByRole('button')).toHaveCount(15);
+  await collapse().click();
   await expect(expand()).toBeVisible();
   await page.screenshot({ path: 'test-results/pdf-tools-collapsed.png' });
   await page.mouse.move(1000, 250);
@@ -485,6 +489,11 @@ try {
   await expect(page.locator('.pdf-view')).toHaveClass(/tool-select/);
   await expand().click();
   await expect(rail()).toHaveAttribute('data-collapsed', 'false');
+  await expect(rail().getByRole('button')).toHaveCount(14);
+  await collapse().click();
+  await page.reload();
+  await page.getByRole('group', { name: 'Manuscript view' }).getByRole('button', { name: 'PDF', exact: true }).click();
+  await expect(collapse()).toHaveAttribute('aria-expanded', 'true');
   await expect(rail().getByRole('button')).toHaveCount(14);
   assert.deepEqual(errors, []);
   console.log('PASS: collapsible rail, bottom undo/redo, history retries and keyboard shortcuts, native text undo, deletions with replacements, the magic pen wheel, number lock, menu and settings, points, sticky notes, hand and Space, tool-after-selection, and phone collapsible bottom capsule.');

@@ -67,8 +67,8 @@ export async function checkReviewTools(page, writes, sent) {
   await expect(rail()).toHaveAttribute('data-collapsed', 'true');
   await page.reload();
   await viewer().locator('.review-note-layer').first().waitFor({ state: 'attached' });
-  await expect(tool('Expand marking tools')).toBeVisible();
-  await tool('Expand marking tools').click();
+  await expect(tool('Collapse marking tools')).toHaveAttribute('aria-expanded', 'true');
+  await expect(tool('Note')).toBeVisible();
   await expect.poll(() => viewer().locator('.review-body').evaluate(element => parseFloat(getComputedStyle(element).marginLeft))).toBe(56);
   await tool('Note').click(); await select();
   await expect(page.getByRole('textbox', { name: 'Comment 1', exact: true })).toBeFocused();

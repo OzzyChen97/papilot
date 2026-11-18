@@ -2151,7 +2151,7 @@ function App() {
           ...state.projects.map(p => ({ id: p.id, label: p.name, detail: shortPath(p.path), title: p.path, checked: p.id === project.id, select: p.id === project.id ? undefined : () => { setProjectId(p.id); setSelected(''); }, edit: { label: t('Edit {name}', { name: p.name }), select: () => setEditingPaper(p) } })),
           { label: t('New paper…'), icon: 'plus', divider: true, select: createProject },
           { label: t('Import or open'), icon: 'download', select: importProject },
-          ...(!isPlayground && gitAvailable ? [{ label: overleafSync ? t('Overleaf sync…') : t('Sync with Overleaf…'), icon: 'refresh', divider: true, select: () => setOverleafOpen(true) }] : []),
+          ...(!isPlayground && gitAvailable ? [{ label: overleafSync ? t('Overleaf sync…') : t('Sync with Overleaf…'), icon: <BrandIcon name="overleaf" size={16}/>, divider: true, select: () => setOverleafOpen(true) }] : []),
         ]}><span className="project-switcher-name">{project.name}</span><Icon name="chevronDown" size={13}/></ActionMenu>
           : <button className="add-project" disabled={!state} onClick={importProject}><Icon name="download" size={16}/>{t('Import or open')}</button>}
         <button className="icon-button" aria-label={t('Hide task list')} title={t('Hide task list')} onClick={hideSidebar}><Icon name={narrow ? 'close' : 'sidebar'} size={18}/></button>

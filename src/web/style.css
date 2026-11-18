@@ -889,7 +889,7 @@ body.resizing iframe{pointer-events:none}
 .action-menu:popover-open{display:flex;flex-direction:column;gap:1px;animation:menu-in .14s var(--ease)}
 .action-menu>button,.action-menu>a{display:flex;align-items:center;gap:8px;min-height:28px;padding:4px 8px;border-radius:var(--r);text-align:left;text-decoration:none;color:inherit}
 .action-menu>button:hover:not(:disabled),.action-menu>a:hover,.action-menu>button:focus-visible,.action-menu>a:focus-visible{--menu-text:#fff;--menu-text-2:#fff;--menu-text-3:#fff;background:var(--menu-selection);outline:none;color:var(--menu-text)}
-.action-menu>button>svg,.action-menu>a>svg{color:var(--menu-text-2)}
+.action-menu>button>:is(svg,.brand-icon),.action-menu>a>:is(svg,.brand-icon){color:var(--menu-text-2)}
 .action-menu>.danger-text{color:var(--red)}
 .action-menu>.danger-text>svg{color:currentColor}
 .menu-check{display:inline-flex;width:16px;color:currentColor}

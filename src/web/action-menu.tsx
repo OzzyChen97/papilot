@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { Icon } from './icons.tsx';
 
 // An href opens in a new tab; with download, it saves the file instead.
-export interface MenuAction { id?: string; label: string; title?: string; detail?: string; hint?: string; indent?: number; select?: () => void; href?: string; download?: boolean; disabled?: boolean; danger?: boolean; checked?: boolean; icon?: string; divider?: boolean; edit?: { label: string; select: () => void } }
+export interface MenuAction { id?: string; label: string; title?: string; detail?: string; hint?: string; indent?: number; select?: () => void; href?: string; download?: boolean; disabled?: boolean; danger?: boolean; checked?: boolean; icon?: ReactNode; divider?: boolean; edit?: { label: string; select: () => void } }
 
 // Native popovers escape scrolling containers and handle outside clicks without
 // making the rest of the workspace modal. Each menu keeps its own task identity.
@@ -67,7 +67,8 @@ export function ActionMenu({ label, actions, children, className = 'icon-button 
       }
     }}>
       {actions.map(action => {
-        const content = <>{action.icon ? <Icon name={action.icon} size={16}/> : radio && <span className="menu-check">{action.checked && <Icon name="check" size={16}/>}</span>}<span className="menu-label">{action.label}{action.detail && <small className="menu-detail" aria-hidden="true">{action.detail}</small>}</span>{action.hint && <span className="menu-hint" aria-hidden="true">{action.hint}</span>}{action.icon && action.checked && <span className="menu-check"><Icon name="check" size={16}/></span>}</>;
+        const icon = typeof action.icon === 'string' ? <Icon name={action.icon} size={16}/> : action.icon;
+        const content = <>{icon || radio && <span className="menu-check">{action.checked && <Icon name="check" size={16}/>}</span>}<span className="menu-label">{action.label}{action.detail && <small className="menu-detail" aria-hidden="true">{action.detail}</small>}</span>{action.hint && <span className="menu-hint" aria-hidden="true">{action.hint}</span>}{icon && action.checked && <span className="menu-check"><Icon name="check" size={16}/></span>}</>;
         const item = action.href && !action.disabled
           ? <a key={action.id || action.label} role="menuitem" title={action.title} href={action.href} {...action.download ? { download: '' } : { target: '_blank', rel: 'noreferrer' }} onClick={close}>{content}</a>
           : <button key={action.id || action.label} type="button" title={action.title} role={action.checked === undefined ? 'menuitem' : 'menuitemradio'} aria-checked={action.checked} disabled={action.disabled} className={action.danger ? 'danger-text' : undefined} data-indent={action.indent || undefined} style={action.indent ? { paddingLeft: 10 + action.indent * 14 } : undefined} onClick={() => { close(); trigger.current?.focus(); action.select?.(); }}>{content}</button>;

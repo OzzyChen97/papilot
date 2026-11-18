@@ -161,7 +161,26 @@ try {
   await page.keyboard.press('Escape');
   projectSessionExpired = true;
   await page.locator('.project-switcher').click();
-  await page.getByRole('menuitem', { name: 'Sync with Overleaf…' }).click();
+  const syncMenu = page.getByRole('menuitem', { name: 'Sync with Overleaf…' });
+  const syncIcon = syncMenu.locator('.brand-icon');
+  await expect(syncIcon).toHaveCount(1);
+  await expect(syncIcon).toHaveAttribute('data-brand', 'overleaf');
+  await expect(syncIcon).toHaveAttribute('aria-hidden', 'true');
+  for (const theme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    await page.mouse.move(1000, 600);
+    await page.keyboard.press('Home');
+    await page.screenshot({ path: `test-results/overleaf-menu-${theme}.png`, animations: 'disabled' });
+    await syncMenu.hover();
+    await expect(syncIcon).toHaveCSS('color', 'rgb(255, 255, 255)');
+    await page.mouse.move(1000, 600);
+    await page.keyboard.press('End');
+    await expect(syncMenu).toBeFocused();
+    await expect(syncIcon).toHaveCSS('color', 'rgb(255, 255, 255)');
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
+  await syncMenu.click();
   await expect(dialog.getByLabel('Session cookie from overleaf.com')).toBeFocused();
   await expect(dialog.getByText('Loading projects…')).toBeHidden();
   await page.screenshot({ path: 'test-results/overleaf-reauth.png', animations: 'disabled' });
