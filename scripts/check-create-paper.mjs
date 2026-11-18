@@ -6,6 +6,32 @@ import staticFiles from '@fastify/static';
 import { chromium } from '../engine/node_modules/playwright/index.mjs';
 import { readyRequirements } from './required-tools-fixture.mjs';
 
+async function checkNativePicker(page, dialog, requests, picked, screenshot) {
+  const before = requests.length, previous = await dialog.locator('.create-paper-location-copy span').textContent();
+  await page.evaluate(() => {
+    const choose = window.papilotDesktop.chooseDirectory;
+    window.papilotDesktop.chooseDirectory = () => new Promise(resolve => {
+      window.finishDirectory = value => { window.papilotDesktop.chooseDirectory = choose; delete window.finishDirectory; resolve(value); };
+    });
+  });
+  const change = dialog.locator('.create-paper-location').getByRole('button', { name: 'Change…', exact: true });
+  await change.click();
+  await page.waitForFunction(() => document.querySelector('.new-paper-dialog .modal-close')?.disabled);
+  assert.equal(await change.isDisabled(), true);
+  assert.equal(await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).isDisabled(), true);
+  assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).isDisabled(), true);
+  assert.equal(await dialog.getByRole('tab').evaluateAll(tabs => tabs.every(tab => tab.disabled)), true, 'Picking keeps the dialog locked');
+  assert.equal(await dialog.locator('.create-paper-status').count(), 0, 'Picking a folder must not announce paper creation');
+  assert.equal(requests.length, before, 'Picking a folder must not send a creation request');
+  if (screenshot) await page.screenshot({ path: screenshot, animations: 'disabled' });
+  await page.evaluate(picked => window.finishDirectory(picked), picked);
+  await page.waitForFunction(expected => document.querySelector('.create-paper-location-copy span')?.textContent === expected && !document.querySelector('.new-paper-dialog .modal-close')?.disabled, picked ?? previous);
+  assert.equal(await change.isEnabled(), true);
+  assert.equal(await dialog.getByRole('button', { name: 'Create paper', exact: true }).isEnabled(), true);
+  assert.equal(await dialog.locator('.create-paper-status').count(), 0);
+  assert.equal(requests.length, before, 'Closing the picker must not create a paper');
+}
+
 const server = Fastify();
 await server.register(staticFiles, { root: path.resolve('dist') });
 await server.listen({ host: '127.0.0.1', port: 0 });
@@ -13,20 +39,23 @@ const browser = await chromium.launch({ channel: process.env.PAPILOT_BROWSER_CHA
 const origin = `http://127.0.0.1:${server.server.address().port}`, errors = [];
 fs.mkdirSync('test-results', { recursive: true });
 try {
-  for (const mode of ['browser', 'windows', 'wsl']) {
+  for (const mode of ['browser', 'macos', 'windows', 'wsl']) {
     const desktop = mode !== 'browser', parent = mode === 'windows' ? 'C:\\Users\\Author' : '/home/author';
     const picked = mode === 'windows' ? 'D:\\Research' : '/home/author/papers';
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
     const requests = [], state = { version: '0.10.4', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: false, account: null, error: null, models: [] } };
-    if (desktop) await context.addInitScript(picked => { window.papilotDesktop = { platform: 'win32', minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => picked }; }, picked);
+    if (desktop) await context.addInitScript(({ picked, platform }) => { window.papilotDesktop = { platform, minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => picked }; }, { picked, platform: mode === 'macos' ? 'darwin' : 'win32' });
     let fail = !desktop;
+    let releaseCreation;
+    const creationGate = new Promise(resolve => { releaseCreation = resolve; });
     // A browser on another device cannot show the system picker and browses in the page instead.
     let picker = { unavailable: true };
-    await context.route('**/api/**', route => {
+    await context.route('**/api/**', async route => {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/projects/create-defaults') return route.fulfill({ json: { parent } });
       if (url.pathname === '/api/projects/create') {
         const body = route.request().postDataJSON(); requests.push(body);
+        await creationGate;
         if (fail) return route.fulfill({ status: 400, json: { error: 'Could not create the paper folder. Check the save location and its permissions.' } });
         const project = { id: 'created-' + mode, name: body.name, path: body.parent + (mode === 'windows' ? '\\' : '/') + body.name, createdAt: 1 };
         state.projects = [project]; return route.fulfill({ json: project });
@@ -58,8 +87,10 @@ try {
     await page.waitForFunction(([selector, expected]) => document.querySelector(selector)?.textContent === expected, ['.create-paper-target', parent + separator + '研究论文']);
     if (desktop) {
       assert.equal(await location.count(), 0, 'Desktop uses a native picker without a path textbox');
-      await dialog.locator('.create-paper-location').getByRole('button', { name: 'Change…', exact: true }).click(); assert.equal(await dialog.locator('.create-paper-location-copy span').textContent(), picked);
+      await checkNativePicker(page, dialog, requests, picked, `test-results/create-paper-picker-${mode}.png`);
       assert.equal(await target.textContent(), picked + separator + '研究论文');
+      await checkNativePicker(page, dialog, requests, null);
+      assert.equal(await target.textContent(), picked + separator + '研究论文', 'Cancel keeps the selected location');
     } else {
       await page.setViewportSize({ width: 320, height: 640 });
       await page.emulateMedia({ colorScheme: 'dark' });
@@ -83,9 +114,16 @@ try {
       await browse.click();
       await page.waitForFunction(parent => document.querySelector('[name=parent]')?.value === parent, parent);
     }
+    const creationRequest = page.waitForRequest('**/api/projects/create');
     await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
+    await creationRequest;
+    await dialog.getByRole('status').filter({ hasText: 'Creating your paper…' }).waitFor();
+    assert.equal(await name.isDisabled(), true, 'Creation keeps the form locked');
+    await page.screenshot({ path: `test-results/create-paper-creating-${mode}.png`, animations: 'disabled' });
+    releaseCreation();
     if (!desktop) {
       await dialog.getByRole('alert').filter({ hasText: 'permissions' }).waitFor();
+      assert.equal(await dialog.locator('.create-paper-status').count(), 0, 'Failed creation clears the status');
       const first = requests.at(-1);
       assert.equal(await name.inputValue(), '研究论文'); assert.equal(await location.inputValue(), parent);
       await page.reload(); await create.click();
@@ -132,6 +170,8 @@ try {
     const requests = [], state = { version: '0.10.4', csrf: 'fixture', projects: [], tasks: [], requests: [], runtime: { connected: true, authenticated: false, account: null, error: null, models: [] } };
     let releaseCatalog;
     const catalogGate = new Promise(resolve => { releaseCatalog = resolve; });
+    let releaseCreation;
+    const creationGate = new Promise(resolve => { releaseCreation = resolve; });
     // A saved blank-paper draft must not be created while a linked template is still loading.
     if (link) await context.addInitScript(() => localStorage.setItem('papilot:create-paper', JSON.stringify({ name: 'Old draft', parent: '/home/author', template: null })));
     if (link) await context.addInitScript(link => { let pending = link; window.papilotDesktop = { platform: 'darwin', minimize() {}, maximize() {}, close() {}, chooseDirectory: async () => '/home/author/local-paper', takeNewPaper: async () => { const value = pending; pending = null; return value; }, onNewPaper: () => () => {} }; }, link);
@@ -139,7 +179,7 @@ try {
       const url = new URL(route.request().url());
       if (url.pathname === '/api/universe') { if (link) await catalogGate; return route.fulfill({ json: { templates } }); }
       if (url.pathname === '/api/projects/create-defaults') return route.fulfill({ json: { parent: '/home/author' } });
-      if (url.pathname === '/api/projects/create') { const body = route.request().postDataJSON(); requests.push(body); return route.fulfill({ status: 400, json: { error: 'Stop here.' } }); }
+      if (url.pathname === '/api/projects/create') { const body = route.request().postDataJSON(); requests.push(body); await creationGate; return route.fulfill({ status: 400, json: { error: 'Stop here.' } }); }
       if (url.pathname === '/api/projects/open') { const project = { id: 'local-paper', name: 'Local paper', path: '/home/author/local-paper', createdAt: 1 }; state.projects = [project]; return route.fulfill({ json: { project } }); }
       if (url.pathname.endsWith('/manuscript')) return route.fulfill({ json: { git: { files: [] }, build: { status: 'failed', error: 'Fixture preview' }, annotations: [] } });
       if (url.pathname.endsWith('/git')) return route.fulfill({ json: { files: [] } });
@@ -218,8 +258,15 @@ try {
       await page.screenshot({ path: 'test-results/create-paper-templates.png', animations: 'disabled' });
     }
     await dialog.getByRole('textbox', { name: 'Paper name', exact: true }).fill('Thesis');
+    if (link) await checkNativePicker(page, dialog, requests, '/home/author/papers', `test-results/create-paper-picker-template-${link.version}.png`);
+    const creationRequest = page.waitForRequest('**/api/projects/create');
     await dialog.getByRole('button', { name: 'Create paper', exact: true }).click();
+    await creationRequest;
+    await dialog.getByRole('status').filter({ hasText: 'Creating your paper…' }).waitFor();
+    assert.equal(await chosen.getByRole('button', { name: 'Change…', exact: true }).isDisabled(), true, 'Creation keeps the template locked');
+    releaseCreation();
     await dialog.getByRole('alert').filter({ hasText: 'Stop here.' }).waitFor();
+    assert.equal(await dialog.locator('.create-paper-status').count(), 0);
     assert.deepEqual(requests.at(-1).template, link ? { id: 'neurips', version: '2026' } : { id: 'thuthesis', version: '7.6.0' });
     if (link?.version === '2026') {
       // Tabs retain each draft, but a blank creation never inherits a template.

@@ -4,6 +4,10 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ## [Unreleased]
 
+### Fixed
+
+- Show “Creating your paper…” in **New paper** only after **Create paper**, not while choosing a save folder. ([#224](https://github.com/PapilotAI/papilot/issues/224))
+
 ## [0.11.0] - 2026-11-18
 
 Write with Papilot Writer, sync with Overleaf, and annotate and review on a redesigned PDF canvas.
