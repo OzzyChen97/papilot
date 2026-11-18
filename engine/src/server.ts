@@ -7,7 +7,7 @@ import compress from "@fastify/compress";
 import { WEB, codeVersion, environmentVersion } from "./runtime.ts";
 import { Repo, cleanPath, stateDir } from "./core/git.ts";
 import { serverHome } from "./client.ts";
-import { buildOverridesFile, documentsFile, loadProject, projectFor, settingsFile, type Project } from "./core/config.ts";
+import { buildOverridesFile, compilerFile, documentsFile, loadProject, projectFor, settingsFile, type Project } from "./core/config.ts";
 import { Store } from "./core/store.ts";
 import { Tasks } from "./core/tasks.ts";
 import { Review } from "./core/review.ts";
@@ -88,7 +88,7 @@ export class App {
     return result;
   }
   private settingsStamp() {
-    return [settingsFile(this.root), buildOverridesFile(this.root), documentsFile(this.root)].map(file => {
+    return [settingsFile(this.root), buildOverridesFile(this.root), documentsFile(this.root), compilerFile()].map(file => {
       const stat = file ? fs.statSync(file, { throwIfNoEntry: false }) : undefined;
       return stat ? `${stat.ino}:${stat.mtimeMs}` : "";
     }).join(";");

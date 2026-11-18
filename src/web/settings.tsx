@@ -21,14 +21,15 @@ import info from 'virtual:papilot-info';
 import { DiagnosticsSettings, type DiagnosticsSettingsProps } from './diagnostics-settings.tsx';
 import { ToolRequirement, type RequirementsState } from './system-requirements.tsx';
 import { LatexSettings } from './latex-settings.tsx';
+import { ExperimentSettings } from './experiment-settings.tsx';
 import { UpdateSettings, versionLabel, type UpdateApi } from './update-notice.tsx';
 import { SkillLibraryPanel, type SkillLibraryControls, type SkillLibraryOptions } from './skill-library.tsx';
-import { CollaborationSettings, type CollaborationSettingsProps } from './collaboration-settings.tsx';
+import type { CollaborationSettingsProps } from './collaboration-settings.tsx';
 import { ModelDefaultSettings, type ModelDefaultSettingsProps } from './model-default-settings.tsx';
 import { OverleafAccounts } from './overleaf.tsx';
 import type { OverleafState } from '../shared.ts';
 
-type SettingsPage = 'general' | 'appearance' | 'notifications' | 'review' | 'quickNotes' | 'shortcuts' | 'about' | 'licenses' | 'agents' | 'git' | 'latex' | 'skills' | 'updates' | 'overleaf';
+type SettingsPage = 'general' | 'appearance' | 'notifications' | 'review' | 'quickNotes' | 'shortcuts' | 'about' | 'licenses' | 'agents' | 'git' | 'latex' | 'skills' | 'updates' | 'overleaf' | 'experiments';
 export type SettingsInitialPage = 'general' | 'shortcuts' | 'quickNotes' | 'git' | 'latex' | 'agents';
 type SettingsEntry = { page: SettingsPage; label: string; icon: string; keywords?: string };
 
@@ -95,6 +96,7 @@ export function SettingsDialog({ theme, onTheme, resolved, appearance, onAppeara
     ] },
     { label: t('Application'), entries: [
       ...(updates ? [{ page: 'updates' as const, label: t('Updates'), icon: 'refresh' }] : []),
+      ...(diagnostics?.compiler || workflow ? [{ page: 'experiments' as const, label: t('Experiments'), icon: 'flask', keywords: `PhiTeX ${t('Compile with PhiTeX')} ${t('Enable collaboration mode')}` }] : []),
       { page: 'about', label: t('About Papilot'), icon: 'info', keywords: t('Third-party licenses') },
     ] },
   ];
@@ -163,7 +165,8 @@ export function SettingsDialog({ theme, onTheme, resolved, appearance, onAppeara
         {page === 'notifications' && <NotificationSettings/>}
         {page === 'shortcuts' && <ShortcutSettings/>}
         {page === 'quickNotes' && <QuickNoteSettings/>}
-        {page === 'about' && <AboutSettings onLicenses={() => goTo('licenses')} experiments={workflow && <CollaborationSettings {...workflow}/>}/>}
+        {page === 'about' && <AboutSettings onLicenses={() => goTo('licenses')}/>}
+        {page === 'experiments' && <ExperimentSettings compiler={diagnostics?.compiler} workflow={workflow} online={diagnostics?.online ?? workflow?.online ?? true}/>}
         {page === 'licenses' && <LicenseSettings/>}
         {page === 'agents' && diagnostics && <DiagnosticsSettings {...diagnostics}/>}
         {page === 'git' && <div className="settings-page">

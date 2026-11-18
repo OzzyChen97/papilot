@@ -1814,11 +1814,6 @@
     "textHash": "fd6bd2f10a3a15dc7176c1657bb2330fb5c41ccb040b48dbb5ce81a45ce2922c",
     "model": "codex"
   },
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": {
-    "revision": "db02021213da3997017a2bdfe3a6ed772d8e0aabb7e19ee423e10e7c9c7dea8f",
-    "textHash": "1a987f8d8eae72a1b9fbc09e158503fe75479b82802bd51297d36eb9a1e020a2",
-    "model": "codex"
-  },
   "Choose Codex for an AI review. Collaboration mode edits annotations.": {
     "revision": "41c31d2e798dbb5d36b919bfb73d298c5d92f7be5e0660533e635d927d0f7c9c",
     "textHash": "bfcd7cc2c6c75f77be5fba4b67bc159d7d36fecadc0d13adf123cf9d51ea28ec",
@@ -1893,5 +1888,15 @@
     "revision": "117afeef48bc925aa4125c75f78deb1b270dfc8f8d56a0e736ae8bf65a49e976",
     "textHash": "2acfcca3a02401ad37bc714273b1a0afb53a874e73c6bd3a867da244c2b7154d",
     "model": "codex-manual"
+  },
+  "Choose latexmk or PhiTeX.": {
+    "revision": "24789a3482c8ceccdb63a442645e7bbba3f8aa255f319107174c05062474d32a",
+    "textHash": "3a8a1c13ab355cd118c30339d8078a5e25e0aa6a58881828c1b19d93a9c6c433",
+    "model": "gemini-4-argon-medium"
+  },
+  "Enable collaboration mode in Settings → Experiments first.": {
+    "revision": "89e50cb5d7211c46f0287aa31758ed9324d471cacd2ef48a1d1574df4bffc1b5",
+    "textHash": "f3f5920002d695ec783067042d57a5c1cf581c67ee01146fca365d2a52e4cf92",
+    "model": "gemini-4-argon-medium"
   }
 }

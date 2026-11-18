@@ -263,6 +263,20 @@ In the manuscript's **Compilation Problems** panel, select **Fix with an agentâ€
 
 If the agent recommends editing the paper, review its diagnosis and select **Start task** to let the agent make the proposed edits in a task worktree. If the original cannot produce a PDF and the revision compiles, the review shows the source changes and the original compiler errors. You can accept the changes and apply them to the manuscript from that review.
 
+### Compile with PhiTeX (experimental)
+
+[PhiTeX](https://phitex.org) is an incremental TeX compiler: it writes the same PDF as pdfLaTeX and, after an edit, rebuilds only what the edit affects. To try it, install PhiTeX on the computer running Papilot so that `phitex` is on that computer's `PATH`, then turn on **Compile with PhiTeX** in **Settings â†’ Experiments**. The setting applies to every paper compiled on that computer from its next build; turn it off to compile with latexmk again. PhiTeX reads TeX files from the TeX installation Papilot already uses. Papilot does not include or download PhiTeX, which is licensed separately under the AGPL-3.0.
+
+PhiTeX keeps what it built of a document by the document's location, so Papilot compiles each paper in a working folder of its own inside the paper's build cache, one for each build running at once, and copies each result into that build's own folder. The first builds after installing PhiTeX prepare its formats and can take longer than with latexmk; later builds after small edits usually take a second or two. PhiTeX also keeps a cache of its own, `~/.cache/phitex` (4 GB at most by default). **Recompile PDF** starts from a clean state.
+
+While PhiTeX is experimental:
+
+- LuaLaTeX papers keep using latexmk, because PhiTeX does not support LuaLaTeX yet. PhiTeX's XeLaTeX support is less complete than its pdfLaTeX support, and its first XeLaTeX build indexes the installed fonts, which can take several minutes.
+- From a `latexmkrc` in the document's folder, PhiTeX applies only the search paths (`TEXINPUTS`, `BIBINPUTS`, `BSTINPUTS`) and `@default_files`. Custom latexmk rules do not run.
+- Each build compiles the whole document: chapter-only comparison builds and the preview of each TeX pass are not used.
+- With `"halt_on_error": true`, the build still fails at the first error, but PhiTeX processes the rest of the document before it stops.
+- Shell escape follows your own PhiTeX settings (`phitex config shell-escape on`), and so does the number of threads (`phitex config threads N`).
+
 ## Sync with Overleaf
 
 **Sync with Overleaf**, with the Overleaf icon on the second row of the empty opening page, imports a project and keeps it in sync. Paste its project link and sign in when prompted. With a paper open, use the paper menu to open its sync settings.

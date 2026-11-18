@@ -13,7 +13,7 @@ export function SettingsLink({ href, icon, title, detail }: { href: string; icon
   </a>;
 }
 
-export function AboutSettings({ onLicenses, experiments }: { onLicenses: () => void; experiments?: ReactNode }) {
+export function AboutSettings({ onLicenses }: { onLicenses: () => void }) {
   return <div className="about-settings settings-page">
     <section className="settings-card settings-card-body">
     <div className="settings-product">
@@ -41,7 +41,6 @@ export function AboutSettings({ onLicenses, experiments }: { onLicenses: () => v
     </button>
     </div>
     </section>
-    {experiments && <details className="workflow-experiments"><summary>{t('Experiments')}</summary>{experiments}</details>}
     <p className="settings-credit">{t('Made by Cui Chen and the Papilot contributors.')}</p>
   </div>;
 }

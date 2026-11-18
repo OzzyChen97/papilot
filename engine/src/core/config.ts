@@ -6,6 +6,10 @@ import { readJson, realPath, writeJson } from "./files.ts";
 import { legacySettings } from "./legacy-state.ts";
 export const ENGINES = ["pdflatex", "xelatex", "lualatex"] as const;
 type Engine = (typeof ENGINES)[number];
+/** What runs TeX: latexmk, or the experimental incremental PhiTeX compiler
+ *  (https://phitex.org), which the author installs. */
+export const COMPILERS = ["latexmk", "phitex"] as const;
+export type Compiler = (typeof COMPILERS)[number];
 interface Settings {
   main?: string;
   engine?: Engine;
@@ -63,11 +67,33 @@ export function saveBuildOverrides(root: string, settings: BuildOverrides) {
   writeJson(file, { project, defaults, settings, ...(Object.keys(others).length ? { others } : {}) }, 0o600);
 }
 
+// The compiler belongs to this installation and host, like the agent's
+// build repairs: it is a program installed on the computer that compiles.
+export function compilerFile() {
+  const data = process.env.PAPILOT_DATA;
+  return data ? path.join(data, "compiler.json") : null;
+}
+export function readCompiler(): Compiler {
+  const file = compilerFile();
+  const value = file && readJson<{ compiler?: unknown } | null>(file, null)?.compiler;
+  return COMPILERS.includes(value as Compiler) ? (value as Compiler) : "latexmk";
+}
+export function writeCompiler(compiler: Compiler) {
+  if (!COMPILERS.includes(compiler)) throw new Error(`The compiler must be one of ${COMPILERS.join(", ")}.`);
+  const file = compilerFile();
+  if (!file) throw new Error("The Papilot data directory is unavailable.");
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  writeJson(file, { compiler });
+}
+
 export interface Project {
   root: string;
   state: string;
   main: string;
   engine: Engine;
+  /** PhiTeX when the author chose it for this host and it supports the
+   *  engine, otherwise latexmk. */
+  compiler: Compiler;
   latexmkrc: string | null;
   source_dir: string;
   partial_builds: boolean;
@@ -427,6 +453,8 @@ export function loadProject(root: string, overrides?: BuildOverrides, document?:
     main,
     doc_dir,
     engine: engine as Engine,
+    // PhiTeX does not run LuaLaTeX yet.
+    compiler: engine === "lualatex" ? "latexmk" : readCompiler(),
     latexmkrc,
     source_dir,
     partial_builds: settings.partial_builds !== false,
@@ -447,5 +475,7 @@ export const signature = (p: Project) =>
     p.preload,
     p.dependencies,
     p.halt_on_error,
+    // Existing keys stay valid: only PhiTeX builds add this.
+    ...(p.compiler === "phitex" ? ["phitex"] : []),
   ]);
 export const isFigure = (p: Project, file: string) => within(file, p.figures);

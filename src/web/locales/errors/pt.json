@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "O manuscrito mudou durante a verificação. Verifique novamente.",
   "The workflow helper was stopped.": "A sessão auxiliar do fluxo de trabalho foi interrompida.",
   "The workflow helper disconnected.": "A sessão auxiliar do fluxo de trabalho foi desconectada.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Primeiro ative o modo colaborativo em Configurações → Sobre o Papilot → Recursos experimentais.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Escolha o Codex para uma revisão por IA. O modo colaborativo aplica alterações conforme as anotações.",
   "Enable collaboration mode before selecting it.": "Ative o modo colaborativo antes de selecioná-lo.",
   "The workflow is no longer active.": "O fluxo de trabalho não está mais ativo.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Conecte um agente que suporte tarefas em modo somente leitura, como o Codex.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "O agente selecionado não suporta o diagnóstico de compilação em modo somente leitura. Selecione outro agente.",
   "The selected agent does not support read-only AI review. Select another agent.": "O agente selecionado não suporta a revisão por IA em modo somente leitura. Selecione outro agente.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "O agente selecionado não suporta tarefas em modo somente leitura via ACP. Selecione outro agente."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "O agente selecionado não suporta tarefas em modo somente leitura via ACP. Selecione outro agente.",
+  "Choose latexmk or PhiTeX.": "Escolha latexmk ou PhiTeX.",
+  "Enable collaboration mode in Settings → Experiments first.": "Primeiro ative o modo colaborativo em Configurações → Recursos experimentais."
 }

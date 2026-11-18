@@ -24,6 +24,16 @@ function texDirectories(env: NodeJS.ProcessEnv) {
     path.join(localAppData, 'Programs', 'MiKTeX', 'bin', 'x64'), path.join(programFiles, 'texlive')];
 }
 
+// PhiTeX's version, when it is on the server's PATH: "phitex 1.0.4".
+export async function detectPhitex(env: NodeJS.ProcessEnv = process.env, platform = process.platform, probe: Probe = command): Promise<string | null> {
+  const extensions = platform === 'win32' ? ['', ...(env.PATHEXT || '.EXE;.CMD;.BAT;.COM').split(';')] : [''];
+  const file = (env.PATH || '').split(path.delimiter).filter(Boolean).flatMap(directory => extensions.map(extension => path.resolve(directory, 'phitex' + extension))).find(candidate => {
+    try { fs.accessSync(candidate, platform === 'win32' ? fs.constants.F_OK : fs.constants.X_OK); return fs.statSync(candidate).isFile(); } catch { return false; }
+  });
+  const banner = file ? await probe(file, ['--version'], env) : null;
+  return banner?.match(/^phitex (\S+)/m)?.[1] ?? null;
+}
+
 // Identify the installation actually found on the server's PATH. In particular,
 // a MacTeX receipt elsewhere on the machine must not relabel another TeX Live.
 export async function detectLatex(env: NodeJS.ProcessEnv = process.env, platform = process.platform, probe: Probe = command): Promise<LatexInstallation | null> {

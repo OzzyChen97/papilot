@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "Il manoscritto è cambiato durante la verifica. Verificalo di nuovo.",
   "The workflow helper was stopped.": "La sessione ausiliaria del flusso di lavoro è stata interrotta.",
   "The workflow helper disconnected.": "La sessione ausiliaria del flusso di lavoro si è disconnessa.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Prima attiva la modalità collaborativa in Impostazioni → Informazioni su Papilot → Funzioni sperimentali.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Scegli Codex per una revisione IA. La modalità collaborativa applica modifiche in base alle annotazioni.",
   "Enable collaboration mode before selecting it.": "Attiva la modalità collaborativa prima di selezionarla.",
   "The workflow is no longer active.": "Il flusso di lavoro non è più attivo.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Connetti un agente che supporti attività in sola lettura, come Codex.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "L’agente selezionato non supporta la diagnosi di compilazione in sola lettura. Seleziona un altro agente.",
   "The selected agent does not support read-only AI review. Select another agent.": "L’agente selezionato non supporta la revisione IA in sola lettura. Seleziona un altro agente.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "L’agente selezionato non supporta attività in sola lettura tramite ACP. Seleziona un altro agente."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "L’agente selezionato non supporta attività in sola lettura tramite ACP. Seleziona un altro agente.",
+  "Choose latexmk or PhiTeX.": "Scegli latexmk o PhiTeX.",
+  "Enable collaboration mode in Settings → Experiments first.": "Prima attiva la modalità collaborativa in Impostazioni → Funzioni sperimentali."
 }

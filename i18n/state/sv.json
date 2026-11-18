@@ -6420,14 +6420,14 @@
     "model": "codex"
   },
   "Experiments": {
-    "revision": "0c67e1a2b90b3dd0eb8f1a45edd032c6f038baf00ad8716961943bef536b4ee9",
-    "textHash": "0302043f944fe20bdc8e756adf4876bc7117aa4a4ee1f744fdc05f7b47ea5f09",
-    "model": "codex"
+    "revision": "7ec7acd249d79dd6ea24ccd246860c484b1442957e6555f26c97e41101139813",
+    "textHash": "72bf6e495cc8a5b59d1f64e1f03b3fe6449599adb1e7e1d0b84fe1914376941d",
+    "model": "gemini-4-argon-medium"
   },
   "Enable collaboration mode": {
-    "revision": "c37dc7c3497dc8aabcb0c63172776b548ebd4c44e3281fa66d92ab747134c6d7",
+    "revision": "57a24621dd1bee7d0bf29d5601823b4b4c03e39852fe18477f8b3eb51c26fc1e",
     "textHash": "389d411a4c14bfa70d18797f4dece5cb18ed45873df795c82578c15d1867bdb1",
-    "model": "codex"
+    "model": "gemini-4-argon-medium"
   },
   "Checks and reasoning": {
     "revision": "7d413c15b0d525d4e3acd0f04be2f78c72591e0619eb89b92a9aa805f4f549a0",
@@ -6513,5 +6513,30 @@
     "revision": "14f4502d807c96dfd15a291c448a668d1ca4a895ff413672ef13462784e64ad8",
     "textHash": "a128e488a2efb834bbcbd480e2f9f9316ed1fc00945e0c1fc4ab4b209564a80a",
     "model": "manual"
+  },
+  "Compile with PhiTeX": {
+    "revision": "f6f16ffad0e4b95007301ef3abfde7d7decc98499a20a9e888ae1656a91f1b5f",
+    "textHash": "d1b1d23c6c00db4a9bb8ffe7139291dc63389fd65542e287e32ab181645211e5",
+    "model": "gemini-4-argon-medium"
+  },
+  "Could not read the compiler. Try again.": {
+    "revision": "b71d954aa8574859a550c6397c0d1e0eb7779f92e474f24e77411f7eb45a642e",
+    "textHash": "f3cb79fa22f01013e42469b4944ce9b0b611aa5c4d2806edaa7d36cba0ed6a42",
+    "model": "gemini-4-argon-medium"
+  },
+  "Could not save the compiler. Try again.": {
+    "revision": "754d87bf336f4938b9cda3ca16c415bde96b5d588c0c521fb6338da4c3cd9b78",
+    "textHash": "9bd8f270eb28e7bb80426a5a2fe46f6af734e5c396b0e6478dfb30629c25d7cf",
+    "model": "gemini-4-argon-medium"
+  },
+  "PhiTeX is not installed on this computer.": {
+    "revision": "cbebc74d1ee11ad735c5476c79a7fac28d26dc2f5b9bc54cc15ce37526cc1c0e",
+    "textHash": "6888b2012c283d286bc7b8281fce7e3f5cefe2a37f94e5e5c6f80f33e8696a51",
+    "model": "gemini-4-argon-medium"
+  },
+  "PhiTeX {version} rebuilds only what each edit changes. LuaLaTeX papers keep using latexmk.": {
+    "revision": "b5ce3e3ae7ec3dfcec15b715e07840b65c5491c9c46451c26eb82694e2a5068f",
+    "textHash": "b1a6d9347463d21e0e4bbe6e91c7131230a07179b38f1eb4db8221c4c53d5615",
+    "model": "gemini-4-argon-medium"
   }
 }

@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "검사 중 원고가 변경되었습니다. 다시 검사하세요.",
   "The workflow helper was stopped.": "워크플로 보조 세션이 중지되었습니다.",
   "The workflow helper disconnected.": "워크플로 보조 세션의 연결이 끊어졌습니다.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "먼저 설정 → Papilot 정보 → 실험 기능에서 협업 모드를 활성화하세요.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "AI 검토에는 Codex를 선택하세요. 협업 모드는 주석에 따른 수정용입니다.",
   "Enable collaboration mode before selecting it.": "협업 모드를 활성화한 뒤 선택하세요.",
   "The workflow is no longer active.": "워크플로가 더 이상 실행 중이 아닙니다.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Codex처럼 읽기 전용 작업을 지원하는 에이전트에 연결하세요.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "선택한 에이전트는 읽기 전용 컴파일 진단을 지원하지 않습니다. 다른 에이전트를 선택하세요.",
   "The selected agent does not support read-only AI review. Select another agent.": "선택한 에이전트는 읽기 전용 AI 검토를 지원하지 않습니다. 다른 에이전트를 선택하세요.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "선택한 에이전트는 ACP를 통한 읽기 전용 작업을 지원하지 않습니다. 다른 에이전트를 선택하세요."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "선택한 에이전트는 ACP를 통한 읽기 전용 작업을 지원하지 않습니다. 다른 에이전트를 선택하세요.",
+  "Choose latexmk or PhiTeX.": "latexmk 또는 PhiTeX를 선택하세요.",
+  "Enable collaboration mode in Settings → Experiments first.": "먼저 설정 → 실험 기능에서 협업 모드를 활성화하세요."
 }

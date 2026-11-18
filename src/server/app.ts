@@ -43,7 +43,8 @@ import { PaperCreations } from './create-paper.ts';
 import { Universe } from './universe.ts';
 import { DATA, pageViewDir } from './paths.ts';
 import { registerAiReviewRoutes } from './ai-review-routes.ts';
-import { detectLatex } from './latex-installation.ts';
+import { detectLatex, detectPhitex } from './latex-installation.ts';
+import { readCompiler, writeCompiler } from '../../engine/src/core/config.ts';
 import { systemRequirements } from './system-requirements.ts';
 import { findExecutable } from '../../bin/agent-paths.mjs';
 import { OverleafService } from './overleaf/service.ts';
@@ -134,6 +135,7 @@ export interface AppOptions {
   prepareDemo?: () => Promise<void>;
   diagnostics?: Diagnostics;
   latexInstallation?: typeof detectLatex;
+  phitexVersion?: typeof detectPhitex;
   systemRequirements?: typeof systemRequirements;
   overleaf?: OverleafService;
 }
@@ -287,6 +289,16 @@ export async function buildApp(options: AppOptions) {
     latex.get('/api/runtime/latex', () => {
       probe ??= (options.latexInstallation || detectLatex)().finally(() => { probe = undefined; });
       return probe;
+    });
+    // The experimental PhiTeX compiler, for every paper on this host.
+    let phitex: ReturnType<typeof detectPhitex> | undefined;
+    const compiler = async () => ({ compiler: readCompiler(), phitex: await (phitex ??= (options.phitexVersion || detectPhitex)().finally(() => { phitex = undefined; })) });
+    latex.get('/api/runtime/compiler', compiler);
+    latex.post('/api/runtime/compiler', request => {
+      const choice = (request.body as { compiler?: unknown } | null)?.compiler;
+      if (choice !== 'latexmk' && choice !== 'phitex') throw new Error('Choose latexmk or PhiTeX.');
+      writeCompiler(choice);
+      return compiler();
     });
   });
   app.post('/api/diagnostics', request => {

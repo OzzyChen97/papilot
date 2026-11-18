@@ -1587,5 +1587,10 @@
   "Skip approval prompts; native rules still apply": "Omitir solicitudes de aprobación; se siguen aplicando las reglas nativas",
   "Uses CodeBuddy CLI and its saved login through ACP.": "Usa CodeBuddy CLI y su inicio de sesión guardado mediante ACP.",
   "Uses Qoder CLI and its saved login through ACP.": "Usa Qoder CLI y su inicio de sesión guardado mediante ACP.",
-  "Uses a configured WorkBuddy ACP launcher. Its login must be available to the launcher.": "Usa un lanzador ACP de WorkBuddy configurado. El lanzador debe tener acceso a su inicio de sesión."
+  "Uses a configured WorkBuddy ACP launcher. Its login must be available to the launcher.": "Usa un lanzador ACP de WorkBuddy configurado. El lanzador debe tener acceso a su inicio de sesión.",
+  "Compile with PhiTeX": "Compilar con PhiTeX",
+  "Could not read the compiler. Try again.": "No se pudo leer el compilador. Inténtalo de nuevo.",
+  "Could not save the compiler. Try again.": "No se pudo guardar el compilador. Inténtalo de nuevo.",
+  "PhiTeX is not installed on this computer.": "PhiTeX no está instalado en este equipo.",
+  "PhiTeX {version} rebuilds only what each edit changes. LuaLaTeX papers keep using latexmk.": "PhiTeX {version} recompila solo lo que cambia en cada edición. Los artículos de LuaLaTeX siguen usando latexmk."
 }

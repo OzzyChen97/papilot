@@ -188,6 +188,12 @@ export interface LatexInstallation {
   version: string | null;
   path: string;
 }
+/** What compiles papers on this host: latexmk, or the experimental PhiTeX
+ *  when installed (its version, else null). */
+export interface CompilerChoice {
+  compiler: 'latexmk' | 'phitex';
+  phitex: string | null;
+}
 export interface DiagnosticReport {
   version: string; checkedAt: number; platform: string; arch: string; node: string;
   ok: boolean; checks: DiagnosticCheck[];

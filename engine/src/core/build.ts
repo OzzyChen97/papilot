@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import { gunzip, gzip } from "node:zlib";
 import type { ChildProcess } from "node:child_process";
 import { cleanPath, Repo } from "./git.ts";
-import { readJson, writeJsonAsync, withLock, now } from "./files.ts";
+import { acquireLock, readJson, writeJsonAsync, withLock, now } from "./files.ts";
 import { stripComments } from "./outline.ts";
 import { signature, type Project } from "./config.ts";
 import { Cancelled, ProcessError, capture, commandVersion, runAsync } from "./process.ts";
@@ -237,6 +237,13 @@ export const OUTLINE_TRACE = String.raw`\makeatletter
 \AddToHook{begindocument/end}{\papilot@patch}
 \fi
 \makeatother`;
+// XeLaTeX can leave a partial XDV after stopping; latexmk -f then converts
+// it to a fresh but truncated PDF. Read the full log because the diagnostic
+// summary can stop before this terminal error. TeX's hard wrapping can split
+// the terminal message inside a word.
+const fatalLog = (log: Buffer) =>
+  /^(?:!\s*|[^\r\n]+:\d+:\s*)?(?:Emergency stop\.|TeX capacity exceeded)|^\s*\*\*\* \(job aborted|^\s*!?\s*==> Fatal error occurred|^\(That makes 100 errors; please try again\.\)/m.test(unwrapLog(log).join("\n"));
+const PHITEX_MISSING = "PhiTeX was not found. Install it from phitex.org, or choose latexmk in Settings.";
 const SAVED = /^Papilot: pass (\d+) output saved/m, NEXT = /^Run number \d+ of rule '([^' ]+)/m;
 /** A TeX pass's PDF, shown while the build goes on. */
 export interface PassPreview { pass: number; pdf: string; root: string; cwd: string }
@@ -417,6 +424,9 @@ export class Builder {
       targets = includes(next[main] ?? "");
     if (
       !p.partial_builds ||
+      // PhiTeX rebuilds only what an edit affects, from its own state of the
+      // whole document.
+      p.compiler === "phitex" ||
       targets.length < 2 ||
       JSON.stringify(targets) !== JSON.stringify(includes(old[main] ?? ""))
     )
@@ -492,10 +502,10 @@ export class Builder {
       );
     let version: string;
     try {
-      version = await commandVersion(p.engine);
+      version = await commandVersion(p.compiler === "phitex" ? "phitex" : p.engine);
     } catch {
       throw new BuildError(
-        `${p.engine} was not found. Install TeX Live (or MacTeX) with latexmk.`,
+        p.compiler === "phitex" ? PHITEX_MISSING : `${p.engine} was not found. Install TeX Live (or MacTeX) with latexmk.`,
       );
     }
     const tree = await this.repo.treeIdAsync(rev, p.source_dir),
@@ -849,6 +859,10 @@ export class Builder {
         prepareBuildDirectory(source, path.join(out, directory)),
       ]),
     ]);
+    // A manual recompilation, or a retry after leftover state broke a build,
+    // starts clean (start is then null).
+    if (p.compiler === "phitex")
+      return this.compilePhitex(tree, key, source, cwd, out, main, included, tikzDirectories, date, start === null, haltOnError, progress, scheduled, signal);
     // Preview outputs carry across days. A dated comparison can still use
     // older auxiliary state, but TeX must refresh the date on its pages.
     // Pages of other targets, such as a chapter build's full seed, are never
@@ -1055,11 +1069,7 @@ export class Builder {
       await Promise.all([path.join(out, job + ".synctex.gz"), texLog].map((file) => relocate(file, path.dirname(base!.root), folder)));
     const logBytes = await fs.promises.readFile(texLog).catch(() => Buffer.alloc(0)),
       logText = logBytes.toString("utf8"),
-      // XeLaTeX can leave a partial XDV after stopping; latexmk -f then
-      // converts it to a fresh but truncated PDF. Read the full log because
-      // the diagnostic summary can stop before this terminal error. TeX's
-      // hard wrapping can split the terminal message inside a word.
-      fatal = /^(?:!\s*|[^\r\n]+:\d+:\s*)?(?:Emergency stop\.|TeX capacity exceeded)|^\s*\*\*\* \(job aborted|^\s*!?\s*==> Fatal error occurred|^\(That makes 100 errors; please try again\.\)/m.test(unwrapLog(logBytes).join("\n")),
+      fatal = fatalLog(logBytes),
       // latexmk reports the errors TeX went past with its exit status. A
       // latexmk that a timeout or a shutdown killed has none, and may have
       // left the PDF unfinished.
@@ -1107,6 +1117,220 @@ export class Builder {
     };
     await writeJsonAsync(path.join(folder, "result.json"), result);
     return result;
+  }
+  // PhiTeX keeps what it built of a document by the absolute paths of its
+  // main file and output folder, and rebuilds only what an edit affects. Its
+  // builds therefore run in working folders that persist, synced to the
+  // version being built, and copy their output into the build's own folder.
+  // A working folder is a sibling of the build folders with a name of the
+  // same length, so relocate() rewrites the paths that SyncTeX names.
+  private async compilePhitex(
+    tree: string,
+    key: string,
+    source: string,
+    cwd: string,
+    out: string,
+    main: string,
+    included: string[],
+    tikzDirectories: Set<string>,
+    date: ReturnType<typeof buildDate>,
+    clean: boolean,
+    haltOnError: boolean,
+    progress?: (progress: BuildProgress) => void,
+    scheduled?: Active,
+    signal?: AbortSignal,
+  ): Promise<BuildInfo> {
+    const p = this.project,
+      folder = path.dirname(source),
+      job = path.posix.basename(main, ".tex"),
+      file = main.startsWith("-") ? "./" + main : main,
+      pdf = path.join(out, job + ".pdf"),
+      texLog = path.join(out, job + ".log"),
+      transcript = path.join(folder, "phitex.log");
+    const abandon = async () => {
+      await fs.promises.rm(folder, { recursive: true, force: true });
+      throw new Cancelled();
+    };
+    // Output tracked in Git is not this build's.
+    await Promise.all([pdf, texLog].map((name) => fs.promises.rm(name, { force: true })));
+    // A share of the TeX pool for as long as PhiTeX runs (see schedule).
+    const lease = new Lease(() => scheduled?.priority ?? "normal");
+    if (scheduled) { scheduled.lease = lease; lease.onLent = schedule; }
+    const release = () => void lease.release();
+    signal?.addEventListener("abort", release, { once: true });
+    let failure: Error | null = null, fresh = false, ran = now();
+    try {
+      // Waiting for a slot ends at once when the build is cancelled.
+      try { await lease.ready; }
+      catch (error) { if (signal?.aborted) return await abandon(); throw error; }
+      signal?.removeEventListener("abort", release);
+      if (signal?.aborted) return await abandon();
+      const work = await this.phitexFolder(),
+        workSource = path.join(work.folder, "src"),
+        workCwd = path.join(workSource, path.relative(source, cwd)),
+        workOut = path.join(workCwd, "build"),
+        workPdf = path.join(workOut, job + ".pdf"),
+        env = { ...process.env, ...date };
+      try {
+        // A clean build starts from a fresh copy of the sources, without
+        // PhiTeX's saved state of the document or anything TeX wrote.
+        if (clean && fs.existsSync(path.join(workCwd, main))) {
+          await capture("phitex", ["clean", "-q", "-o", "build", file], { cwd: workCwd, env, check: false, signal }).catch((error) => { if (!(error instanceof Cancelled)) throw error; });
+          await fs.promises.rm(workSource, { recursive: true, force: true });
+        }
+        if (signal?.aborted) return await abandon();
+        await this.syncPhitex(work.folder, source, tree);
+        await this.tracePhitex(work.folder, path.join(workCwd, main));
+        // TeX cannot create folders: those of included files' .aux and of
+        // TikZ's external pictures must exist, as in latexmk's builds.
+        await Promise.all([
+          ...included.map((target) => prepareBuildDirectory(workSource, path.dirname(path.resolve(workOut, target + ".aux")))),
+          ...[...tikzDirectories].flatMap((directory) => [prepareBuildDirectory(workSource, path.join(workCwd, directory)), prepareBuildDirectory(workSource, path.join(workOut, directory))]),
+        ]);
+        if (progress) progressReader(progress, writtenPages(path.join(workOut, job + ".log")));
+        // PhiTeX leaves an output whose bytes did not change as it is. The
+        // PDF and log are removed, so that only this build's can be read.
+        await Promise.all([workPdf, path.join(workOut, job + ".log")].map((name) => fs.promises.rm(name, { force: true })));
+        const log = await fs.promises.open(transcript, "w");
+        let writing = Promise.resolve();
+        ran = now();
+        try {
+          await runAsync("phitex", ["build", "--engine", p.engine, "--synctex", "-o", "build", file], {
+            cwd: workCwd,
+            env,
+            timeout: 1800000,
+            signal,
+            started: (child) => {
+              lease.attach(child);
+              if (!scheduled) return;
+              scheduled.child = child;
+              schedule();
+            },
+            output: (chunk) => {
+              writing = writing.then(() => log.write(chunk)).then(() => undefined, () => undefined);
+            },
+          });
+        } catch (error) {
+          failure = error as Error;
+        } finally {
+          if (scheduled) { scheduled.child = undefined; scheduled.paused = false; scheduled.lease = undefined; schedule(); }
+          lease.detach();
+          await lease.release();
+          await writing;
+          await log.close();
+        }
+        if (failure instanceof Cancelled) return await abandon();
+        fresh = fs.existsSync(workPdf);
+        for (const output of await filesIn(workOut)) await clone(output, path.join(out, path.relative(workOut, output)));
+        await fs.promises.writeFile(path.join(folder, "papilot-trace.tex"), OUTLINE_TRACE + "\n");
+        await Promise.all([path.join(out, job + ".synctex.gz"), path.join(out, job + ".papilot"), texLog].map((name) => relocate(name, work.folder, folder)));
+        const time = new Date();
+        await fs.promises.utimes(work.folder, time, time).catch(() => undefined);
+      } finally {
+        await work.release();
+      }
+    } finally {
+      signal?.removeEventListener("abort", release);
+      if (scheduled?.lease === lease) scheduled.lease = undefined;
+      await lease.release();
+    }
+    const logBytes = await fs.promises.readFile(texLog).catch(() => Buffer.alloc(0)),
+      logText = logBytes.toString("utf8"),
+      transcriptText = await fs.promises.readFile(transcript, "utf8").catch(() => ""),
+      // PhiTeX, like latexmk -f, continues past errors and reports them with
+      // its exit status.
+      past = !haltOnError && !fatalLog(logBytes) && failure instanceof ProcessError && / failed \(\d+\)$/.test(failure.message) && fresh,
+      errors = past ? compilerDiagnostics(logText, transcriptText) : [];
+    // As with latexmk, errors in generated files left from earlier builds
+    // fail this one, so that it is retried clean.
+    if ((failure && !past) || !fresh || (!clean && auxiliaryDiagnostics(errors))) {
+      const kept = path.join(p.state, "logs", key + ".log"),
+        details = compilerDiagnostics(logText, transcriptText);
+      await fs.promises.mkdir(path.dirname(kept), { recursive: true });
+      await fs.promises.writeFile(kept, transcriptText + (logText ? "\n\n--- TeX log ---\n" + logText : ""));
+      await fs.promises.rm(folder, { recursive: true, force: true });
+      throw new BuildError(
+        failure?.message.includes("ENOENT") ? PHITEX_MISSING : "LaTeX failed to compile.",
+        details.length ? details : transcriptText.split("\n").slice(-25),
+        kept,
+      );
+    }
+    const result: BuildInfo = {
+      key,
+      tree,
+      targets: ["full"],
+      root: source,
+      cwd,
+      pdf,
+      seconds: Math.round((now() - ran) * 10) / 10,
+      warnings: warnings(logText),
+      ...(past ? { errors: errors.length ? errors : transcriptText.split("\n").slice(-25) } : {}),
+    };
+    await writeJsonAsync(path.join(folder, "result.json"), result);
+    return result;
+  }
+  /** A PhiTeX working folder that no other build is using, locked. One per
+   *  build running at once: the TeX pool bounds how many there are. */
+  private async phitexFolder() {
+    for (let slot = 0; ; slot++) {
+      const folder = path.join(this.cache, hash(JSON.stringify(["phitex", signature(this.project), slot])).slice(0, 32));
+      try {
+        return { folder, release: await acquireLock(folder + ".lock", false) };
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ELOCKED") throw error;
+      }
+    }
+  }
+  /** Records the outline as latexmk builds do (OUTLINE_TRACE). PhiTeX has no
+   *  -usepretex, so the working copy of the main file inputs the trace first,
+   *  on its first line: every line keeps its number. latexmk's builds enter
+   *  the main file with \input, which the trace records and names its
+   *  entries by; this build enters it the same way. */
+  private async tracePhitex(work: string, main: string) {
+    const trace = path.join(work, "papilot-trace.tex"), wanted = OUTLINE_TRACE + "\n", name = path.basename(main);
+    if (await fs.promises.readFile(trace, "utf8").catch(() => null) !== wanted) await fs.promises.writeFile(trace, wanted);
+    const text = await fs.promises.readFile(main),
+      bom = text.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])) ? 3 : 0,
+      // As a string, like LaTeX's own file names: non-ASCII names too.
+      enter = /^[^\\{}%#|]+$/.test(name) ? String.raw`\ifcsname papilot@w\endcsname\edef\CurrentFile{\detokenize{${name}}}\def\CurrentFilePath{}\csname papilot@w\endcsname{F|0||\CurrentFile}\fi` : "",
+      input = Buffer.from(`\\input{${path.relative(path.dirname(main), trace).split(path.sep).join("/")}}${enter}`);
+    if (text.subarray(bom, bom + input.length).equals(input)) return;
+    // A link may name a file outside the copy: write a file in its place.
+    if ((await fs.promises.lstat(main)).isSymbolicLink()) await fs.promises.rm(main);
+    await fs.promises.writeFile(main, Buffer.concat([text.subarray(0, bom), input, text.subarray(bom)]));
+  }
+  /** Makes the working folder's copy of the sources that of `tree`, which
+   *  `source` holds, replacing only the files that differ, so that PhiTeX
+   *  reads only those again. What TeX wrote there stays. */
+  private async syncPhitex(work: string, source: string, tree: string) {
+    const state = path.join(work, "papilot.json"),
+      copy = path.join(work, "src"),
+      previous = readJson<{ tree?: unknown } | null>(state, null)?.tree;
+    if (previous === tree && fs.existsSync(copy)) return;
+    await fs.promises.mkdir(work, { recursive: true });
+    await writeJsonAsync(state, { tree: null });
+    let synced = false;
+    if (typeof previous === "string" && fs.existsSync(copy))
+      try {
+        // Paths relative to the source folder, whose trees these are.
+        const fields = (await this.repo.runAsync(["diff-tree", "-r", "-z", "--no-renames", "--name-status", previous, tree])).toString().split("\0");
+        for (let i = 0; i + 1 < fields.length; i += 2) {
+          const target = path.join(copy, cleanPath(fields[i + 1]));
+          await fs.promises.rm(target, { recursive: true, force: true });
+          if (fields[i] === "D") continue;
+          await fs.promises.mkdir(path.dirname(target), { recursive: true });
+          await fs.promises.cp(path.join(source, fields[i + 1]), target, { verbatimSymlinks: true });
+        }
+        synced = true;
+      } catch {
+        // The earlier tree may be gone, or a file replaced a folder: copy all.
+      }
+    if (!synced) {
+      await fs.promises.rm(copy, { recursive: true, force: true });
+      const cloned = process.platform === "darwin" && (await capture("/bin/cp", ["-c", "-R", source, copy], { check: false })).status === 0;
+      if (!cloned) await fs.promises.cp(source, copy, { recursive: true, verbatimSymlinks: true, force: true });
+    }
+    await writeJsonAsync(state, { tree });
   }
   // Removes builds unused for `maxAge` seconds, except those in `keep` and the
   // two newest of each set of targets, which the next build continues from.

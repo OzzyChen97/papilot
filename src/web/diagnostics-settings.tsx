@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { AgentId, LatexInstallation, DiagnosticReport, Project, RuntimeStatus, WriterAuth } from '../shared.ts';
+import type { AgentId, CompilerChoice, LatexInstallation, DiagnosticReport, Project, RuntimeStatus, WriterAuth } from '../shared.ts';
 import { RuntimeAgents } from './runtime-agents.tsx';
 
 export interface DiagnosticsSettingsProps {
@@ -9,6 +9,8 @@ export interface DiagnosticsSettingsProps {
   check: (projectId: string | undefined, signal: AbortSignal) => Promise<DiagnosticReport>;
   reconnect: () => Promise<void>;
   latex: (signal: AbortSignal) => Promise<LatexInstallation | null>;
+  /** The compiler for this host: GET with no choice, POST with one. */
+  compiler?: (choice?: CompilerChoice['compiler']) => Promise<CompilerChoice>;
   /** Papilot Writer's providers: GET with no body, POST with one. */
   writer?: (route: string, body?: unknown) => Promise<WriterAuth>;
 }

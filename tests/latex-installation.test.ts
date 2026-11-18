@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { detectLatex } from '../src/server/latex-installation.ts';
+import { detectLatex, detectPhitex } from '../src/server/latex-installation.ts';
 
 test('LaTeX detection identifies the active distribution and associates macOS receipts with its binary', { skip: process.platform === 'win32' && 'file links need Windows Developer Mode' }, async () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-tex-'));
@@ -54,5 +54,17 @@ test('LaTeX detection follows PATH order and can fall back to a working XeLaTeX'
     });
     assert.deepEqual(result, { distribution: 'TeX Live', version: '2026', path: fs.realpathSync(first) });
     assert.ok(visited.every(file => file.startsWith(first)), 'Do not query another installation’s kpsewhich or fall through PATH');
+  } finally { fs.rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('PhiTeX detection reads the version of the phitex on PATH, and runs nothing without one', async () => {
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-phitex-'));
+  try {
+    const env = { PATH: directory, PATHEXT: '.EXE' }, executable = path.join(directory, process.platform === 'win32' ? 'phitex.EXE' : 'phitex');
+    assert.equal(await detectPhitex(env, process.platform, async () => { throw new Error('No commands should run when PhiTeX is absent'); }), null);
+    fs.writeFileSync(executable, '', { mode: 0o755 });
+    const probe = async (file: string, args: string[]) => { assert.equal(file, executable); assert.deepEqual(args, ['--version']); return 'phitex 1.0.4\nCopyright 2026'; };
+    assert.equal(await detectPhitex(env, process.platform, probe), '1.0.4');
+    assert.equal(await detectPhitex(env, process.platform, async () => null), null);
   } finally { fs.rmSync(directory, { recursive: true, force: true }); }
 });

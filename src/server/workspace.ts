@@ -475,7 +475,7 @@ export class Workspace extends EventEmitter {
       if (input.prepareReview && existing.preparation) this.reviewCopies.set(existing.id, input.prepareReview);
       return this.retryTask(existing.id);
     }
-    if (input.agent === 'collaboration' && !this.collaborationEnabled) throw new Error('Enable collaboration mode in Settings → About Papilot → Experiments first.');
+    if (input.agent === 'collaboration' && !this.collaborationEnabled) throw new Error('Enable collaboration mode in Settings → Experiments first.');
     if (input.agent === 'collaboration' && input.prepareReview) throw new Error('Choose Codex for an AI review. Collaboration mode edits annotations.');
     if (input.prepareReview) this.requireReviewAgent(input.agent || 'codex');
     this.validateTaskPermissions(input.permissions ?? 'workspace', input.agent || 'codex', Boolean(input.prepareReview));

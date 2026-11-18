@@ -1,6 +1,6 @@
 # Collaboration mode
 
-An opt-in experiment for editing many PDF annotations with several agents at once. It is hidden by default. Open **Settings → About Papilot → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
+An opt-in experiment for editing many PDF annotations with several agents at once. It is hidden by default. Open **Settings → Experiments**, then turn on **Enable collaboration mode**. It becomes available in the agent/model picker once Codex is detected. The setting is saved on the Papilot host and shared by its browsers. Turning it off hides new choices; existing tasks can continue.
 
 Codex is the coordinator. It plans the work by annotation intent and source span, sends each piece to the worker configured for its role, resolves conflicts and finishes with an independent audit. Pick the coordinator's model and reasoning effort in the task's model picker, as for a Codex task. This mode edits annotations; use Codex directly for the AI review skill that generates new PDF notes.
 

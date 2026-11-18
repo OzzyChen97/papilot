@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "Le manuscrit a changé pendant la vérification. Vérifiez-le à nouveau.",
   "The workflow helper was stopped.": "La session auxiliaire du workflow a été arrêtée.",
   "The workflow helper disconnected.": "La session auxiliaire du workflow a été déconnectée.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Activez d’abord le mode collaboratif dans Paramètres → À propos de Papilot → Fonctions expérimentales.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Choisissez Codex pour une relecture par IA. Le mode collaboratif traite les modifications demandées par les annotations.",
   "Enable collaboration mode before selecting it.": "Activez le mode collaboratif avant de le sélectionner.",
   "The workflow is no longer active.": "Le workflow n’est plus actif.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Connectez un agent qui prend en charge les tâches en lecture seule, comme Codex.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "L’agent sélectionné ne prend pas en charge le diagnostic de compilation en lecture seule. Sélectionnez un autre agent.",
   "The selected agent does not support read-only AI review. Select another agent.": "L’agent sélectionné ne prend pas en charge la relecture par IA en lecture seule. Sélectionnez un autre agent.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "L’agent sélectionné ne prend pas en charge les tâches en lecture seule via ACP. Sélectionnez un autre agent."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "L’agent sélectionné ne prend pas en charge les tâches en lecture seule via ACP. Sélectionnez un autre agent.",
+  "Choose latexmk or PhiTeX.": "Choisissez latexmk ou PhiTeX.",
+  "Enable collaboration mode in Settings → Experiments first.": "Activez d’abord le mode collaboratif dans Paramètres → Fonctions expérimentales."
 }

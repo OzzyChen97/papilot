@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "Manuskriptet ändrades under kontrollen. Kontrollera igen.",
   "The workflow helper was stopped.": "Arbetsflödets hjälpsession stoppades.",
   "The workflow helper disconnected.": "Arbetsflödets hjälpsession kopplades från.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Aktivera först samarbetsläget under Inställningar → Om Papilot → Experimentella funktioner.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Välj Codex för AI-granskning. samarbetsläget redigerar utifrån anteckningar.",
   "Enable collaboration mode before selecting it.": "Aktivera samarbetsläget innan du väljer det.",
   "The workflow is no longer active.": "Arbetsflödet är inte längre aktivt.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Anslut en agent som stöder uppgifter med enbart läsåtkomst, till exempel Codex.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "Den valda agenten stöder inte kompileringsdiagnostik med enbart läsåtkomst. Välj en annan agent.",
   "The selected agent does not support read-only AI review. Select another agent.": "Den valda agenten stöder inte AI-granskning med enbart läsåtkomst. Välj en annan agent.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "Den valda agenten stöder inte uppgifter med enbart läsåtkomst via ACP. Välj en annan agent."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "Den valda agenten stöder inte uppgifter med enbart läsåtkomst via ACP. Välj en annan agent.",
+  "Choose latexmk or PhiTeX.": "Välj latexmk eller PhiTeX.",
+  "Enable collaboration mode in Settings → Experiments first.": "Aktivera först samarbetsläget under Inställningar → Experimentella funktioner."
 }

@@ -448,7 +448,6 @@
   "The manuscript changed during the audit. Audit again.": "El manuscrito cambió durante la revisión. Revíselo de nuevo.",
   "The workflow helper was stopped.": "Se detuvo la sesión auxiliar del flujo de trabajo.",
   "The workflow helper disconnected.": "Se desconectó la sesión auxiliar del flujo de trabajo.",
-  "Enable collaboration mode in Settings → About Papilot → Experiments first.": "Primero active el modo colaborativo en Ajustes → Acerca de Papilot → Funciones experimentales.",
   "Choose Codex for an AI review. Collaboration mode edits annotations.": "Elija Codex para una revisión con IA. El modo colaborativo aplica cambios según las anotaciones.",
   "Enable collaboration mode before selecting it.": "Active el modo colaborativo antes de seleccionarlo.",
   "The workflow is no longer active.": "El flujo de trabajo ya no está activo.",
@@ -463,5 +462,7 @@
   "Connect an agent that supports read-only tasks, such as Codex.": "Conecta un agente que admita tareas de solo lectura, como Codex.",
   "The selected agent does not support read-only compilation diagnosis. Select another agent.": "El agente seleccionado no admite diagnósticos de compilación en modo de solo lectura. Selecciona otro agente.",
   "The selected agent does not support read-only AI review. Select another agent.": "El agente seleccionado no admite revisiones con IA en modo de solo lectura. Selecciona otro agente.",
-  "The selected agent does not support read-only tasks through ACP. Select another agent.": "El agente seleccionado no admite tareas de solo lectura a través de ACP. Selecciona otro agente."
+  "The selected agent does not support read-only tasks through ACP. Select another agent.": "El agente seleccionado no admite tareas de solo lectura a través de ACP. Selecciona otro agente.",
+  "Choose latexmk or PhiTeX.": "Elige latexmk o PhiTeX.",
+  "Enable collaboration mode in Settings → Experiments first.": "Primero active el modo colaborativo en Ajustes → Funciones experimentales."
 }

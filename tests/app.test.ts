@@ -41,7 +41,7 @@ async function fixture(latexInstallation: AppOptions['latexInstallation'] = asyn
   const diagnosticRequests: { repo?: string; port?: number }[] = [];
   const diagnostics = new Diagnostics(async (repo, port) => { diagnosticRequests.push({ repo, port }); return { version: '9.9.9', ok: false, checks: [{ id: 'latexmk', ok: false, severity: 'error', detail: 'Not installed.', fix: 'Install TeX Live.' }] }; });
   const systemRequirements = async (): Promise<SystemRequirements> => ({ platform: 'linux', checks: [{ id: 'git', ok: true }, { id: 'latexmk', ok: false }, { id: 'synctex', ok: false }, { id: 'tex-engine', ok: false }] });
-  const shared = { store, workspace, updates, diagnostics, systemRequirements, latexInstallation, manuscripts: new Manuscripts(), csrf: 'local-csrf', serialGit: gitQueue(), dist, version: '9.9.9', connectReview: async () => review };
+  const shared = { store, workspace, updates, diagnostics, systemRequirements, latexInstallation, phitexVersion: async () => '1.0.4', manuscripts: new Manuscripts(), csrf: 'local-csrf', serialGit: gitQueue(), dist, version: '9.9.9', connectReview: async () => review };
   const local = await buildApp({ ...shared, listener: { kind: 'local', port: 7274, publicOrigin: PUBLIC, owner: 'owner@example' } });
   const state = (await local.inject({ url: '/api/state', headers: LOCAL })).json();
   const as = { ...LOCAL, origin: 'http://127.0.0.1:7274', 'x-papilot-token': state.csrf };
@@ -235,6 +235,25 @@ test('LaTeX installation information is read-only', async () => {
     assert.deepEqual(result.json(), { distribution: 'MacTeX', version: '2025', path: '/usr/local/texlive/2025' });
     assert.equal(f.diagnosticRequests.length, 0, 'Reading the installation does not run repository or agent diagnostics');
   } finally { await f.close(); }
+});
+
+test('the compiler is chosen for every paper on this host, with CSRF', async () => {
+  const f = await fixture(), data = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-compiler-')), previous = process.env.PAPILOT_DATA;
+  process.env.PAPILOT_DATA = data;
+  try {
+    const url = '/api/runtime/compiler';
+    assert.deepEqual((await f.local.inject({ url, headers: LOCAL })).json(), { compiler: 'latexmk', phitex: '1.0.4' });
+    assert.equal((await f.local.inject({ method: 'POST', url, headers: LOCAL, payload: { compiler: 'phitex' } })).statusCode, 403);
+    assert.equal((await f.local.inject({ method: 'POST', url, headers: f.as, payload: { compiler: 'tectonic' } })).statusCode, 400);
+    const chosen = await f.local.inject({ method: 'POST', url, headers: f.as, payload: { compiler: 'phitex' } });
+    assert.equal(chosen.statusCode, 200, chosen.body);
+    assert.deepEqual(chosen.json(), { compiler: 'phitex', phitex: '1.0.4' });
+    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(data, 'compiler.json'), 'utf8')), { compiler: 'phitex' });
+  } finally {
+    if (previous === undefined) delete process.env.PAPILOT_DATA; else process.env.PAPILOT_DATA = previous;
+    fs.rmSync(data, { recursive: true, force: true });
+    await f.close();
+  }
 });
 
 test('LaTeX detection shares a host-wide rate limit, rejects excess probes and recovers after its window', async t => {

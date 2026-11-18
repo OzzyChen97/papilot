@@ -49,10 +49,8 @@ try {
     await page.locator('[data-settings-page="agents"]').click();
     await expect(page.locator('[data-agent="collaboration"]')).toHaveCount(0);
     if (width < 600) await page.locator('.settings-mobile-back').click();
-    await page.locator('[data-settings-page="about"]').click();
-    const disclosure = page.locator('.workflow-experiments'), toggle = disclosure.getByRole('switch');
-    await expect(toggle).not.toBeVisible();
-    await disclosure.locator('summary').focus(); await page.keyboard.press('Enter');
+    await page.locator('[data-settings-page="experiments"]').click();
+    const disclosure = page.locator('.collaboration-settings'), toggle = disclosure.getByRole('switch');
     await expect(toggle).toBeVisible(); await expect(toggle).not.toBeChecked();
     await expect(toggle).toHaveAccessibleName(language === 'zh-CN' ? '启用协作模式' : 'Enable collaboration mode');
     if (language === 'en') {
@@ -100,7 +98,7 @@ try {
     assert.equal(await selectedValue(model), JSON.stringify(['collaboration', 'gpt-test']));
     await expect(model).toContainText(language === 'zh-CN' ? '协作模式' : 'Collaboration mode');
     if (width < 600) await page.locator('.settings-mobile-back').click();
-    await page.locator('[data-settings-page="about"]').click(); await disclosure.locator('summary').click();
+    await page.locator('[data-settings-page="experiments"]').click();
     await expect(toggle).toBeChecked();
     // Saved on the host: the routes come back after reloading.
     await expect(disclosure.locator('[data-role="polish"] [role="combobox"]')).toContainText('Gemini Test');

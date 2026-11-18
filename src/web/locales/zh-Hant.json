@@ -1587,5 +1587,10 @@
   "Skip approval prompts; native rules still apply": "略過核准提示；仍遵循原生規則",
   "Uses CodeBuddy CLI and its saved login through ACP.": "透過 ACP 使用 CodeBuddy CLI 及其已儲存的登入資訊。",
   "Uses Qoder CLI and its saved login through ACP.": "透過 ACP 使用 Qoder CLI 及其已儲存的登入資訊。",
-  "Uses a configured WorkBuddy ACP launcher. Its login must be available to the launcher.": "使用已設定的 WorkBuddy ACP 啟動器。該啟動器必須能使用登入資訊。"
+  "Uses a configured WorkBuddy ACP launcher. Its login must be available to the launcher.": "使用已設定的 WorkBuddy ACP 啟動器。該啟動器必須能使用登入資訊。",
+  "Compile with PhiTeX": "使用 PhiTeX 編譯",
+  "Could not read the compiler. Try again.": "無法讀取編譯器，請再試一次。",
+  "Could not save the compiler. Try again.": "無法儲存編譯器，請再試一次。",
+  "PhiTeX is not installed on this computer.": "此電腦未安裝 PhiTeX。",
+  "PhiTeX {version} rebuilds only what each edit changes. LuaLaTeX papers keep using latexmk.": "PhiTeX {version} 僅會重新編譯每次編輯變更的部分。LuaLaTeX 論文仍會繼續使用 latexmk。"
 }

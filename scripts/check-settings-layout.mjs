@@ -28,8 +28,15 @@ try {
       localStorage.setItem('papilot:language', language);
       localStorage.setItem('papilot:setup-seen', '1');
     }, language);
+    // A nightly PhiTeX's long version; choosing a compiler saves it here.
+    const compiler = { compiler: 'phitex', phitex: '1.0.5-nightly.202611180235' }, chosen = [];
     await context.route('**/api/**', route => {
       const pathname = new URL(route.request().url()).pathname;
+      if (pathname === '/api/runtime/compiler') {
+        const choice = route.request().postDataJSON()?.compiler;
+        if (choice) { chosen.push(choice); compiler.compiler = choice; }
+        return route.fulfill({ json: compiler });
+      }
       if (pathname === '/api/state') return route.fulfill({ json: state });
       if (pathname === '/api/events') return route.fulfill({ contentType: 'text/event-stream', body: ': fixture\n\n' });
       if (pathname === '/api/runtime/requirements') return route.fulfill({ json: { platform: 'win32', checks: ['git', 'latexmk', 'synctex', 'tex-engine'].map(id => ({ id, ok: false })) } });
@@ -71,6 +78,7 @@ try {
         }
         await category.click();
         if (name === 'latex') await page.locator('.latex-installation-facts').waitFor();
+        if (name === 'experiments') await expect(page.locator('.phitex-experiment').getByRole('switch')).toBeChecked();
         if (name === 'updates') await page.locator('.settings-content-updates [role=alert]').waitFor();
         if (name === 'skills') await expect(page.locator('.skill-library-new')).toBeEnabled();
         if (name === 'quickNotes') await page.locator('.quick-note-text strong').getByText('Literaturverzeichnis', { exact: true }).waitFor();
@@ -118,6 +126,31 @@ try {
           for (let index = 1; index < labels.length; index++) {
             assert.ok(labels[index].left >= labels[index - 1].right + 1,
               `${label}: alternative labels ${labels[index - 1].text} and ${labels[index].text} stay separated`);
+          }
+        }
+        if (language === 'en' && name === 'experiments' && [390, 1280].includes(width)) {
+          for (const colorScheme of ['light', 'dark']) {
+            await page.emulateMedia({ colorScheme });
+            await page.locator('.settings-content').screenshot({ animations: 'disabled', path: `test-results/settings-experiments-${width}-${colorScheme}.png` });
+          }
+          await page.emulateMedia({ colorScheme: 'light' });
+          if (width === 1280) {
+            // Turning it off saves latexmk for this host. It cannot be turned
+            // on while PhiTeX is not installed.
+            const phitex = page.locator('.phitex-experiment').getByRole('switch', { name: 'Compile with PhiTeX' });
+            await phitex.click();
+            await expect(phitex).not.toBeChecked();
+            assert.deepEqual(chosen, ['latexmk']);
+            compiler.phitex = null;
+            await page.locator('[data-settings-page="general"]').click();
+            await category.click();
+            await expect(phitex).toBeDisabled();
+            await expect(page.getByRole('link', { name: 'phitex.org' })).toHaveAttribute('href', 'https://phitex.org');
+            await page.locator('.settings-content').screenshot({ animations: 'disabled', path: 'test-results/settings-experiments-missing.png' });
+            Object.assign(compiler, { compiler: 'phitex', phitex: '1.0.5-nightly.202611180235' });
+            await page.locator('[data-settings-page="general"]').click();
+            await category.click();
+            await expect(phitex).toBeChecked();
           }
         }
         if (name === 'skills') {

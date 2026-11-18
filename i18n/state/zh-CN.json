@@ -700,9 +700,9 @@
     "model": "gemini-4-argon-medium"
   },
   "Enable collaboration mode": {
-    "revision": "e724ccf63e40ca2fc7dc529be5bed1cd6b55ffcd76717aef6471fe639fd3f229",
+    "revision": "99460596a91bf2f9b3a84c15f85b2a8d08fc2c952be4a922e6c520fa24d0a816",
     "textHash": "ae4c7e5d55b129fc7f30677ee24dddbbd925ed9c4bddbd0839c1e30dcca8a0e9",
-    "model": "codex"
+    "model": "gemini-4-argon-medium"
   },
   "Collaboration mode": {
     "revision": "f7ba05fafacbd447e8b99f4053047de5c478e1daa90e7b618199151aa5d23637",
@@ -710,8 +710,8 @@
     "model": "codex"
   },
   "Experiments": {
-    "revision": "0d8b23d979310759df274eabbefce5e70276c7664576a953f707ca63501031af",
-    "textHash": "001a51a407db9f9a06e80c066482a107a6c1bbfb7027859805bb39564b80ae6a",
-    "model": "codex"
+    "revision": "ca126559433431aea0f4b1fbd61eb0a6dcdb40f3c76db0776192073c6a46286f",
+    "textHash": "4c322f4b7d921c0fc50f269d3335f054c9730e9a81f0d5ba2ce22507de21a361",
+    "model": "gemini-4-argon-medium"
   }
 }

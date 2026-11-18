@@ -415,6 +415,8 @@ export const zhCN: Record<string, string> = {
   'LaTeX installation': 'LaTeX 安装信息', 'Distribution': '发行版', 'Version': '版本', 'Installation location': '安装位置',
   'Detect again': '重新识别', 'Detecting LaTeX installation…': '正在识别 LaTeX 安装…',
   'Could not read the LaTeX installation. Try again.': '无法读取 LaTeX 安装信息，请重试。',
+  'Compile with PhiTeX': '使用 PhiTeX 编译', 'PhiTeX {version} rebuilds only what each edit changes. LuaLaTeX papers keep using latexmk.': 'PhiTeX {version} 只重新编译每次修改影响到的部分。LuaLaTeX 论文仍使用 latexmk。',
+  'PhiTeX is not installed on this computer.': '这台电脑上没有安装 PhiTeX。', 'Could not save the compiler. Try again.': '无法保存编译器设置，请重试。', 'Could not read the compiler. Try again.': '无法读取编译器设置，请重试。',
   'No LaTeX installation was detected on this host.': '未在此主机上检测到 LaTeX 安装。',
   'Runtime': '运行环境', 'Agents': '智能体',
   'Set up this agent': '配置此智能体', 'Already set up?': '已经配置过了？',
