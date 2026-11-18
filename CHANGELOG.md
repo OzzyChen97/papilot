@@ -26,7 +26,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 - Show the Mac app icon beside the name at the top of the README, and link the Discord server from the homepage header and footer.
 - Redraw the homepage's app windows, the README showcase and the social preview in the canvas interface: the PDF on a grey canvas with the marking tools in a floating bar, a change outlined in blue with its count, history and PDF buttons in the toolbar, notes numbered in the page margin, full-width chat messages and the composer's agent and model.
-- **A new Papilot icon.** Navy and blue capsules split by a coral line replace the pen nib in the desktop app, browser tabs, the home-screen icon, the workspace, Settings, the Mac installer and the website. In the dark theme the workspace and Settings draw the navy capsules light, and at 16 to 32 px a three-stripe cut keeps the mark legible.
+- **A new Papilot icon.** Navy and blue capsules split by a coral line replace the pen nib in the desktop app, browser tabs, the home-screen icon, the workspace, Settings, Papilot Writer's agent icon (now in full colour), the Mac installer and the website. In the dark theme the workspace and Settings draw the navy capsules light, and at 16 to 32 px a three-stripe cut keeps the mark legible.
 - Continue compiling after recoverable LaTeX errors and show the resulting PDF with its diagnostics in task reviews, full and retained PDFs, accepted PDFs, Git comparisons and agent reviews. Diagnostics follow the PDF actually displayed, including errors found only during a full-document build after a clean chapter comparison. Fatal errors still fail the build, including when XeLaTeX leaves a truncated PDF. Set `"halt_on_error": true` in the document's `.git/papilot/settings.json` to stop at the first error. Stale generated list and navigation files still trigger an automatic clean rebuild in either mode.
 - Refresh the Mac installer with a minimal PDF diff and annotation: a blue connector guides the Papilot icon from the selected paper region into Applications inside its note. Use the current “Next-Generation AI LaTeX Editor” tagline.
 
@@ -52,6 +52,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- Finish preparing a review as soon as its main PDF comparison is ready. Alternative wording previews load in the background without delaying review, application or commit; obsolete preview errors no longer interfere with later decisions.
 - Keep new PDF notes and their TeX locations responsive while grouping comments by section. Reuse the outline and existing assignments for each PDF version, and read only pages containing new or moved marks.
 - Keep the Overleaf project-picker heading on one line beside search, including Chinese labels; let controls wrap when space is limited.
 - Keep space above task search while the workspace loads or no paper is open, so the field does not touch the sidebar divider.

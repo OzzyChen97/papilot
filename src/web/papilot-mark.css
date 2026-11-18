@@ -3,3 +3,5 @@
 .papilot-mark .mark-line{fill:#ff6a64}
 .papilot-mark .mark-bottom{fill:#4d93f8}
 :root[data-theme="dark"] .papilot-mark .mark-top{fill:#d8e2f9}
+/* As an agent icon it takes the brand icons' sizes, not their single-colour mask. */
+.brand-icon.papilot-mark{background:none;-webkit-mask:none;mask:none}

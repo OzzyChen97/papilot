@@ -2,7 +2,7 @@
   <title id="title">Papilot Writer, Pi, Codex, Claude, Cursor, Copilot, Grok, Antigravity, Kimi, GLM, DeepSeek, Qwen, OpenCode, Qoder, CodeBuddy, WorkBuddy</title>
   <!-- Original brand paths from src/web/brand-icons; see SOURCES.txt. -->
   <g transform="translate(2 0)">
-    <svg x="0" y="17" width="26" height="26" viewBox="-237 -250 487 487" fill="#cbd5e1" color="#cbd5e1" fill-rule="evenodd"><g transform="rotate(-45)"><rect x="-180" y="-172" width="380" height="104" rx="52"/><rect x="-310" y="-34" width="620" height="68" rx="34"/><rect x="-180" y="68" width="380" height="104" rx="52"/></g></svg>
+    <svg x="0" y="17" width="26" height="26" viewBox="0 0 64 64" fill="#cbd5e1" color="#cbd5e1" fill-rule="evenodd"><g transform="translate(34.4715 29.5285) scale(0.1125) rotate(-45)"><rect x="-174" y="-229" width="236" height="68" rx="34" fill="currentColor"/><rect x="-124" y="-127" width="336" height="68" rx="34" fill="currentColor"/><rect x="-323" y="-24" width="634" height="48" rx="24" fill="#FF6A64"/><rect x="-124" y="59" width="336" height="68" rx="34" fill="#4D93F8"/><rect x="-174" y="161" width="236" height="68" rx="34" fill="#4D93F8"/></g></svg>
     <text x="36" y="35" fill="#cbd5e1" font-family="-apple-system,BlinkMacSystemFont,Segoe UI,Arial,sans-serif" font-size="14" font-weight="500">Papilot Writer</text>
   </g>
   <g transform="translate(138 0)">

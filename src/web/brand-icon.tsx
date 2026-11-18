@@ -24,6 +24,7 @@ import mistral from './brand-icons/mistral.svg';
 import arxiv from './brand-icons/arxiv.svg';
 import overleaf from './brand-icons/overleaf.svg';
 import github from './brand-icons/github.svg';
+import { PapilotMark } from './papilot-mark.tsx';
 import './brand-icon.css';
 
 const marks = { collaboration: codex, papilot, pi, codex, claude, cursor, copilot, grok, antigravity, kimi, glm, deepseek, qwen, opencode, qoder, codebuddy, workbuddy, git, latex, openai, gemini, openrouter, mistral, arxiv, overleaf, github };
@@ -31,5 +32,7 @@ export type Brand = keyof typeof marks;
 
 // Decorative beside a visible name. Local assets work offline and inherit theme colors.
 export function BrandIcon({ name, size = 24 }: { name: Brand; size?: number }) {
+  // Papilot Writer is Papilot's own agent: it shows the app's mark in its colours.
+  if (name === 'papilot') return <PapilotMark size={size} full className="brand-icon"/>;
   return <i className="brand-icon" data-brand={name} aria-hidden="true" style={{ '--brand-image': `url("${marks[name]}")`, width: size, height: size } as CSSProperties}/>;
 }

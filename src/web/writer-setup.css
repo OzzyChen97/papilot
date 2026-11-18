@@ -1,7 +1,6 @@
 /* Scoped to the built-in Writer's provider setup; other agents keep their layout.
    Providers are small tiles; the one being set up opens a filled box below. */
 .runtime-agent-writer{background:var(--raised);overflow:hidden}
-.runtime-agent-writer .brand-icon[data-brand=papilot]{--brand-color:var(--accent)}
 .runtime-agent-writer .runtime-agent-header{gap:8px;margin-bottom:16px}
 .writer-setup{display:grid;gap:20px;min-width:0;padding-bottom:4px}
 .writer-setup>section{min-width:0}

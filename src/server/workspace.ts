@@ -223,6 +223,8 @@ export class Workspace extends EventEmitter {
   private commentWrites = new Map<string, number>();
   private deletions = new Set<string>();
   private publishing = new Set<string>();
+  // Optional PDF previews warm the cache without holding publication open.
+  private optionPreparations = new Map<string, Promise<void>>();
   private earlyCompletions = new Map<string, Map<string, any>>();
   private earlyRequests = new Map<string, any[]>();
   private queued = false;
@@ -1520,10 +1522,6 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
           });
           for (const run of this.store.runs().filter(run => pending.runs.includes(run.id) && run.noteOptions?.length))
             await savePreparedNoteOptions(this.store, { ...this.store.task(taskId), status: 'reviewing' }, run, client!);
-          await prepareNoteComparisons(this.store, { ...this.store.task(taskId), status: 'reviewing' }, client!, (completed, total) => {
-            const review = this.store.task(taskId).review!;
-            this.store.updateTask(taskId, { review: { ...review, job: { id: pending.job, status: 'running', phase: 'options', createdAt: current.createdAt, options: { completed, total } } } });
-          }, () => this.closing);
           if (this.closing) return;
           const latest = this.store.task(taskId).pendingBuild;
           if (latest && latest.job !== pending.job) { pending = follow(latest); continue; }
@@ -1548,6 +1546,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         await delay(1500);
       }
       await this.refresh(taskId);
+      this.prepareOptions(this.store.task(taskId), client!);
     } catch (e) {
       if (this.closing) return;
       if (reviewConnectionError(e)) {
@@ -1557,6 +1556,23 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       }
       else this.holdForReview(taskId, { status: 'failed', pendingBuild: null, error: errorText(e) });
     }
+  }
+  private prepareOptions(task: Task, client: ReviewClient) {
+    let preparation: Promise<void>;
+    const stopped = () => {
+      if (this.closing || this.optionPreparations.get(task.id) !== preparation) return true;
+      const current = this.store.findTask(task.id);
+      return !current || current.status !== 'reviewing' || current.review?.round !== task.review?.round
+        || Boolean(current.pendingBuild || current.pendingReview || current.delivery?.pending || current.reconciliation);
+    };
+    preparation = Promise.resolve().then(() => {
+      if (!stopped()) return prepareNoteComparisons(this.store, task, client, undefined, stopped);
+    }).catch(error => {
+      if (!stopped()) console.warn('Could not prepare optional comparisons:', task.name, errorText(error));
+    }).finally(() => {
+      if (this.optionPreparations.get(task.id) === preparation) this.optionPreparations.delete(task.id);
+    });
+    this.optionPreparations.set(task.id, preparation);
   }
   private finishAiReview(task: Task, run: Run, turnId: string) {
     try {
