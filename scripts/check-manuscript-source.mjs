@@ -233,7 +233,7 @@ try {
   // A selected task with notes must stay readable beside an open file tab.
   await page.getByRole('separator', { name: 'Resize manuscript panel', exact: true }).press('End');
   await rail.getByRole('button', { name: 'Sticky note', exact: true }).click();
-  await word('herons').click();
+  await page.locator('.point-capture').first().click({ position: { x: 100, y: 100 } });
   const note = page.getByRole('dialog', { name: 'PDF note 1', exact: true });
   await note.getByRole('textbox').fill('Explain the change.');
   await note.getByRole('textbox').press('Enter');
