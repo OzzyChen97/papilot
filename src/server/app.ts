@@ -268,7 +268,12 @@ export async function buildApp(options: AppOptions) {
       store.saveAnnotation({ ...current, ...(document ? { document } : {}), key: next.key, page: next.page, rect: next.rect, rects: next.rects, source: next.source });
     }
     const annotations = store.annotations(id).filter(paperNote);
-    const scope = state.build.key ? await manuscripts.noteSections(id, state.build.key, annotations).catch(() => null) : null;
+    // A cold section lookup must not hold up notes or their source locations.
+    // Ready assignments return immediately; pending ones arrive on the next poll.
+    const scope = state.build.key ? await Promise.race([
+      manuscripts.noteSections(id, state.build.key, annotations).catch(() => null),
+      new Promise<null>(resolve => setImmediate(resolve, null)),
+    ]) : null;
     return { ...state, annotations, ...(scope ? { noteSections: scope.sections, unplacedSectionNotes: scope.unplaced } : {}) };
   }
 

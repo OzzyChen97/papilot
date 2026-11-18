@@ -49,6 +49,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- Keep new PDF notes and their TeX locations responsive while grouping comments by section. Reuse the outline and existing assignments for each PDF version, and read only pages containing new or moved marks.
 - Keep the Overleaf project-picker heading on one line beside search, including Chinese labels; let controls wrap when space is limited.
 - Keep space above task search while the workspace loads or no paper is open, so the field does not touch the sidebar divider.
 - Move keyboard focus into a skill after its details finish rendering, so opening it on a busy device does not leave focus on a hidden list item.

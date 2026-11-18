@@ -759,6 +759,30 @@ test('sending a new PDF note with a task waits for its source', async () => {
   } finally { release(); await f.close(); }
 });
 
+test('manuscript polls return notes and resolved source while section grouping is pending', { timeout: 10000 }, async () => {
+  const f = await fixture();
+  let release!: () => void;
+  const grouping = new Promise<void>(resolve => { release = resolve; });
+  const sections = [{ id: 'first', title: 'First', level: 1, notes: ['new-note'] }];
+  f.manuscripts.state = async () => ({ git: { branch: 'main', upstream: null, ahead: 0, behind: 0, files: [], head: null }, build: { key: 'pdf', status: 'ready', current: true } });
+  f.manuscripts.reanchor = async (_id, _root, notes) => notes;
+  f.manuscripts.noteSections = async () => { await grouping; return { sections, contexts: { 'new-note': ['Section: First'] }, unplaced: 0 }; };
+  const note: Annotation = { id: 'new-note', projectId: 'thesis', key: 'pdf', page: 0, rect: [0.1, 0.1, 0.4, 0.2], quote: 'Passage', comment: 'Clarify.', source: null, createdAt: 1 };
+  try {
+    f.store.saveAnnotation(note);
+    const poll = () => f.local.inject({ url: '/api/projects/thesis/manuscript', headers: LOCAL });
+    const pending = await poll();
+    assert.equal(pending.statusCode, 200);
+    assert.deepEqual(pending.json().annotations, [note]);
+    assert.equal(pending.json().noteSections, undefined, 'do not publish partial section counts');
+    const located = { ...note, source: { file: 'main.tex', lines: [7, 8] as [number, number] } };
+    f.store.saveAnnotation(located);
+    assert.deepEqual((await poll()).json().annotations, [located], 'source delivery is independent of grouping');
+    release();
+    assert.deepEqual((await poll()).json().noteSections, sections);
+  } finally { release(); await f.close(); }
+});
+
 test('color groups persist without per-location comments and take their meaning from each request', async () => {
   const f = await fixture();
   f.manuscripts.locate = async () => ({ quote: 'Selected text', source: { file: 'main.tex', lines: [10, 12], excerpt: undefined } });

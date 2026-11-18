@@ -1036,17 +1036,8 @@ export class Manuscripts extends EventEmitter {
     return { pdf, root: shown.root || path.dirname(pdf), sourceDir: shown.sourceDir || '' };
   }
 
-  private sectionNotes = new Map<string, Promise<NoteSections>>();
   async noteSections(projectId: string, key: string, notes: Annotation[]): Promise<NoteSections> {
-    const cacheKey = JSON.stringify([projectId, key, notes.map(note => [note.id, note.key, note.page, note.rect, note.rects, note.source?.file, note.source?.lines])]);
-    let pending = this.sectionNotes.get(cacheKey);
-    if (!pending) {
-      pending = this.pdfReader.sections(this.compiled(projectId, key), key, notes);
-      this.sectionNotes.set(cacheKey, pending);
-      pending.catch(() => this.sectionNotes.delete(cacheKey));
-      if (this.sectionNotes.size > 20) this.sectionNotes.delete(this.sectionNotes.keys().next().value!);
-    }
-    return pending;
+    return this.pdfReader.sections(this.compiled(projectId, key), key, notes);
   }
 
   /** A page of a PDF as a PNG, with a commented passage marked on it. */

@@ -52,7 +52,7 @@ export function groupSectionNotes(notes: Annotation[], key: string, headings: Se
       if (position.page < page || (position.page === page && heading && before(heading, at))) chosen = index;
     }
     const next = headings[chosen + 1]?.position;
-    if (chosen >= 0 && chosen + 1 < headings.length && (!next || !order(next.page, next.top, next.left))) return -1;
+    if (chosen >= 0 && chosen + 1 < headings.length && (!next || (next.page === page && !order(next.page, next.top, next.left)))) return -1;
     return chosen;
   };
   const contexts: Record<string, string[]> = {};

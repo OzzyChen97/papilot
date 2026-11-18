@@ -24,6 +24,7 @@ function note(id, page, top, group) {
 }
 const notes = [note('outside', 0, 0.3), note('parent', 1, 0.17), note('child-a', 1, 0.3, 'yellow'), note('child-b', 1, 0.4, 'purple'), { ...note('stale', 1, 0.5), key: 'old' }];
 const scope = await reader.sections({ pdf: path.resolve('tests/fixtures/outline.pdf'), root: path.resolve('tests/fixtures'), sourceDir: '' }, 'pdf', notes);
+let scopeReady = false;
 assert.deepEqual(scope.sections.map(section => section.notes), [['outside'], ['parent', 'child-a', 'child-b'], ['child-a', 'child-b']]);
 const sent = [];
 await page.route('**/api/**', async route => {
@@ -39,7 +40,7 @@ await page.route('**/api/**', async route => {
   if (url.pathname.endsWith('/git')) return json({ branch: 'main', files: [] });
   if (url.pathname.endsWith('/git/history')) return json({ versions: [], next: null });
   if (url.pathname.endsWith('/git/overview')) return json({ worktrees: [], commits: [], truncated: false });
-  if (url.pathname.endsWith('/manuscript')) return json({ git: { branch: 'main', files: [] }, build: { status: 'ready', key: 'pdf', pages: [[612, 792], [612, 792]] }, annotations: notes, noteSections: scope.sections, unplacedSectionNotes: scope.unplaced });
+  if (url.pathname.endsWith('/manuscript')) return json({ git: { branch: 'main', files: [] }, build: { status: 'ready', key: 'pdf', pages: [[612, 792], [612, 792]] }, annotations: notes, ...(scopeReady ? { noteSections: scope.sections, unplacedSectionNotes: scope.unplaced } : {}) });
   if (url.pathname.endsWith('/manuscript.pdf')) return route.fulfill({ contentType: 'application/pdf', body: fs.readFileSync('tests/fixtures/outline.pdf') });
   if (url.pathname.endsWith('/manuscript/words')) return json(words[Number(url.searchParams.get('page'))]);
   if (url.pathname.endsWith('/items')) return json({ items: [] });
@@ -64,6 +65,12 @@ try {
   });
   await page.goto(origin);
   await openNotes();
+  await expect(page.locator('.pdf-reading-notes [data-note]')).toHaveCount(5);
+  await expect(page.getByRole('button', { name: 'Select all notes for this task', exact: true })).toBeVisible();
+  await expect(pick()).toHaveCount(0);
+  scopeReady = true;
+  await expect(pick()).toBeVisible();
+  for (const id of ['outside', 'child-a']) await expect(included(id)).toHaveCount(1);
   await expect(menu()).not.toBeVisible();
   await pick().click();
   await expect(section('Method')).toHaveAttribute('title', 'Includes subsections · 1 of 3 selected');
