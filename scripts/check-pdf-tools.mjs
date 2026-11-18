@@ -103,6 +103,9 @@ try {
   // tool and keyboard shortcuts, and remembers the preference on reload.
   const collapse = () => tool('Collapse marking tools'), expand = () => tool('Expand marking tools');
   const expandedWidth = (await settled(page.locator('.pdf-container'))).width;
+  const toggleBox = await collapse().boundingBox();
+  assert.ok(toggleBox.y + toggleBox.height <= railBox.y, 'Collapse comes before the tools visually as well as in keyboard order');
+  await page.screenshot({ path: 'test-results/pdf-tools-expanded.png' });
   await key('q');
   await collapse().click();
   await expect(expand()).toHaveAttribute('aria-expanded', 'false');
@@ -110,6 +113,10 @@ try {
   await expect(rail().getByRole('button')).toHaveCount(1);
   await expect(page.locator('.pdf-view')).toHaveClass(/tool-magic/);
   assert.ok((await settled(page.locator('.pdf-container'))).width > expandedWidth + 40);
+  const reopenBox = await expand().boundingBox();
+  assert.ok(reopenBox.width >= 24 && reopenBox.height >= 24, 'The reopen button is a full pointer target');
+  assert.ok(Math.abs(toggleBox.x + toggleBox.width / 2 - reopenBox.x - reopenBox.width / 2) < 1
+    && Math.abs(toggleBox.y + toggleBox.height / 2 - reopenBox.y - reopenBox.height / 2) < 1, 'The toggle stays in the same place when the rail folds away');
   await key('h');
   await expect(page.locator('.pdf-view')).toHaveClass(/tool-hand/);
   await expand().click();
@@ -119,11 +126,19 @@ try {
   await words().first().waitFor();
   await expect(expand()).toBeVisible();
   await page.screenshot({ path: 'test-results/pdf-tools-collapsed.png' });
+  await page.mouse.move(1000, 250);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(expand()).toHaveCSS('background-color', 'rgb(51, 51, 51)');
+  await page.screenshot({ path: 'test-results/pdf-tools-collapsed-dark.png' });
   await expand().focus();
   await page.keyboard.press('Enter');
   await expect(collapse()).toHaveAttribute('aria-expanded', 'true');
   await expect(collapse()).toBeFocused();
   await expect(rail().getByRole('button')).toHaveCount(15);
+  await settled(rail());
+  await page.screenshot({ path: 'test-results/pdf-tools-expanded-dark.png' });
+  await page.emulateMedia({ colorScheme: 'light' });
   // The note tool is its own color picker: a click picks it, a second opens colors.
   await tool('Note').click();
   await expect(tool('Note')).toHaveAttribute('aria-pressed', 'true');
@@ -279,6 +294,10 @@ try {
   await key('5');
   await expect(page.locator('.stamp-lock')).toContainText('Verify');
   await expect(rail().locator('.rail-badge')).toHaveText('5');
+  await collapse().click();
+  const penBox = await settled(expand()), lockBox = await page.locator('.stamp-lock').boundingBox();
+  assert.ok(lockBox.x >= penBox.x + penBox.width, 'The quick-note status stays clear of the reopen button');
+  await expand().click();
   await selectText(3);
   await expect.poll(() => notes.length).toBe(3);
   await expect(wheel).toHaveCount(0);
@@ -449,6 +468,7 @@ try {
   await expect(rail().getByRole('button', { name: 'Hand', exact: true })).toHaveCount(0);
   const mobileRailBox = await settled(rail());
   assert.ok(mobileRailBox.x >= 0 && mobileRailBox.x + mobileRailBox.width <= 390 && mobileRailBox.y > 700, 'Phone marking capsule floats within the bottom viewport');
+  await page.screenshot({ path: 'test-results/pdf-tools-mobile-expanded.png' });
   await tool('Note').click(); await tool('Note').click();
   const palette = page.getByRole('menu', { name: 'Annotation group color' });
   await expect(palette).toBeVisible();
@@ -461,6 +481,7 @@ try {
   await expect(expand()).toBeVisible();
   const pillBox = await settled(rail());
   assert.ok(pillBox.height <= 34 && pillBox.y > mobileRailBox.y, 'Collapsed phone pill shrinks down to the bottom edge');
+  await page.screenshot({ path: 'test-results/pdf-tools-mobile-collapsed.png' });
   await expect(page.locator('.pdf-view')).toHaveClass(/tool-select/);
   await expand().click();
   await expect(rail()).toHaveAttribute('data-collapsed', 'false');

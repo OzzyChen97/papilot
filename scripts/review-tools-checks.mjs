@@ -14,6 +14,28 @@ export async function checkReviewTools(page, writes, sent) {
     element.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, pointerType: 'mouse' }));
   });
   await expect(rail()).toBeVisible();
+  const collapseBox = await tool('Collapse marking tools').boundingBox();
+  const firstToolBox = await tool('Magic pen').boundingBox();
+  assert.ok(collapseBox.y + collapseBox.height <= firstToolBox.y, 'Review collapse control starts the rail');
+  await tool('Collapse marking tools').click();
+  await expect(rail()).toHaveAttribute('data-collapsed', 'true');
+  const expandBox = await tool('Expand marking tools').boundingBox();
+  const minimumTarget = await page.evaluate(() => matchMedia('(pointer: coarse)').matches) ? 44 : 24;
+  assert.ok(expandBox.width >= minimumTarget && expandBox.height >= minimumTarget, 'Review reopen button fits the pointer');
+  assert.ok(Math.abs(collapseBox.x + collapseBox.width / 2 - expandBox.x - expandBox.width / 2) < 1
+    && Math.abs(collapseBox.y + collapseBox.height / 2 - expandBox.y - expandBox.height / 2) < 1, 'Review toggle keeps its position');
+  await expect.poll(async () => (await viewer().locator('.part-title').first().boundingBox()).x).toBeGreaterThan(expandBox.x + expandBox.width);
+  await viewer().locator('#paper').evaluate(element => { element.scrollTop = 100; });
+  await expect.poll(async () => (await viewer().locator('.change.current .change-head').boundingBox()).x).toBeGreaterThan(expandBox.x + expandBox.width);
+  await viewer().locator('#paper').evaluate(element => { element.scrollTop = 0; });
+  await page.screenshot({ path: `test-results/review-tools-collapsed${minimumTarget === 44 ? '-touch' : ''}.png` });
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await expect(rail()).toBeHidden();
+  await expect.poll(() => viewer().locator('.review-body').evaluate(element => parseFloat(getComputedStyle(element).marginLeft))).toBe(0);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(tool('Expand marking tools')).toBeVisible();
+  await tool('Expand marking tools').press('Enter');
+  await expect(tool('Collapse marking tools')).toBeFocused();
   if (process.env.PAPILOT_REVIEW_TOOLS_TOUCH === '1') {
     await tool('Magic pen').click();
     const glyph = viewer().locator('.change[data-stop="0"] .after .pdf-glyph').first();

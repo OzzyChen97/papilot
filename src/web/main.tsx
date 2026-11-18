@@ -2160,7 +2160,7 @@ function App() {
           {!gitAvailable && <p className="git-install-hint" id="git-install-hint"><a href="https://git-scm.com/install/" target="_blank" rel="noreferrer">{t('Install Git in this environment to use version management.')}</a></p>}
           <ActionMenu label={t('Research Tools')} className="nav-link paper-tools" menuClassName="paper-tools-menu" align="side" actions={[
             { id: 'references', label: t('Reference check'), icon: 'checklist', detail: t('Citations, entries and their records'), hint: problems ? String(problems) : undefined, checked: referencesOpen || undefined, select: () => { if (isPlayground) { requestPlaygroundDownload(); return; } setSelected(''); setPage('references'); setSidebar(false); } },
-          ]}><Icon name="tool" size={16}/><span className="nav-label">{t('Research Tools')}</span><Icon name="more" size={16}/></ActionMenu>
+          ]}><Icon name="book" size={16}/><span className="nav-label">{t('Research Tools')}</span><Icon name="more" size={16}/></ActionMenu>
         </>}
       </div>
       <div className="task-list-tools" role="group" aria-label={showArchived ? t('Archived tasks') : t('Tasks')}>

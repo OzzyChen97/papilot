@@ -140,6 +140,8 @@ From a source checkout, use `npm run doctor -- --data .papilot` (or `node bin/pa
 
 ## Reading with anchors
 
+The arrow at the top of the desktop PDF toolbar folds the tools away. The floating pen button in the same place opens them again; the browser remembers your choice. On phones, use the arrow at the end of the bottom toolbar or swipe it down to collapse it, then tap the pen button to reopen it.
+
 On desktop, saved anchors appear as numbered buttons at the end of the PDF tool rail. Click a number to jump there, hover or focus to see its name, and use **+** to save the current passage. Each compact numbered anchor shows a **×** in its upper-right corner on hover or keyboard focus to delete it directly; touch input keeps the delete action visible. On phones, **+** also saves the current passage directly, and **Anchors** (the bookmark icon) opens the compact list. The bookmark button also opens naming and deletion controls on desktop: click a pencil to rename in place; Enter or leaving the row saves it, and Escape cancels. The trash button removes an anchor.
 
 ![A numbered anchor with its corner delete action inside the shared hover background](assets/pdf-anchor-controls.png)
