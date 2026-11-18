@@ -1,7 +1,5 @@
 # Papilot 0.11.0
 
-> Draft: 0.11.0 has not been published. Final release CI, native installers, npm and update assets still need verification.
-
 Write with Papilot Writer, keep an Overleaf project in sync, and annotate and review on a redesigned PDF canvas. This release also brings paper templates, reading anchors, more agent integrations, and experimental incremental compilation.
 
 ![The PDF canvas showing a typeset before-and-after change beside its note](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/assets/readme-showcase/hero.png)
@@ -75,8 +73,6 @@ Two features are off by default in **Settings → Experiments**:
 - Managed installations can disable in-app updates and runtime agent downloads; diagnostics identify dependencies that belong in the deployment. ([#190](https://github.com/PapilotAI/papilot/pull/190))
 
 ## Installation and updates
-
-After publication:
 
 - **Desktop:** use **Settings → Updates**, or the matching release asset: macOS Apple Silicon/Intel DMG or ZIP, Windows x64 installer/portable executable, or Linux x64 AppImage/deb. Desktop updates use the desktop release assets.
 - **CLI/server:** run `npm install -g papilot@0.11.0` with Node.js 22.22 or newer, then restart Papilot. npm updates the CLI/server installation.

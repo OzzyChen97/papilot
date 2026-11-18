@@ -4,9 +4,9 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ## [Unreleased]
 
-## [0.11.0] - Unreleased
+## [0.11.0] - 2026-11-18
 
-Write with Papilot Writer, sync with Overleaf, and annotate and review on a redesigned PDF canvas. This release is in preparation.
+Write with Papilot Writer, sync with Overleaf, and annotate and review on a redesigned PDF canvas.
 
 ### Added
 
