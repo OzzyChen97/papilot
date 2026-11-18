@@ -3095,7 +3095,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Overleaf": {
-    "revision": "d7f43ea8d120dbc99f3f5ec682881863a0cac364dcf6cd52bc686f117399326f",
+    "revision": "085457c9ce1510065e0ebfc89535865862c22b62a1ed2dd567baaa8ecc04e3c6",
     "textHash": "4899dbb9eb04f4a357e32ae8cb67c777c653d2c0bf0bc66f8f5cbafede5213bd",
     "model": "gemini-4-argon-medium"
   },
@@ -3325,7 +3325,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Paste the link of an Overleaf project.": {
-    "revision": "cd6f542f3d7e1fc5c037ee0d2dda7e1b54a7244fbb5c357651096741deb48cad",
+    "revision": "0a7a8418fedb1de46a390f3353e9f9c771a1350e46f8fe9d861f4bb637fe0cdb",
     "textHash": "04fee2f6ad90171140a019803ecd855d0e83d2742a095c6326efaa499f255421",
     "model": "gemini-4-argon-medium"
   },
@@ -4680,7 +4680,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Sync with Overleaf": {
-    "revision": "061063b4410957cb1a7840fbc030b05b242d05d3aff14f47906f6e817be43326",
+    "revision": "fa6e66b482aee7d2e15dcd57c54d06c04564f096752c9a025e0f163d3613762d",
     "textHash": "8a0c090372af85faccad1fffe2bd7b4fefa330f9be4c067780e6c5fd843323cf",
     "model": "gemini-4-argon-medium"
   },

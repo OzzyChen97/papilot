@@ -140,7 +140,7 @@ From a source checkout, use `npm run doctor -- --data .papilot` (or `node bin/pa
 
 ## Reading with anchors
 
-The arrow at the top of the desktop PDF toolbar folds the tools away. The floating pen button in the same place opens them again; the browser remembers your choice. On phones, use the arrow at the end of the bottom toolbar or swipe it down to collapse it, then tap the pen button to reopen it.
+The arrow at the top of the desktop PDF toolbar folds the tools away. The floating down arrow in the same place opens them again; the browser remembers your choice. On phones, use the arrow at the end of the bottom toolbar or swipe it down to collapse it, then tap the up arrow to reopen it.
 
 On desktop, saved anchors appear as numbered buttons at the end of the PDF tool rail. Click a number to jump there, hover or focus to see its name, and use **+** to save the current passage. Each compact numbered anchor shows a **Ã—** in its upper-right corner on hover or keyboard focus to delete it directly; touch input keeps the delete action visible. On phones, **+** also saves the current passage directly, and **Anchors** (the bookmark icon) opens the compact list. The bookmark button also opens naming and deletion controls on desktop: click a pencil to rename in place; Enter or leaving the row saves it, and Escape cancels. The trash button removes an anchor.
 
@@ -254,6 +254,8 @@ In the manuscript's **Compilation Problems** panel, select **Fix with an agentâ€
 If the agent recommends editing the paper, review its diagnosis and select **Start task** to let the agent make the proposed edits in a task worktree. If the original cannot produce a PDF and the revision compiles, the review shows the source changes and the original compiler errors. You can accept the changes and apply them to the manuscript from that review.
 
 ## Sync with Overleaf
+
+**Sync with Overleaf**, with the Overleaf icon on the second row of the opening page, imports a project and keeps it in sync. Paste its project link and sign in when prompted. With a paper open, the same shortcut below the new-task composer opens its sync settings.
 
 ![Overleaf sync status and conflict controls](assets/canvas-consistency/overleaf-panel.png)
 

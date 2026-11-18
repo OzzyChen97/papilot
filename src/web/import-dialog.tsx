@@ -11,7 +11,6 @@ import { OverleafSignIn, overleafOrigin } from './overleaf.tsx';
 import './import-dialog.css';
 
 type Api = <T = any>(route: string, body?: unknown, signal?: AbortSignal) => Promise<T>;
-const memoryKey = 'papilot:paper-import';
 const clock = (ms: number) => { const seconds = Math.max(0, Math.floor(ms / 1000)); return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`; };
 // What a long compilation is doing, so it never looks stuck: latexmk's step,
 // the LaTeX pass with the pages typeset in it, and the time since it started.
@@ -39,7 +38,9 @@ function BuildStatus({ draft }: { draft: PaperImport }) {
     </div>
   </div>;
 }
-export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onClose, onBusyChange }: { api: Api; agent: AgentId; canRepair: boolean; onChooseFolder?: () => Promise<void>; onDone: (project: Project) => Promise<void>; onClose: () => void; onBusyChange: (busy: boolean) => void }) {
+export function ImportPanel({ api, agent, canRepair, source, onChooseFolder, onDone, onClose, onBusyChange }: { api: Api; agent: AgentId; canRepair: boolean; source?: 'overleaf'; onChooseFolder?: () => Promise<void>; onDone: (project: Project) => Promise<void>; onClose: () => void; onBusyChange: (busy: boolean) => void }) {
+  const defaultMemoryKey = source === 'overleaf' ? 'papilot:overleaf-import' : 'papilot:paper-import';
+  const memoryKey = useRef(defaultMemoryKey);
   const dialog = useRef<HTMLDivElement>(null), folder = useRef<HTMLInputElement>(null), zip = useRef<HTMLInputElement>(null), pending = useRef(false);
   const linkInput = useRef<HTMLInputElement>(null), linkId = useId();
   const [link, setLink] = useState(''), [fromLink, setFromLink] = useState(false);
@@ -47,18 +48,20 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   // wants only a copy; syncing needs the author's Overleaf sign-in.
   // A project or invitation link syncs by default; a read-only view link
   // makes a copy, which needs no sign-in.
-  const [keepSynced, setKeepSynced] = useState<boolean | null>(null), [signIn, setSignIn] = useState<string | null>(null);
+  const [keepSynced, setKeepSynced] = useState<boolean | null>(source === 'overleaf' ? true : null), [signIn, setSignIn] = useState<string | null>(null);
   const syncs = (url: string) => Boolean(overleafOrigin(url)) && (keepSynced ?? /\/project\/[a-f0-9]{24}/i.test(url));
   const overleafLink = Boolean(overleafOrigin(link));
   const [draft, setDraft] = useState<PaperImport | null>(null), [form, setForm] = useState({ name: '', path: '', main: '', engine: 'pdflatex' });
   const [busy, setBusy] = useState(false), [error, setError] = useState(''), [dragging, setDragging] = useState(false);
   const working = draft?.phase === 'building' || draft?.phase === 'repairing', locked = busy || working;
-  function receive(value: PaperImport) { setDraft(value); setForm(current => ({ ...current, name: value.name, main: value.main, engine: value.engine })); browserStorage.setItem(memoryKey, value.id); }
+  function receive(value: PaperImport) { setDraft(value); setForm(current => ({ ...current, name: value.name, main: value.main, engine: value.engine })); browserStorage.setItem(memoryKey.current, value.id); }
+  function forgetDraft() { browserStorage.removeItem(memoryKey.current); memoryKey.current = defaultMemoryKey; }
   useEffect(() => {
     folder.current?.setAttribute('webkitdirectory', '');
-    const saved = browserStorage.getItem(memoryKey);
+    if (source !== 'overleaf' && !browserStorage.getItem(memoryKey.current) && browserStorage.getItem('papilot:overleaf-import')) memoryKey.current = 'papilot:overleaf-import';
+    const saved = browserStorage.getItem(memoryKey.current);
     let live = true;
-    if (saved) { setBusy(true); api<PaperImport>('/imports/' + saved).then(value => { if (live) receive(value); }, () => browserStorage.removeItem(memoryKey)).finally(() => { if (live) setBusy(false); }); }
+    if (saved) { setBusy(true); api<PaperImport>('/imports/' + saved).then(value => { if (live) receive(value); }, () => { if (live) forgetDraft(); }).finally(() => { if (live) setBusy(false); }); }
     return () => { live = false; };
   }, []);
   useEffect(() => { onBusyChange(busy); }, [busy, onBusyChange]);
@@ -94,6 +97,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   const upload = (list: File[], archive: boolean) => run(() => uploadFiles(list.map(file => ({ file, path: file.webkitRelativePath || file.name })), archive));
   const openFolder = async (path: string) => start(await api<PaperImport>('/imports', { path }));
   const importLink = (url: string) => run(async () => {
+    if (source === 'overleaf' && !overleafOrigin(url)) throw new Error(t('Paste the link of an Overleaf project.'));
     const sync = syncs(url);
     setSignIn(null);
     try { await start(await api<PaperImport>('/imports', { url: url.trim(), ...(sync ? { sync: true } : {}) })); }
@@ -118,7 +122,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
     });
   }
   const build = (repair = false) => run(async () => receive(await api<PaperImport>(`/imports/${draft!.id}/${repair ? 'repair' : 'build'}`, { name: form.name, main: form.main, engine: form.engine, agent })));
-  const finish = () => run(async () => { const project = await api<Project>(`/imports/${draft!.id}/finish`, {}); browserStorage.removeItem(memoryKey); await onDone(project); });
+  const finish = () => run(async () => { const project = await api<Project>(`/imports/${draft!.id}/finish`, {}); forgetDraft(); await onDone(project); });
   const failure = draft?.error || '';
   const preparationFailure = /ENOBUFS|ERR_CHILD_PROCESS_STDIO_MAXBUFFER|Git snapshot export/i.test(failure);
   const hint = preparationFailure ? t('Papilot could not prepare the files for compilation. This is an application error, not a LaTeX error.')
@@ -136,29 +140,29 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
   return <div ref={dialog} className="import-dialog">
       {!draft ? <>
         <section className="import-copy" aria-labelledby={linkId + '-copy'}>
-          <h3 id={linkId + '-copy'}>{t('Import a copy')}</h3>
-          <p>{t('Save a separate copy in Papilot. Your original files stay unchanged.')}</p>
+          <h3 id={linkId + '-copy'}>{source === 'overleaf' ? t('Overleaf') : t('Import a copy')}</h3>
+          {source !== 'overleaf' && <p>{t('Save a separate copy in Papilot. Your original files stay unchanged.')}</p>}
           <form className="import-path import-link" aria-labelledby={linkId + '-label'} onSubmit={event => { event.preventDefault(); void importLink(link); }}>
-            <label id={linkId + '-label'} htmlFor={linkId}>{t('Paper or repository link')}</label>
+            <label id={linkId + '-label'} htmlFor={linkId}>{source === 'overleaf' ? t('Paste the link of an Overleaf project.') : t('Paper or repository link')}</label>
             <div className="import-path-row">
-              <input ref={linkInput} id={linkId} name="url" type="url" inputMode="url" enterKeyHint="go" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={link} required disabled={locked} maxLength={8000} aria-describedby={linkId + '-hint' + (fromLink && error ? ' ' + linkId + '-error' : '')} aria-invalid={fromLink && !!error || undefined} onChange={event => { setLink(event.target.value); if (fromLink) setError(''); }} placeholder={t('Paste a link…')}/>
+              <input ref={linkInput} id={linkId} name="url" type="url" inputMode="url" enterKeyHint="go" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={link} required disabled={locked} maxLength={8000} aria-describedby={linkId + '-hint' + (fromLink && error ? ' ' + linkId + '-error' : '')} aria-invalid={fromLink && !!error || undefined} onChange={event => { setLink(event.target.value); if (fromLink) setError(''); }} placeholder={source === 'overleaf' ? 'https://www.overleaf.com/project/…' : t('Paste a link…')}/>
               <button type="submit" className="button primary compact" aria-label={t('Import link')} disabled={locked}><Icon name="arrowRight" size={15}/>{t('Import')}</button>
             </div>
-            <div className="import-link-hint" id={linkId + '-hint'}><span className="import-source"><BrandIcon name="arxiv" size={16}/><span>arXiv</span></span><span className="import-source"><BrandIcon name="overleaf" size={16}/><span>Overleaf</span></span><span className="import-source"><BrandIcon name="github" size={16}/><span>GitHub</span></span></div>
-            {overleafLink && <label className="import-sync"><input type="checkbox" role="switch" className="switch" checked={syncs(link)} disabled={locked} onChange={event => setKeepSynced(event.target.checked)}/><span>{t('Keep in sync with Overleaf')}</span></label>}
+            <div className="import-link-hint" id={linkId + '-hint'}>{source !== 'overleaf' && <span className="import-source"><BrandIcon name="arxiv" size={16}/><span>arXiv</span></span>}<span className="import-source"><BrandIcon name="overleaf" size={16}/><span>Overleaf</span></span>{source !== 'overleaf' && <span className="import-source"><BrandIcon name="github" size={16}/><span>GitHub</span></span>}</div>
+            {(overleafLink || source === 'overleaf') && <label className="import-sync"><input type="checkbox" role="switch" className="switch" checked={overleafLink ? syncs(link) : Boolean(keepSynced)} disabled={locked} onChange={event => setKeepSynced(event.target.checked)}/><span>{t('Keep in sync with Overleaf')}</span></label>}
           </form>
           {signIn && syncs(link) && <OverleafSignIn api={api} origin={signIn} onSignedIn={() => { setSignIn(null); void importLink(link); }}/>}
-          <div className={'import-drop' + (dragging ? ' dragging' : '')} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={event => { event.preventDefault(); setDragging(false); if (!locked) drop(event.dataTransfer); }}>
+          {source !== 'overleaf' && <div className={'import-drop' + (dragging ? ' dragging' : '')} onDragOver={event => { event.preventDefault(); setDragging(true); }} onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDragging(false); }} onDrop={event => { event.preventDefault(); setDragging(false); if (!locked) drop(event.dataTransfer); }}>
             <span className="import-drop-hint"><Icon name="folder" size={15}/>{t('Drop a source ZIP or folder')}</span>
             <div className="import-options">
               <button type="button" className="button secondary compact" aria-label={t('Import ZIP')} disabled={locked} onClick={() => zip.current?.click()}><Icon name="archive" size={15}/>{t('Import ZIP')}</button>
               <button type="button" className="button secondary compact" disabled={locked} onClick={() => folder.current?.click()}><Icon name="folder" size={15}/>{t('Import folder')}</button>
             </div>
-          </div>
+          </div>}
           <input hidden {...{ webkitdirectory: '' }} ref={folder} type="file" multiple aria-label={t('Choose folder')} onChange={event => { void upload(Array.from(event.target.files || []), false); event.target.value = ''; }}/>
           <input hidden ref={zip} type="file" accept=".zip,application/zip" aria-label={t('Import ZIP')} onChange={event => { void upload(Array.from(event.target.files || []), true); event.target.value = ''; }}/>
         </section>
-        <section className="import-original" aria-labelledby={linkId + '-original'}>
+        {source !== 'overleaf' && <section className="import-original" aria-labelledby={linkId + '-original'}>
           <h3 id={linkId + '-original'}>{t('Open existing folder')}</h3>
           <p id={linkId + '-original-hint'}>{t('Work in the original folder. Changes are saved directly to your files.')}</p>
           {onChooseFolder ? <button type="button" data-choose-folder className="button secondary compact" aria-describedby={linkId + '-original-hint'} disabled={locked} onClick={() => void chooseFolder()}><Icon name="folder" size={15}/>{t('Choose folder…')}</button>
@@ -168,7 +172,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
                 <button type="submit" className={'button compact ' + (form.path.trim() ? 'primary' : 'secondary')} disabled={locked}>{t('Open')}</button>
               </FolderField>
             </form>}
-        </section>
+        </section>}
         {busy && <p className="import-reading" role="status"><span className="spinner"/>{fromLink ? t('Downloading paper source…') : t('Reading paper files…')}</p>}
         {error && <p id={linkId + '-error'} className="inline-error" role="alert">{error}</p>}
       </> : <>
@@ -183,7 +187,7 @@ export function ImportPanel({ api, agent, canRepair, onChooseFolder, onDone, onC
             <span className="import-location-label">{t('Saved folder')}</span>
             <code className="import-location-path"><span className="paper-location-parent">{draft.path.slice(0, folderAt)}</span><span className="paper-location-name">{draft.path.slice(folderAt)}</span></code>
           </div>
-          {!working && <button type="button" className="button ghost compact" disabled={busy} onClick={() => { browserStorage.removeItem(memoryKey); setDraft(null); setError(''); }}>{t('Choose different files')}</button>}
+          {!working && <button type="button" className="button ghost compact" disabled={busy} onClick={() => { forgetDraft(); setDraft(null); setError(''); }}>{t('Choose different files')}</button>}
         </div>
         <form onSubmit={event => { event.preventDefault(); void build(); }}>
           <label>{t('Paper name')}<input required maxLength={120} value={form.name} disabled={locked} onChange={event => setForm({ ...form, name: event.target.value })}/></label>

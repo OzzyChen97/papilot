@@ -20,7 +20,7 @@
 /* On desktop the rail is itself a white floating bar, 46px wide with 5px of
    canvas on either side, so the slot the review frame measures for the page's
    margin stays 56px. The collapse button stays at the top when the tools
-   fold away, leaving a floating pen button at the same location. */
+   fold away, leaving a floating expand button at the same location. */
 @media (min-width:681px){
   .pdf-rail{flex-direction:column;align-items:center;align-self:flex-start;gap:2px;width:46px;max-height:calc(100% - 16px);margin:8px 5px;padding:6px 0;border-radius:12px;background:var(--raised);box-shadow:var(--shadow-sm)}
   .rail-items{flex:0 1 auto;width:100%}

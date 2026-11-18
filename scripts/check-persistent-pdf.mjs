@@ -63,6 +63,7 @@ await page.route('**/api/**', async route => {
 await page.route('**/review/**', route => route.fulfill({ contentType: 'text/html', body: brokenReview ? '<html><body>Unavailable</body></html>' : '<html><body><div id="root"><main id="paper"><div class="waiting">Building</div></main></div><script>window.addEventListener("papilot:review:view-changed", event => { document.documentElement.dataset.view = event.detail; });</script></body></html>' }));
 const preview = page.locator('.task-document-preview');
 const canvas = preview.locator('.pdfViewer canvas').first();
+const pdfPage = preview.locator('.pdfViewer .page').first();
 const views = page.getByRole('group', { name: 'Workspace view' });
 async function readable() {
   await expect(preview).toBeVisible();
@@ -87,7 +88,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.server.address().port}`);
   await readable();
   await expect(page.locator('.task-grid')).toHaveClass(/layout-split/);
-  let original = await canvas.elementHandle();
+  let original = await pdfPage.elementHandle();
   for (const status of ['queued', 'waiting_input', 'building', 'failed', 'reviewing']) {
     task.status = status;
     task.error = status === 'failed' ? 'Compile failed' : null;
@@ -138,14 +139,10 @@ try {
   await rail.getByRole('button', { name: 'Undo', exact: true }).click();
   await expect.poll(async () => (await unsent()).length).toBe(0);
   await expect(preview.locator('.note-mark')).toHaveCount(0);
-  // Unsent notes resize the reader, which redraws its pages; compare the
-  // pages loaded once the same canvas stays on screen between polls.
+  // Resizing redraws the canvas inside a retained page. Track the page itself
+  // to distinguish a new document from a new raster at the current width.
   await readable();
-  original = null;
-  await expect.poll(async () => {
-    const current = await canvas.elementHandle(), settled = Boolean(original) && await current.evaluate((element, last) => element === last, original);
-    original = current; return settled;
-  }, { intervals: [500] }).toBe(true);
+  original = await pdfPage.elementHandle();
   // A new, unavailable PDF must leave the successfully loaded pages intact.
   manuscript.build = { status: 'failed', key: 'broken', current: false, error: 'Compile failed' };
   await sync();
@@ -203,6 +200,8 @@ try {
   fs.mkdirSync('test-results', { recursive: true });
   for (const [size, viewport] of [['desktop', { width: 1440, height: 900 }], ['mobile', { width: 390, height: 844 }]]) {
     await page.setViewportSize(viewport);
+    // Writing a note opens Chat; explicitly return to the PDF on a phone.
+    if (size === 'mobile') await views.getByRole('button', { name: 'Review', exact: true }).click();
     for (const theme of ['light', 'dark']) {
       await page.emulateMedia({ colorScheme: theme });
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
@@ -255,7 +254,7 @@ try {
     await frame.locator('#paper').evaluate(el => { el.innerHTML = '<p class="comparison-waiting" data-state="failed">Comparison unavailable</p>'; });
     await readable();
   }
-  const firstRetained = await canvas.elementHandle();
+  const firstRetained = await pdfPage.elementHandle();
   await publish(3);
   await expect(problems.locator('pre')).toHaveText(firstProblems.join('\n\n'));
   assert.ok(await firstRetained.evaluate(el => el.isConnected));
@@ -267,7 +266,7 @@ try {
   await expect(problems.locator('pre')).toHaveText(retained.get(3).errors[0]);
   await readable();
   assert.equal(await firstRetained.evaluate(el => el.isConnected), false);
-  const replacement = await canvas.elementHandle();
+  const replacement = await pdfPage.elementHandle();
   const failedPdf = page.waitForResponse(response => response.url().endsWith('round=4&build=round-4'));
   await publish(4); assert.equal((await failedPdf).status(), 404);
   await expect(problems.locator('pre')).toHaveText(retained.get(3).errors[0]);

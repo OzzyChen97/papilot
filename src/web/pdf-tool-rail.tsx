@@ -126,7 +126,6 @@ export function PdfToolRail({ tool, onTool, group, onGroup, disabled, suspended,
       <button type="button" className="rail-tool rail-toggle" aria-expanded={!collapsed} aria-controls={railId}
         aria-label={collapsed ? t('Expand marking tools') : t('Collapse marking tools')} title={collapsed ? t('Expand marking tools') : t('Collapse marking tools')}
         onClick={() => toggleCollapse()}>
-        {collapsed && <Icon name="toolNote" size={14}/>}
         <Icon name={collapsed === mobile ? 'chevronUp' : 'chevronDown'} size={14}/>
       </button>
       <div id={railId} className="rail-items" hidden={collapsed}>

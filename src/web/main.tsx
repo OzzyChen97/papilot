@@ -39,6 +39,7 @@ import { BulkTaskDialog, type BulkTaskAction } from './bulk-task-dialog.tsx';
 import { restartDraftText } from './restart-draft.ts';
 import { ActionMenu } from './action-menu.tsx';
 import { Icon } from './icons.tsx';
+import { BrandIcon } from './brand-icon.tsx';
 import { toolIcon, toolNote, toolSentence, toolSummary } from './tool-calls.ts';
 import { ContextMeter } from './context-meter.tsx';
 import { ChangeSummary, FileDiffs } from './file-changes.tsx';
@@ -1187,7 +1188,7 @@ function App() {
   const sidebarRef = useRef<HTMLElement>(null);
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [bulkTarget, setBulkTarget] = useState<BulkTaskAction | null>(null);
-  const [modal, setModal] = useState<'project' | 'create' | null>(null);
+  const [modal, setModal] = useState<'project' | 'create' | 'overleaf' | null>(null);
   const [createPreset, setCreatePreset] = useState<{ id: string; version: string } | null>(null);
   const [openingFolder, setOpeningFolder] = useState(false), [mainChoice, setMainChoice] = useState<{ path: string; name: string; candidates: string[] } | null>(null);
   const folderRequest = useRef(false);
@@ -1484,6 +1485,7 @@ function App() {
   // open the original folder in place through the system picker.
   function createProject() { if (isPlayground) { requestPlaygroundDownload(); return; } setCreatePreset(null); setModal('create'); }
   function importProject() { if (isPlayground) { requestPlaygroundDownload(); return; } setCreatePreset(null); setModal('project'); }
+  function syncOverleaf() { if (project) setOverleafOpen(true); else { setCreatePreset(null); setModal('overleaf'); } }
   async function openFolder(folder?: string, main?: string) {
     if (folderRequest.current) return;
     folderRequest.current = true;
@@ -2117,6 +2119,7 @@ function App() {
         </div>
     {manuscriptView === 'pdf' && <div className="workspace-nav-end">{manuscriptTools}{manuscriptShare}</div>}
   </>;
+  const overleafEntry = !isPlayground && gitAvailable && <button type="button" className="button secondary" onClick={syncOverleaf}><BrandIcon name="overleaf" size={16}/>{overleafSync ? t('Overleaf sync…') : t('Sync with Overleaf')}</button>;
   const newTaskPanel = (attachments: React.ReactNode) => <section className={'new-task-panel' + (noteSelection.selected.length ? ' has-notes' : '')} aria-label={t('New task')}>
     <div className="new-task-start">
     {!noteSelection.selected.length && <div className="new-task-welcome"><img src={logo} alt=""/><h2>{t('What are we revising next?')}</h2></div>}
@@ -2131,6 +2134,7 @@ function App() {
       </div>}
       action={<button className="send-button" type="submit" aria-label={t('Start task')} title={missingGroupDirections ? t('Add instructions to the selected color groups above.') : t('Start task (Enter)')} disabled={missingAgent || creating || reviewNoteBusy || noteEditing || history.busy || (newSkill?.output !== 'annotations' && (newFiles.blocked || marking > 0 || missingGroupDirections)) || (!newDraft.trim() && !newSkill && !newFiles.files.length && !noteSelection.selected.some(actionable) && !Object.keys(groupDirections).length)} aria-busy={creating}>{creating ? <span className="spinner light"/> : <Icon name="arrowUp" size={18}/>}</button>}/>
     {createError && <p className="inline-error" role="alert">{createError}</p>}
+    {!noteSelection.selected.length && overleafEntry && <div className="home-integrations">{overleafEntry}</div>}
     {PlaygroundPresets && <Suspense fallback={null}><PlaygroundPresets selected={noteSelection.selected} open={id => openPreparedTask(id)} disabled={creating}/></Suspense>}
     {runtimes[agentChoice]?.usage && <UsageSummary agent={agentLabel(agentChoice)} usage={runtimes[agentChoice]!.usage!}/>}
     </div>
@@ -2231,7 +2235,7 @@ function App() {
           <ReferencesPanel key={project.id} place={'references:' + project.id} data={bibliography} onInvestigate={draftInvestigation}/>
         </section>
       : !state ? <div className="home"><div className="home-inner"><div className="home-mark"><span className="spinner"/></div><h1>{t('Opening your workspace')}</h1><p className="home-copy" role="status">{connectionError || t('Connecting to your papers and tasks…')}</p>{connectionError && <button className="button secondary" onClick={() => void refresh(true)}>{t('Retry connection')}</button>}</div></div>
-      : <div className="home"><div className="home-inner"><img className="home-logo" src={logo} alt=""/><h1>{t('Add your first paper')}</h1><div className="home-paper-actions"><button className="button primary" onClick={createProject}><Icon name="plus" size={16}/>{t('New paper')}</button><button className="button secondary" onClick={importProject}><Icon name="download" size={16}/>{t('Import or open')}</button></div></div></div>}
+      : <div className="home"><div className="home-inner"><img className="home-logo" src={logo} alt=""/><h1>{t('Add your first paper')}</h1><div className="home-paper-actions"><button className="button primary" onClick={createProject}><Icon name="plus" size={16}/>{t('New paper')}</button><button className="button secondary" onClick={importProject}><Icon name="download" size={16}/>{t('Import or open')}</button></div>{overleafEntry && <div className="home-integrations">{overleafEntry}</div>}</div></div>}
     </main>
     {error && !modal && <div role="alert" className="toast"><Icon name="alert" size={16}/><span>{error}</span><button className="icon-button" aria-label={t('Dismiss error')} onClick={() => setError('')}><Icon name="close" size={14}/></button></div>}
     {settings && <SettingsDialog workflow={isPlayground ? undefined : { enabled: runtimes.collaboration?.hidden === false, online, runtimes, load: () => api<CollaborationSettingsState>('/collaboration'), save: async change => { const result = await api<CollaborationSettingsState>('/collaboration', change); await refresh(true); return result; } }} requirements={isPlayground ? undefined : { state: requirements, online }} modelDefaults={{ agents: offered.map(id => ({ value: id, label: agentLabel(id), runtime: runtimes[id] })), agent: agentChoice, model: chosenModel, effort: agent.effort, onSelect: chooseModel, onEffort: effort => remember({ effort }) }} updates={!isPlayground ? api : undefined} overleaf={!isPlayground ? { api, state: state?.overleaf } : undefined} initialPage={settings} theme={theme.theme} onTheme={theme.setTheme} resolved={theme.resolved} appearance={theme.appearance} onAppearance={theme.setAppearance} onClose={() => setSettings(false)} diagnostics={!isPlayground ? { online, runtimes, project, check: checkDiagnostics, latex: detectLatexInstallation, reconnect: async () => { await api('/reconnect', {}); await refresh(true); }, writer: (route: string, body?: unknown) => api('/writer' + route, body) } : undefined} skills={!isPlayground ? { project, api, onChanged: () => setSkillsRevision(value => value + 1) } : undefined}/>}
@@ -2258,7 +2262,7 @@ function App() {
     }}/>}
     {mainChoice && <MainFileDialog key={mainChoice.path} name={mainChoice.name} candidates={mainChoice.candidates} open={main => openFolder(mainChoice.path, main)} onClose={() => setMainChoice(null)}/>}
     {openingFolder && !mainChoice && <div role="status" className="toast toast-status"><span className="spinner"/><span>{t('Reading paper files…')}</span></div>}
-    {(modal === 'create' || modal === 'project') && <NewPaperDialog key={createPreset ? createPreset.id + '@' + createPreset.version : 'new'} initialTab={modal === 'project' ? 'import' : 'blank'} preset={createPreset ?? undefined} api={api} agent={agentChoice} canRepair={Object.values(runtimes).some(runtime => runtime?.connected && runtime.authenticated)} onChooseFolder={nativeFolders ? async () => { const path = await chooseDirectory(); if (path) await openFolder(path); } : undefined} onClose={() => { setModal(null); setCreatePreset(null); }} onDone={async paper => {
+    {modal && <NewPaperDialog key={createPreset ? createPreset.id + '@' + createPreset.version : 'new'} initialTab={modal === 'create' ? 'blank' : 'import'} source={modal === 'overleaf' ? 'overleaf' : undefined} preset={createPreset ?? undefined} api={api} agent={agentChoice} canRepair={Object.values(runtimes).some(runtime => runtime?.connected && runtime.authenticated)} onChooseFolder={nativeFolders ? async () => { const path = await chooseDirectory(); if (path) await openFolder(path); } : undefined} onClose={() => { setModal(null); setCreatePreset(null); }} onDone={async paper => {
       setCreatePreset(null);
       await refresh(true);
       setProjectId(paper.id); setSelected(''); setPage('manuscript'); setManuscriptView('pdf'); setModal(null); setSidebar(false);

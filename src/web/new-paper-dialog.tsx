@@ -44,7 +44,7 @@ export function NewPaperDialog({ initialTab = 'blank', preset, onClose, ...props
   return <dialog ref={dialog} className="modal-backdrop new-paper-backdrop" aria-labelledby={id + '-title'} onCancel={event => { if (event.target !== event.currentTarget) return; event.preventDefault(); close(); }} onClick={event => { if (event.target === event.currentTarget) close(); }}>
     <section className="modal new-paper-dialog">
       <button type="button" className="modal-close icon-button" aria-label={t('Close')} disabled={busy} onClick={close}><Icon name="close"/></button>
-      <h2 id={id + '-title'}>{t('New paper')}</h2>
+      <h2 id={id + '-title'}>{props.source === 'overleaf' && tab === 'import' ? t('Sync with Overleaf') : t('New paper')}</h2>
       <div className="new-paper-tabs" role="tablist" aria-label={t('Paper source')} onKeyDown={event => {
         if (busy || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
         const buttons = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
