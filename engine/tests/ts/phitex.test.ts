@@ -121,6 +121,28 @@ it.skipIf(!posix)("accepts a build whose PDF did not change, and creates the fol
   expect(fs.readFileSync(path.join(included.cwd, "build/chapters/one.aux"), "utf8")).toBe("\\relax\n");
 });
 
+it.skipIf(!posix)("refreshes a symlinked main file when its target changes", async () => {
+  const main = path.join(f.root, "paper/main.tex"), target = "paper/document.tex";
+  fs.renameSync(main, path.join(f.root, target));
+  fs.symlinkSync("document.tex", main);
+  commit(target, f.read(target));
+  const builder = new Builder(loadProject(f.root), f.repo), first = await builder.build("HEAD");
+  expect(fs.readFileSync(first.pdf, "utf8")).toContain("We conclude.");
+
+  commit(target, f.read(target).replace("We conclude.", "The linked document changed."));
+  const second = await builder.build("HEAD");
+  expect(second.key).not.toBe(first.key);
+  expect(fs.readFileSync(second.pdf, "utf8")).toContain("The linked document changed.");
+  expect(fs.readFileSync(first.pdf, "utf8")).toContain("We conclude.");
+  const [, folder] = builds()[0].split(" "), tracedMain = path.join(folder, "main.tex");
+  const modified = fs.statSync(tracedMain).mtimeMs;
+  commit("paper/notes.txt", "Unrelated notes.\n");
+  await builder.build("HEAD");
+  expect(fs.statSync(tracedMain).mtimeMs).toBe(modified);
+  expect(fs.readlinkSync(main)).toBe("document.tex");
+  expect(f.read(target)).not.toContain("papilot-trace");
+});
+
 it.skipIf(!posix)("starts clean when recompiled by hand, without anything an earlier build wrote", async () => {
   const builder = new Builder(loadProject(f.root), f.repo);
   await builder.build("HEAD");

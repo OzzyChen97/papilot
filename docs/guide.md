@@ -273,7 +273,7 @@ While PhiTeX is experimental:
 
 - LuaLaTeX papers keep using latexmk, because PhiTeX does not support LuaLaTeX yet. PhiTeX's XeLaTeX support is less complete than its pdfLaTeX support, and its first XeLaTeX build indexes the installed fonts, which can take several minutes.
 - From a `latexmkrc` in the document's folder, PhiTeX applies only the search paths (`TEXINPUTS`, `BIBINPUTS`, `BSTINPUTS`) and `@default_files`. Custom latexmk rules do not run.
-- Each build compiles the whole document: chapter-only comparison builds and the preview of each TeX pass are not used.
+- New comparisons compile the whole document, without previews of individual TeX passes. Existing chapter-only reviews keep using latexmk to preserve their comparison scope.
 - With `"halt_on_error": true`, the build still fails at the first error, but PhiTeX processes the rest of the document before it stops.
 - Shell escape follows your own PhiTeX settings (`phitex config shell-escape on`), and so does the number of threads (`phitex config threads N`).
 

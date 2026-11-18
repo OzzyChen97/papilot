@@ -53,6 +53,27 @@ const chapter = (name: string, other: string, cite: string, opening: string) => 
 ${opening} See Section~\ref{sec:${other}} on page~\pageref{sec:${other}} and \cite{${cite}}.
 ${Array.from({ length: 40 }, (_, i) => `Body ${name} sentence ${i}.`).join(" ")}
 `;
+it.skipIf(!tex)("keeps saved chapter scopes on latexmk after PhiTeX is enabled", async () => {
+  const f = new Fixture();
+  try {
+    f.write("paper/main.tex", "\\documentclass{book}\n\\begin{document}\n\\include{chapters/a}\n\\include{chapters/b}\n\\end{document}\n");
+    f.write("paper/chapters/a.tex", "\\chapter{A}\nOriginal chapter a.\n");
+    f.write("paper/chapters/b.tex", "\\chapter{B}\nUnrelated chapter b.\n");
+    f.repo.run(["add", "-A"]); f.repo.run(["commit", "-qm", "Book"]);
+    const project = { ...loadProject(f.root), compiler: "latexmk" as const };
+    const latexmk = new Builder(project, f.repo), seed = await latexmk.build("HEAD");
+    const builder = new Builder({ ...project, compiler: "phitex" }, f.repo), targets = ["chapters/a"];
+    const scoped = await builder.build("HEAD", targets, seed);
+    expect(scoped.targets).toEqual(targets);
+    expect(text(scoped.pdf)).toContain("Original chapter a.");
+    expect(text(scoped.pdf)).not.toContain("Unrelated chapter b.");
+    expect(scoped.key).toBe((await latexmk.resolve("HEAD", targets, seed)).cacheKey);
+    expect((await builder.cached("HEAD", targets, seed))?.key).toBe(scoped.key);
+    // New comparisons still choose PhiTeX's full-document scope.
+    expect(await builder.planAsync("HEAD", "HEAD", ["paper/chapters/a.tex"])).toEqual(["full"]);
+  } finally { await f.close(); }
+});
+
 it.skipIf(!tex).each(["manual", "comparison"])("a recovered %s full build supersedes clean seeds without becoming continuation state", async origin => {
   const f = new Fixture(), external = path.join(f.base, "package.tex");
   try {

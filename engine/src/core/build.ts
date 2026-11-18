@@ -494,8 +494,10 @@ export class Builder {
   /** What identifies the build of `rev`: its cache key, and the tree and
    *  date that it compiles. */
   async resolve(rev: string, targets: string[], seed: BuildInfo | null, options: { date?: ReturnType<typeof buildDate>; pastErrors?: boolean } = {}) {
-    const p = this.project,
-      partial = JSON.stringify(targets) !== '["full"]';
+    const partial = JSON.stringify(targets) !== '["full"]',
+      // Saved reviews retain their chapter scope when the host switches
+      // compilers. PhiTeX cannot render those explicit partial requests.
+      p = partial ? { ...this.project, compiler: "latexmk" as const } : this.project;
     if (partial && !seed)
       throw new BuildError(
         "A partial build needs a completed full build to start from.",
@@ -861,7 +863,7 @@ export class Builder {
     ]);
     // A manual recompilation, or a retry after leftover state broke a build,
     // starts clean (start is then null).
-    if (p.compiler === "phitex")
+    if (p.compiler === "phitex" && !partial)
       return this.compilePhitex(tree, key, source, cwd, out, main, included, tikzDirectories, date, start === null, haltOnError, progress, scheduled, signal);
     // Preview outputs carry across days. A dated comparison can still use
     // older auxiliary state, but TeX must refresh the date on its pages.
@@ -1180,7 +1182,7 @@ export class Builder {
         }
         if (signal?.aborted) return await abandon();
         await this.syncPhitex(work.folder, source, tree);
-        await this.tracePhitex(work.folder, path.join(workCwd, main));
+        await this.tracePhitex(work.folder, path.join(workCwd, main), path.join(cwd, main));
         // TeX cannot create folders: those of included files' .aux and of
         // TikZ's external pictures must exist, as in latexmk's builds.
         await Promise.all([
@@ -1286,18 +1288,21 @@ export class Builder {
    *  on its first line: every line keeps its number. latexmk's builds enter
    *  the main file with \input, which the trace records and names its
    *  entries by; this build enters it the same way. */
-  private async tracePhitex(work: string, main: string) {
+  private async tracePhitex(work: string, main: string, source: string) {
     const trace = path.join(work, "papilot-trace.tex"), wanted = OUTLINE_TRACE + "\n", name = path.basename(main);
     if (await fs.promises.readFile(trace, "utf8").catch(() => null) !== wanted) await fs.promises.writeFile(trace, wanted);
-    const text = await fs.promises.readFile(main),
+    // Read the current snapshot: the working main may have replaced a link
+    // whose target changed without changing the link's own Git entry.
+    const text = await fs.promises.readFile(source),
       bom = text.subarray(0, 3).equals(Buffer.from([0xef, 0xbb, 0xbf])) ? 3 : 0,
       // As a string, like LaTeX's own file names: non-ASCII names too.
       enter = /^[^\\{}%#|]+$/.test(name) ? String.raw`\ifcsname papilot@w\endcsname\edef\CurrentFile{\detokenize{${name}}}\def\CurrentFilePath{}\csname papilot@w\endcsname{F|0||\CurrentFile}\fi` : "",
-      input = Buffer.from(`\\input{${path.relative(path.dirname(main), trace).split(path.sep).join("/")}}${enter}`);
-    if (text.subarray(bom, bom + input.length).equals(input)) return;
+      input = Buffer.from(`\\input{${path.relative(path.dirname(main), trace).split(path.sep).join("/")}}${enter}`),
+      traced = Buffer.concat([text.subarray(0, bom), input, text.subarray(bom)]);
+    if ((await fs.promises.readFile(main)).equals(traced)) return;
     // A link may name a file outside the copy: write a file in its place.
     if ((await fs.promises.lstat(main)).isSymbolicLink()) await fs.promises.rm(main);
-    await fs.promises.writeFile(main, Buffer.concat([text.subarray(0, bom), input, text.subarray(bom)]));
+    await fs.promises.writeFile(main, traced);
   }
   /** Makes the working folder's copy of the sources that of `tree`, which
    *  `source` holds, replacing only the files that differ, so that PhiTeX
