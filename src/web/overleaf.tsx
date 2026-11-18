@@ -139,17 +139,16 @@ export function OverleafLinkDialog({ api, projectId, overleaf, current, onClose,
   const [busy, setBusy] = useState<'' | 'compare' | 'link'>(''), [error, setError] = useState(''), [signIn, setSignIn] = useState<string | null>(null);
   const signedIn = Boolean(overleaf?.accounts.some(account => account.origin === origin));
   useEffect(() => {
-    if (!signedIn) { setProjects(null); return; }
+    if (!signedIn || signIn) { setProjects(null); return; }
     const stop = new AbortController();
-    api<{ projects: OverleafProjectSummary[] }>(`/overleaf/projects?origin=${encodeURIComponent(origin)}`, undefined, stop.signal).then(value => setProjects(value.projects), failure => { if (!stop.signal.aborted) { if ((failure as { signIn?: string }).signIn) setSignIn(origin); else setError((failure as Error).message); } });
+    api<{ projects: OverleafProjectSummary[] }>(`/overleaf/projects?origin=${encodeURIComponent(origin)}`, undefined, stop.signal).then(value => { if (!stop.signal.aborted) setProjects(value.projects); }, failure => { if (!stop.signal.aborted) { if ((failure as { signIn?: string }).signIn) setSignIn(origin); else setError((failure as Error).message); } });
     return () => stop.abort();
-  }, [origin, signedIn]);
+  }, [origin, signedIn, signIn]);
   async function compare(value: string) {
     setLink(value); setComparison(null); setError('');
     const server = overleafOrigin(value);
     if (!server) { if (value.trim()) setError(t('Paste the link of an Overleaf project.')); return; }
     setOrigin(server);
-    if (!overleaf?.accounts.some(account => account.origin === server)) { setSignIn(server); return; }
     setBusy('compare');
     try { setComparison(await api<OverleafComparison>(`/projects/${projectId}/overleaf/compare`, { url: value.trim(), ...replace })); }
     catch (failure) { if ((failure as { signIn?: string }).signIn) setSignIn((failure as { signIn: string }).signIn); else setError((failure as Error).message); }
@@ -164,7 +163,7 @@ export function OverleafLinkDialog({ api, projectId, overleaf, current, onClose,
   const isCurrent = (item: OverleafProjectSummary) => current?.origin === origin && current.overleafId === item.id;
   const date = (time: number | null) => time ? new Date(time).toLocaleDateString(locale(), { month: 'short', day: 'numeric', year: new Date(time).getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) : '';
   return <Dialog title={<><BrandIcon name="overleaf" size={22}/>{current ? t('Change Overleaf project') : t('Sync with Overleaf')}</>} onClose={() => { if (busy !== 'link') onClose(); }}>
-    {signIn && !overleaf?.accounts.some(account => account.origin === signIn) ? <OverleafSignIn api={api} origin={signIn} onSignedIn={() => { setSignIn(null); if (link) void compare(link); }}/> : <>
+    {signIn ? <OverleafSignIn api={api} origin={signIn} onSignedIn={() => { setSignIn(null); if (link) void compare(link); }}/> : <>
       {!comparison && (signedIn ? <>
         <div className="overleaf-projects">
           <div className="overleaf-projects-head"><span>{t('Your projects')}</span>{projects && projects.length > 8 && <input type="search" aria-label={t('Search projects')} placeholder={t('Search projects')} value={filter} onChange={event => setFilter(event.target.value)}/>}</div>

@@ -39,7 +39,7 @@ export interface LocalFile { size: number; mtimeMs: number }
 /** Whether the paper folder is there to sync: a moved folder or an
  *  unmounted disk must not read as every file deleted. */
 export function present(root: string) {
-  try { return fs.statSync(root).isDirectory(); } catch { return false; }
+  try { return fs.lstatSync(root).isDirectory(); } catch { return false; }
 }
 /** Every synchronizable file of the folder, with what shows it changed, and
  *  the symbolic links in it, which stay as they are. */
@@ -47,15 +47,19 @@ export function scan(root: string) {
   const files = new Map<string, LocalFile>(), links = new Set<string>(), folders = [''];
   while (folders.length) {
     const folder = folders.pop()!;
-    let entries: fs.Dirent[];
-    try { entries = fs.readdirSync(path.join(root, folder), { withFileTypes: true }); } catch { continue; }
+    // An unreadable folder is not an empty one: abort the scan before its
+    // missing entries can be mistaken for deletions on Overleaf.
+    const directory = folder ? inside(root, folder) : root;
+    if (!fs.lstatSync(directory).isDirectory()) throw new Error('Invalid file path.');
+    const entries = fs.readdirSync(directory, { withFileTypes: true });
     for (const entry of entries) {
       const file = folder ? `${folder}/${entry.name}` : entry.name;
       if (ignored(file)) continue;
       if (entry.isSymbolicLink()) links.add(file);
       else if (entry.isDirectory()) folders.push(file);
       else if (entry.isFile()) {
-        try { const stat = fs.statSync(path.join(root, file)); files.set(file, { size: stat.size, mtimeMs: stat.mtimeMs }); } catch { /* Gone meanwhile. */ }
+        const value = stat(root, file);
+        if (value) files.set(file, value);
       }
     }
   }
@@ -68,16 +72,25 @@ export const linked = (links: Set<string>, file: string) => file.split('/').some
 function inside(root: string, file: string) {
   const target = path.resolve(root, file);
   if (unsafeName(file) || !target.startsWith(path.resolve(root) + path.sep)) throw new Error('Invalid file path.');
+  if (!fs.lstatSync(root).isDirectory()) throw new Error('Invalid file path.');
   for (let at = path.dirname(target); at.length > path.resolve(root).length; at = path.dirname(at)) {
     try { if (fs.lstatSync(at).isSymbolicLink()) throw new Error('Invalid file path.'); } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   }
   return target;
 }
 export function stat(root: string, file: string): LocalFile | null {
-  try { const value = fs.lstatSync(path.join(root, file)); return value.isFile() ? { size: value.size, mtimeMs: value.mtimeMs } : null; } catch { return null; }
+  try {
+    const value = fs.lstatSync(inside(root, file));
+    if (value.isSymbolicLink()) throw new Error('Invalid file path.');
+    return value.isFile() ? { size: value.size, mtimeMs: value.mtimeMs } : null;
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
 }
 export function read(root: string, file: string) {
-  try { return fs.readFileSync(path.join(root, file)); } catch { return null; }
+  try {
+    const target = inside(root, file);
+    if (!fs.lstatSync(target).isFile()) throw new Error('Invalid file path.');
+    return fs.readFileSync(target);
+  } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
 }
 /** UTF-8 text, or null for bytes that are not. */
 export function decode(data: Buffer) {

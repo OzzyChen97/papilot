@@ -246,7 +246,7 @@ export class PaperImports {
   get busy() { return this.active.size > 0; }
   /** Downloads an Overleaf project the paper keeps syncing with, and links
    *  the paper once added. */
-  overleaf?: { download(url: unknown, root: string): Promise<{ linkId: string; name: string; main?: string; compiler?: string }>; attach(linkId: string, projectId: string): void; discard(linkId: string): void };
+  overleaf?: { download(url: unknown, root: string): Promise<{ linkId: string; name: string; main?: string; compiler?: string }>; finish(linkId: string, register: () => Promise<Project>): Promise<Project>; discard(linkId: string): void };
   constructor(private manuscripts: Manuscripts, private directory = DATA, private registered: (root: string) => boolean = () => false, private source = downloadPaperSource) {
     // Staged ZIPs belong to requests that ended with a previous server process.
     if (fs.existsSync(directory)) for (const name of fs.readdirSync(directory)) if (name.startsWith('upload-')) fs.rmSync(path.join(directory, name), { recursive: true, force: true });
@@ -396,8 +396,8 @@ export class PaperImports {
   async finish(id: string, register: (root: string, name: string) => Promise<Project>) {
     const value = this.get(id);
     if (this.active.has(id) || !value.versioned) throw new Error('Wait for repository preparation to finish.');
-    const project = await register(value.path, value.name);
-    if (value.overleaf) this.overleaf?.attach(value.overleaf, project.id);
+    const add = () => register(value.path, value.name);
+    const project = value.overleaf && this.overleaf ? await this.overleaf.finish(value.overleaf, add) : await add();
     // Keep the receipt so a lost HTTP response can safely retry finalization.
     this.manuscripts.forgetProject('import-' + id); return project;
   }

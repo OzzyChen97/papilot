@@ -58,6 +58,8 @@ export async function gitIgnored(root: string, files: string[]) {
 export class OverleafService extends EventEmitter {
   readonly store: OverleafStore;
   private syncs = new Map<string, PaperSync>();
+  private reservations = new Set<string>();
+  private finishing = new Map<string, Promise<Project>>();
   // Syncs being stopped, so a new one for the same paper waits for them.
   private stopping = new Map<string, Promise<void>>();
   private changeTimer: NodeJS.Timeout | undefined;
@@ -132,7 +134,9 @@ export class OverleafService extends EventEmitter {
     let account: { userId: string; email: string };
     try { account = await http.account(); } catch (error) { throw error instanceof SignInError || error instanceof AccessError ? new Error('Overleaf did not accept this sign-in. Sign in again.') : error; }
     this.store.saveAccount({ origin: server, cookies: jar, ...account, savedAt: Date.now(), ...(shared ? { shared } : {}) });
-    for (const sync of this.syncs.values()) if (sync.link.origin === server) sync.retry();
+    // Existing connections hold the old session and its permissions. Stop
+    // them before reconnecting with the account the author just chose.
+    for (const sync of [...this.syncs.values()]) if (sync.link.origin === server) this.run(sync.link);
     this.changed();
     return { origin: server, email: account.email };
   }
@@ -193,6 +197,11 @@ export class OverleafService extends EventEmitter {
 
   // ------------------------------------------------------------------ links
   sync(projectId: string) { return this.syncs.get(projectId); }
+  private available(origin: string, overleafId: string, ownLink?: string) {
+    // Downloads and finalization reserve the project while running. Completed import receipts
+    // may be abandoned or resumed; only attaching one claims the live sync.
+    if (this.reservations.has(`${origin}/${overleafId}`) || this.store.links().some(link => link.id !== ownLink && link.projectId && link.origin === origin && link.overleafId === overleafId)) throw new Error('Another paper is already synced with this Overleaf project.');
+  }
   /** What linking a paper would change, before anything changes. */
   /** Which project a paper may sync with: any other paper's is taken; with
    *  `replace`, a synced paper may move to another project. */
@@ -201,7 +210,7 @@ export class OverleafService extends EventEmitter {
     if (current && !replace) throw new Error('This paper is already synced with Overleaf.');
     const { origin, overleafId } = await this.resolve(value);
     if (current?.link.origin === origin && current.link.overleafId === overleafId) throw new Error('This paper already syncs with this Overleaf project.');
-    if (this.store.links().some(link => link.origin === origin && link.overleafId === overleafId && link.projectId)) throw new Error('Another paper is already synced with this Overleaf project.');
+    this.available(origin, overleafId);
     return { origin, overleafId };
   }
   async compare(projectId: string, value: unknown, replace = false): Promise<OverleafComparison & { origin: string; overleafId: string }> {
@@ -214,6 +223,10 @@ export class OverleafService extends EventEmitter {
   async link(projectId: string, value: unknown, choice: unknown, replace = false) {
     if (choice !== 'overleaf' && choice !== 'local') throw new Error('Choose whose version to keep.');
     const { origin, overleafId } = await this.target(projectId, value, replace);
+    // Another request may have linked this paper or reserved the project
+    // while the target was being resolved.
+    if (this.syncs.has(projectId) && !replace) throw new Error('This paper is already synced with Overleaf.');
+    this.available(origin, overleafId);
     // The new sync starts once the old one has stopped.
     if (this.syncs.has(projectId)) this.unlink(projectId);
     const link = this.store.createLink({ projectId, origin, overleafId, name: '', choice });
@@ -243,16 +256,47 @@ export class OverleafService extends EventEmitter {
    *  for the paper the import becomes. */
   async download(value: unknown, root: string) {
     const { origin, overleafId } = await this.resolve(value);
+    this.available(origin, overleafId);
     const link = this.store.createLink({ projectId: null, origin, overleafId, name: '' });
+    const reservation = `${origin}/${overleafId}`;
+    this.reservations.add(reservation);
     try {
       const sync = new PaperSync(link, root, this.store, { changed: () => {}, busy: () => false, ignored: async () => new Set(), status: () => {} });
       const settings = await sync.fetchAll();
       return { linkId: link.id, name: sync.name, ...settings };
     } catch (error) { this.store.removeLink(link.id); throw error; }
+    finally { this.reservations.delete(reservation); }
+  }
+  /** Reserves the remote project before registering an imported paper, so
+   *  a competing import cannot leave a registered paper without its sync. */
+  async finishImport(linkId: string, register: () => Promise<Project>) {
+    const pending = this.finishing.get(linkId);
+    if (pending) return pending;
+    const link = this.store.link(linkId);
+    if (!link) return register();
+    this.available(link.origin, link.overleafId, link.id);
+    const reservation = `${link.origin}/${link.overleafId}`;
+    this.reservations.add(reservation);
+    const work = (async () => {
+      try {
+        const project = await register();
+        // Releasing our reservation and attaching are synchronous, so no
+        // competing request can claim the project in between.
+        this.reservations.delete(reservation);
+        this.attach(linkId, project.id);
+        return project;
+      } finally { this.reservations.delete(reservation); }
+    })();
+    this.finishing.set(linkId, work);
+    try { return await work; } finally { this.finishing.delete(linkId); }
   }
   attach(linkId: string, projectId: string) {
     const link = this.store.link(linkId);
     if (!link) return;
+    this.available(link.origin, link.overleafId, link.id);
+    const current = this.syncs.get(projectId);
+    if (current?.link.id === link.id) return;
+    if (current || (link.projectId && link.projectId !== projectId)) throw new Error('This paper is already synced with Overleaf.');
     link.projectId = projectId;
     this.store.saveLink(link);
     this.run(link);

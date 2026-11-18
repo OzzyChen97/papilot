@@ -112,6 +112,117 @@ test('linking compares first, keeps the chosen version, saves the other, and joi
   } finally { await t.close(); }
 });
 
+test('signing in as another account reconnects active syncs with that account’s access', async () => {
+  const server = await new FakeOverleaf().start(), t = setup(server);
+  server.addDoc('main.tex', 'Shared main\n');
+  fs.writeFileSync(path.join(t.root, 'main.tex'), 'Shared main\n');
+  try {
+    await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
+    await t.service.link('paper', `${server.origin}/project/${server.projectId}`, 'local');
+    await until(() => t.service.state().syncs[0]?.state === 'synced', 'the original account’s sync');
+    const [previousClient] = server.clients;
+    assert.ok(previousClient);
+
+    // The second account can sign in, but is not a member of this project.
+    // A connection opened under the first account is still authorized until
+    // Papilot closes it, as an existing browser tab would be.
+    server.userId = '0123456789abcdef01234567';
+    server.session = 'second-account-session';
+    server.member = false;
+    await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
+    await until(() => !server.clients.has(previousClient), 'the previous account’s connection to close');
+    await until(() => t.service.state().syncs[0]?.state === 'no-access', 'the new account’s project access');
+    assert.equal(t.service.store.account(server.origin)?.userId, server.userId);
+    assert.equal(server.text('main.tex'), 'Shared main\n');
+    assert.equal(fs.readFileSync(path.join(t.root, 'main.tex'), 'utf8'), 'Shared main\n');
+
+    // Granting the new account access resumes the existing link and files.
+    server.member = true;
+    t.service.retry('paper');
+    await until(() => t.service.state().syncs[0]?.state === 'synced', 'the new account’s sync');
+    fs.writeFileSync(path.join(t.root, 'main.tex'), 'Second account edit\n');
+    await until(() => server.text('main.tex') === 'Second account edit\n', 'the new account’s edit');
+  } finally { await t.close(); }
+});
+
+test('prepared imports can be abandoned or resumed but only one can start a sync', async () => {
+  const server = await new FakeOverleaf().start(), t = setup(server);
+  server.addDoc('main.tex', 'Shared main\n');
+  const other = path.join(t.dir, 'other');
+  fs.mkdirSync(other);
+  t.projects.push({ id: 'other', name: 'Other paper', path: other, createdAt: 1 });
+  try {
+    await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
+    const url = `${server.origin}/project/${server.projectId}`;
+    const imported = await t.service.download(url, t.root);
+    // Choosing different files leaves a resumable receipt. It must not
+    // permanently reserve a project that is not synced to any paper yet.
+    const another = await t.service.download(url, other);
+    t.service.attach(imported.linkId, 'paper');
+    await until(() => t.service.state().syncs[0]?.state === 'synced', 'the imported paper’s sync');
+    const sync = t.service.sync('paper');
+    t.service.attach(imported.linkId, 'paper');
+    assert.equal(t.service.sync('paper'), sync, 'a retried finalize receipt keeps the active sync');
+    assert.throws(() => t.service.attach(another.linkId, 'other'), /Another paper is already synced/);
+    await assert.rejects(t.service.download(url, other), /Another paper is already synced/);
+    await assert.rejects(t.service.link('other', url, 'local'), /Another paper is already synced/);
+    t.service.discard(another.linkId);
+    assert.equal(t.service.store.links().length, 1);
+    assert.equal(t.service.state().syncs.length, 1);
+  } finally { await t.close(); }
+});
+
+test('concurrent links and imports cannot claim the same Overleaf project twice', async () => {
+  const server = await new FakeOverleaf().start(), t = setup(server);
+  server.addDoc('main.tex', 'Shared main\n');
+  const other = path.join(t.dir, 'other');
+  fs.mkdirSync(other);
+  t.projects.push({ id: 'other', name: 'Other paper', path: other, createdAt: 1 });
+  try {
+    await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
+    const url = `${server.origin}/project/${server.projectId}`;
+    const imports = await Promise.allSettled([t.service.download(url, t.root), t.service.download(url, other)]);
+    assert.equal(imports.filter(result => result.status === 'fulfilled').length, 1);
+    assert.equal(imports.filter(result => result.status === 'rejected').length, 1);
+    for (const result of imports) if (result.status === 'fulfilled') t.service.discard(result.value.linkId);
+    assert.equal(t.service.store.links().length, 0, 'discarding releases the import’s reservation');
+
+    const links = await Promise.allSettled([t.service.link('paper', url, 'overleaf'), t.service.link('other', url, 'overleaf')]);
+    assert.equal(links.filter(result => result.status === 'fulfilled').length, 1);
+    assert.equal(links.filter(result => result.status === 'rejected').length, 1);
+    assert.equal(t.service.store.links().length, 1);
+    assert.equal(t.service.state().syncs.length, 1);
+  } finally { await t.close(); }
+});
+
+test('finalizing an import reserves the project before registration and releases failed attempts', async () => {
+  const server = await new FakeOverleaf().start(), t = setup(server);
+  server.addDoc('main.tex', 'Shared main\n');
+  const other = path.join(t.dir, 'other');
+  fs.mkdirSync(other);
+  t.projects.push({ id: 'other', name: 'Other paper', path: other, createdAt: 1 });
+  let release!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  try {
+    await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
+    const url = `${server.origin}/project/${server.projectId}`;
+    const first = await t.service.download(url, t.root), second = await t.service.download(url, other);
+    await assert.rejects(t.service.finishImport(first.linkId, async () => { throw new Error('Registration failed'); }), /Registration failed/);
+    let registrations = 0, competingRegistrations = 0;
+    const finish = t.service.finishImport(first.linkId, async () => { registrations++; await gate; return t.projects[0]; });
+    const retry = t.service.finishImport(first.linkId, async () => { registrations++; return t.projects[0]; });
+    await assert.rejects(t.service.finishImport(second.linkId, async () => { competingRegistrations++; return t.projects[1]; }), /Another paper is already synced/);
+    assert.equal(competingRegistrations, 0, 'the competing paper is never registered');
+    release();
+    assert.equal(await finish, await retry);
+    assert.equal(registrations, 1, 'a duplicate in-flight receipt shares registration');
+    await until(() => t.service.state().syncs[0]?.state === 'synced', 'the finalized sync');
+    const sync = t.service.sync('paper');
+    assert.equal(await t.service.finishImport(first.linkId, async () => t.projects[0]), t.projects[0]);
+    assert.equal(t.service.sync('paper'), sync, 'a retried completed receipt keeps its sync');
+  } finally { release(); await t.close(); }
+});
+
 test('an import downloads the project at its own paths and syncs once the paper is added', async () => {
   const server = await new FakeOverleaf().start(), t = setup(server);
   // A project with a single top folder stays as it is: paths must match.
@@ -120,8 +231,8 @@ test('an import downloads the project at its own paths and syncs once the paper 
   server.rootDoc = 'paper/main.tex'; server.compiler = 'xelatex';
   await t.service.signIn(server.origin, `overleaf_session2=${server.session}`);
   const manuscripts = { forgetProject() {}, state: async () => ({ build: { status: 'ready' } }) } as unknown as Manuscripts;
-  const imports = new PaperImports(manuscripts, path.join(t.dir, 'data'));
-  imports.overleaf = { download: (url, root) => t.service.download(url, root), attach: (link, project) => t.service.attach(link, project), discard: link => t.service.discard(link) };
+  const imports = new PaperImports(manuscripts, path.join(t.dir, 'data'), root => t.projects.some(project => project.path === root));
+  imports.overleaf = { download: (url, root) => t.service.download(url, root), finish: (link, register) => t.service.finishImport(link, register), discard: link => t.service.discard(link) };
   try {
     const draft = await imports.create({ url: `${server.origin}/project/${server.projectId}`, sync: true });
     assert.ok(draft.overleaf);
@@ -129,9 +240,22 @@ test('an import downloads the project at its own paths and syncs once the paper 
     assert.ok(fs.existsSync(path.join(draft.path, 'paper/main.tex')));
     assert.deepEqual({ main: draft.main, engine: draft.engine }, { main: 'paper/main.tex', engine: 'xelatex' }, 'Overleaf’s main document and compiler');
     assert.equal(imports.holdsLink(draft.overleaf!), true);
-    t.projects.push({ id: 'imported', name: 'Fake paper', path: draft.path, createdAt: 2 });
-    t.service.attach(draft.overleaf!, 'imported');
+    await imports.build(draft.id, {});
+    await until(() => !imports.busy, 'the imported repository to be prepared');
+    assert.equal(imports.get(draft.id).phase, 'ready', imports.get(draft.id).error);
+    const register = async (root: string, name: string) => {
+      const existing = t.projects.find(project => project.path === root);
+      if (existing) return existing;
+      const project = { id: 'imported', name, path: root, createdAt: 2 };
+      t.projects.push(project);
+      return project;
+    };
+    const imported = await imports.finish(draft.id, register);
     await until(() => t.service.state().syncs.some(sync => sync.projectId === 'imported' && sync.state === 'synced'), 'the attached sync');
+    const sync = t.service.sync(imported.id);
+    assert.equal(await imports.finish(draft.id, register), imported, 'a lost finalize response can retry its receipt');
+    assert.equal(t.service.sync(imported.id), sync);
+    assert.equal(imports.holdsLink(draft.overleaf!), false);
     fs.writeFileSync(path.join(draft.path, 'paper/main.tex'), '\\documentclass{article}\n\\begin{document}\nHello\n\\end{document}\n');
     await until(() => server.text('paper/main.tex')!.includes('Hello'), 'the edit after import');
     // A failed download leaves no link behind.

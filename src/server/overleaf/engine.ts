@@ -89,9 +89,10 @@ const sameFile = (a: string, b: string) => { try { const x = fs.statSync(a), y =
 class StoppedError extends Error { constructor() { super('Syncing stopped.'); this.name = 'StoppedError'; } }
 /** The paper folder is gone: moved, renamed or on a disk not mounted. */
 class FolderError extends Error { constructor(message: string) { super(message); this.name = 'FolderError'; } }
+class GitBusyError extends Error { constructor() { super('Wait for the current Git operation before sending more instructions.'); this.name = 'GitBusyError'; } }
 // Whether a failure is about the connection or the account, which ends the
 // session, rather than one file, which is set aside.
-const connectionLevel = (error: unknown) => error instanceof ConnectionError || error instanceof SignInError || error instanceof AccessError || error instanceof StoppedError || error instanceof FolderError || (error instanceof Error && error.name === 'AbortError');
+const connectionLevel = (error: unknown) => error instanceof ConnectionError || error instanceof SignInError || error instanceof AccessError || error instanceof StoppedError || error instanceof FolderError || error instanceof GitBusyError || (error instanceof Error && error.name === 'AbortError');
 // What the author reads about a failure. Overleaf's answers say what
 // happened; anything else is an inconsistency the next connection repairs.
 function explain(error: unknown) {
@@ -230,7 +231,11 @@ export class PaperSync extends EventEmitter {
     this.queue = run.catch(() => undefined);
     return run;
   }
-  private check() { if (this.stopped) throw new StoppedError(); }
+  private check() {
+    if (this.stopped) throw new StoppedError();
+    if (!present(this.root)) throw new FolderError('The paper folder is missing. Syncing resumes when it is back.');
+    if (this.hooks.busy()) throw new GitBusyError();
+  }
   private notify() {
     this.notifyTimer ??= setTimeout(() => { this.notifyTimer = undefined; this.hooks.changed(); }, NOTIFY_EVERY);
   }
@@ -263,6 +268,7 @@ export class PaperSync extends EventEmitter {
         await this.connect();
         const closed = await this.socket!.done;
         if (this.stopped) break;
+        if (closed instanceof GitBusyError) { this.set('paused'); await this.sleep(2000); continue; }
         if (closed instanceof FolderError) { this.set('paused', closed.message); await this.sleep(5000); continue; }
         if (this.state !== 'paused') this.set('offline', explain(closed) ?? this.message);
         // A connection that drops at once again waits longer each time.
@@ -270,6 +276,7 @@ export class PaperSync extends EventEmitter {
       } catch (error) {
         this.socket?.close();
         if (this.stopped || error instanceof StoppedError) break;
+        if (error instanceof GitBusyError) { this.set('paused'); await this.sleep(2000); continue; }
         if (error instanceof SignInError) { this.set('signed-out', error.message); await this.sleep(10 * 60_000); continue; }
         if (error instanceof AccessError) { this.set('no-access', error.message); await this.sleep(5 * 60_000); continue; }
         if (error instanceof FolderError) { this.set('paused', error.message); await this.sleep(5000); continue; }
@@ -395,6 +402,7 @@ export class PaperSync extends EventEmitter {
    *  then writes it must not be read halfway. */
   private async readStable(file: string) {
     for (let attempt = 0; ; attempt++) {
+      this.check();
       const before = stat(this.root, file), data = read(this.root, file), after = stat(this.root, file);
       if (!data || !before || !after) return null;
       // A file as Papilot last wrote or read it needs no wait.
@@ -408,6 +416,7 @@ export class PaperSync extends EventEmitter {
     }
   }
   private writeLocal(doc: Doc, text: string) {
+    this.check();
     write(this.root, doc.path, doc.eol === '\r\n' ? text.replace(/\n/g, '\r\n') : text);
     doc.local = text;
     this.attribute(doc, text);
@@ -416,6 +425,7 @@ export class PaperSync extends EventEmitter {
     this.notify();
   }
   private writeFile(file: string, data: Buffer) {
+    this.check();
     write(this.root, file, data);
     const value = stat(this.root, file);
     if (value) this.seen.set(file, value);
@@ -528,6 +538,7 @@ export class PaperSync extends EventEmitter {
     const added = [...local.keys()].filter(file => !tree.entries.has(file) && !base[file]);
     const ignoredByGit = added.length ? await this.hooks.ignored(added) : new Set<string>();
     for (const file of local.keys()) {
+      this.check();
       if (tree.entries.has(file) || skipped.has(file.toLowerCase())) continue;
       const entry = base[file];
       if (!entry) { if (!ignoredByGit.has(file) && !localOnly(file, sibling => local.has(sibling) || tree.entries.has(sibling))) await this.attempt(file, () => this.create(file)); continue; }
@@ -644,6 +655,9 @@ export class PaperSync extends EventEmitter {
     doc.server = apply(doc.type, doc.server, op);
     doc.version++;
     if (doc.behind !== null) return; // The next send merges everything.
+    // Reading may wait for an editor, during which Git can start or the
+    // folder can disappear. Keep the pre-update base until writing succeeds.
+    doc.behind = visible(doc, predicted);
     // The file is merged as it is now; when it changes in the moment
     // between reading and writing, it is merged again.
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -656,12 +670,11 @@ export class PaperSync extends EventEmitter {
       const snapshot = pending ? apply(doc.type, predicted, pending) : predicted;
       const after = visible(doc, apply(doc.type, snapshot, local));
       this.attribute(doc, before);
-      if (after === before) { doc.local = after; return; }
+      if (after === before) { doc.local = after; doc.behind = null; return; }
       const now = stat(this.root, doc.path);
-      if (now && now.size === file.stat.size && now.mtimeMs === file.stat.mtimeMs) { this.attribute(doc, after, user); this.writeLocal(doc, after); return; }
+      if (now && now.size === file.stat.size && now.mtimeMs === file.stat.mtimeMs) { this.attribute(doc, after, user); this.writeLocal(doc, after); doc.behind = null; return; }
     }
-    // The file was moving, or briefly gone while an editor saved it.
-    doc.behind = visible(doc, predicted);
+    // A moving or briefly missing file keeps its base for the next send.
   }
   private settle(doc: Doc) {
     const remote = visible(doc, doc.server), dirty = doc.local !== null && doc.local !== remote;
@@ -679,8 +692,8 @@ export class PaperSync extends EventEmitter {
     if (doc.behind !== null) {
       const merged = merge3(doc.behind, doc.local, server);
       for (const conflict of merged.conflicts) this.conflict(doc.path, 'text', conflict);
-      doc.behind = null;
       if (merged.text !== doc.local) this.writeLocal(doc, merged.text);
+      doc.behind = null;
     }
     // A file that suddenly reads empty is more likely being rewritten than
     // cleared; it is sent empty only once it stays so.
@@ -700,6 +713,7 @@ export class PaperSync extends EventEmitter {
     this.hooks.status();
   }
   private send(doc: Doc, again = false) {
+    this.check();
     doc.sentAt = Date.now(); doc.retried = again;
     if (this.socket && !doc.origins.includes(this.socket.publicId)) doc.origins.push(this.socket.publicId);
     // Overleaf tracks changes in ShareJS files from a seed for their ids.
@@ -803,11 +817,12 @@ export class PaperSync extends EventEmitter {
   }
   /** Moves a file or folder here, with everything Papilot knows about it. */
   private relocate(from: string, to: string) {
+    this.check();
     const source = path.join(this.root, from), target = path.join(this.root, to);
     if (fs.existsSync(source) && fs.existsSync(target) && !sameFile(source, target)) {
       // Overleaf's names win: a file here that only had the name is kept to
       // put back, never uploaded in the moved file's place.
-      if (fs.lstatSync(target).isFile()) { this.conflict(to, 'file', { backup: this.store.backup(this.link.id, fs.readFileSync(target)) }); remove(this.root, to); }
+      if (fs.lstatSync(target).isFile()) { this.conflict(to, 'file', { backup: this.store.backup(this.link.id, read(this.root, to)!) }); remove(this.root, to); }
       else { for (const entity of [...this.entities.values()].filter(item => item.kind !== 'folder' && item.path.startsWith(from + '/'))) this.relocate(entity.path, to + entity.path.slice(from.length)); }
     }
     if (fs.existsSync(source) && (!fs.existsSync(target) || sameFile(source, target))) move(this.root, from, to);
@@ -886,6 +901,7 @@ export class PaperSync extends EventEmitter {
     if (folder === '' || folder === '.') return this.rootFolder;
     for (const [id, value] of this.folders) if (value === folder) return id;
     const parent = await this.folderFor(path.posix.dirname(folder));
+    this.check();
     const created = await this.http!.json<{ _id: string }>(`/project/${this.link.overleafId}/folder`, { method: 'POST', entity: true, body: { json: { name: path.posix.basename(folder), parent_folder_id: parent } } });
     this.folders.set(created._id, folder); this.entities.set(created._id, { kind: 'folder', path: folder });
     return created._id;
@@ -893,6 +909,7 @@ export class PaperSync extends EventEmitter {
   private async upload(file: string, data: Buffer) {
     if (data.length > 50 * 1024 * 1024) { this.skipped.add(file); return; }
     const folder = await this.folderFor(path.posix.dirname(file));
+    this.check();
     const result = await this.http!.json<{ success: boolean; entity_id?: string; entity_type?: 'doc' | 'file'; hash?: string }>(`/Project/${this.link.overleafId}/upload?folder_id=${folder}`, { method: 'POST', entity: true, body: { form: { name: path.posix.basename(file) }, file: { field: 'qqfile', name: path.posix.basename(file), data } }, limit: 1024 * 1024 });
     if (!result.success || !result.entity_id) throw new Error('Overleaf refused the change.');
     for (const [id, entity] of this.entities) if (entity.path === file && id !== result.entity_id) { this.entities.delete(id); this.drop(id); }
@@ -911,13 +928,19 @@ export class PaperSync extends EventEmitter {
     catch (error) { if ((error as { statusCode?: number }).statusCode === 422) this.skipped.add(file); else throw error; }
   }
   private async download(file: string, id: string) {
+    const before = read(this.root, file);
     const data = await this.http!.download(`/project/${this.link.overleafId}/file/${id}`);
+    this.check();
+    const current = read(this.root, file);
+    // The author may have saved another version while the download ran.
+    if (current && !current.equals(data) && (!before || !current.equals(before))) this.conflict(file, 'file', { backup: this.store.backup(this.link.id, current) });
     this.writeFile(file, data);
     const entity = this.entities.get(id);
     if (entity) entity.hash = entity.agreed = blobHash(data);
     this.baseDirty = true;
   }
   private async removeRemote(id: string) {
+    this.check();
     const entity = this.entities.get(id);
     if (!entity) return;
     try { await this.http!.json(`/project/${this.link.overleafId}/${entity.kind}/${id}`, { method: 'DELETE', entity: true }); }
@@ -927,14 +950,21 @@ export class PaperSync extends EventEmitter {
     for (let folder = path.posix.dirname(entity.path); folder !== '.'; folder = path.posix.dirname(folder)) {
       const folderId = [...this.folders].find(([, value]) => value === folder)?.[0];
       if (!folderId || [...this.entities.values()].some(item => item.kind !== 'folder' && item.path.startsWith(folder + '/')) || fs.existsSync(path.join(this.root, folder))) break;
+      this.check();
       try { await this.http!.json(`/project/${this.link.overleafId}/folder/${folderId}`, { method: 'DELETE', entity: true }); } catch (error) { if (connectionLevel(error)) throw error; break; }
       this.folders.delete(folderId); this.entities.delete(folderId);
     }
     this.baseDirty = true;
   }
   private async moveRemote(id: string, from: string, to: string) {
+    this.check();
     const entity = this.entities.get(id)!;
-    if (path.posix.dirname(from) !== path.posix.dirname(to)) await this.http!.json(`/project/${this.link.overleafId}/${entity.kind}/${id}/move`, { method: 'POST', entity: true, body: { json: { folder_id: await this.folderFor(path.posix.dirname(to)) } } });
+    if (path.posix.dirname(from) !== path.posix.dirname(to)) {
+      const folder = await this.folderFor(path.posix.dirname(to));
+      this.check();
+      await this.http!.json(`/project/${this.link.overleafId}/${entity.kind}/${id}/move`, { method: 'POST', entity: true, body: { json: { folder_id: folder } } });
+    }
+    this.check();
     if (path.posix.basename(from) !== path.posix.basename(to)) await this.http!.json(`/project/${this.link.overleafId}/${entity.kind}/${id}/rename`, { method: 'POST', entity: true, body: { json: { name: path.posix.basename(to) } } });
     entity.path = to;
     const doc = this.docs.get(id);
@@ -986,7 +1016,7 @@ export class PaperSync extends EventEmitter {
         write(this.root, conflict.path, data);
       } else {
         const data = read(this.root, conflict.path), current = data && decode(data);
-        const text = current ? restore(normalize(current), conflict) : null;
+        const text = current !== null ? restore(normalize(current), conflict) : null;
         if (text === null) throw new Error('This passage has changed since. Edit it in the file instead.');
         write(this.root, conflict.path, lineEnding(current!) === '\r\n' ? text.replace(/\n/g, '\r\n') : text);
       }

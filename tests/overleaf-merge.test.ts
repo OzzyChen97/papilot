@@ -26,6 +26,12 @@ test('a passage both sides changed keeps Overleaf’s text, and the author’s c
   assert.equal(restore('changed entirely\n', merged.conflicts[0]), null);
 });
 
+test('restoring a whole-file deletion requires the file to remain empty', () => {
+  const conflict = { ours: 'My text', theirs: '', before: '', after: '' };
+  assert.equal(restore('', conflict), 'My text');
+  assert.equal(restore('Someone added new text', conflict), null);
+});
+
 test('merging is safe whatever both sides did', () => {
   const text = fc.array(fc.constantFrom('a\n', 'b\n', 'c', ' ', 'x\n'), { maxLength: 8 }).map(parts => parts.join(''));
   fc.assert(fc.property(text, text, text, (base, ours, theirs) => {

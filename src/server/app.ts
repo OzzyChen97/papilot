@@ -152,7 +152,7 @@ export async function buildApp(options: AppOptions) {
     const service = overleaf = new OverleafService(path.join(DATA, 'overleaf'), store, () => manuscripts.emit('change'));
     overleafByWorkspace.set(workspace, service);
     const paperImports = imports;
-    imports.overleaf = { download: (url, root) => service.download(url, root), attach: (link, project) => service.attach(link, project), discard: link => service.discard(link) };
+    imports.overleaf = { download: (url, root) => service.download(url, root), finish: (link, register) => service.finishImport(link, register), discard: link => service.discard(link) };
     service.start(link => paperImports.holdsLink(link));
     ownsOverleaf = true;
   }
@@ -819,17 +819,18 @@ export async function buildApp(options: AppOptions) {
   // Manual LaTeX edits from the PDF, without an agent: the passage under a
   // click as it is on disk now, any lines of a file, a save of those lines
   // (which compiles the manuscript), and where saved lines were printed.
-  app.post<{ Params: { id: string } }>('/api/projects/:id/manuscript/source/locate', project(), request => {
-    const project = store.project(request.params.id), b = (request.body || {}) as any;
-    if (!isRect(b.rect)) throw new Error('Click the text whose source you want to edit.');
-    const rects = Array.isArray(b.rects) ? b.rects.filter(isRect).slice(0, 200) : [];
-    return locateSource(manuscripts, project.id, project.path, string(b.key, 'Preview key', 64), Number(b.page), b.rect, rects, typeof b.quote === 'string' ? b.quote.slice(0, 20000) : '');
-  });
   // A paper synced with Overleaf also says who wrote what there.
   const authored = <T extends SourceFile>(projectId: string, source: T): T => {
     const authors = overleaf.authors(projectId, source.file, source.text);
     return authors.length ? { ...source, authors } : source;
   };
+  app.post<{ Params: { id: string } }>('/api/projects/:id/manuscript/source/locate', project(), async request => {
+    const project = store.project(request.params.id), b = (request.body || {}) as any;
+    if (!isRect(b.rect)) throw new Error('Click the text whose source you want to edit.');
+    const rects = Array.isArray(b.rects) ? b.rects.filter(isRect).slice(0, 200) : [];
+    const found = await locateSource(manuscripts, project.id, project.path, string(b.key, 'Preview key', 64), Number(b.page), b.rect, rects, typeof b.quote === 'string' ? b.quote.slice(0, 20000) : '');
+    return { ...found, source: found.source ? authored(project.id, found.source) : null };
+  });
   app.get<{ Params: { id: string }; Querystring: { file?: string } }>('/api/projects/:id/manuscript/source', project(), async request =>
     authored(request.params.id, await readFile(store.project(request.params.id).path, request.query.file)));
   app.post<{ Params: { id: string } }>('/api/projects/:id/manuscript/source', { ...project(), bodyLimit: 8 * 1024 * 1024 }, request => {

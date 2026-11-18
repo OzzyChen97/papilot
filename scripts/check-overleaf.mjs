@@ -29,6 +29,7 @@ const linked = () => ({ projectId: 'paper', origin: OVERLEAF, overleafId: projec
   cursors: [{ client: 'P.ada', id: 'u1', name: 'Ada Lovelace', file: 'chapters/intro.tex', line: 1, column: 4 }, { client: 'P.me', id: 'me', name: 'Author', you: true, file: 'chapters/intro.tex', line: 0, column: 0 }],
   conflicts: [{ id: 'c1', path: 'chapters/intro.tex', kind: 'text', at: Date.now(), ours: 'Our results improve accuracy by 4%.', theirs: 'Our results improve accuracy by 3.8%.' }], skipped: [] });
 let importNeedsSignIn = true, browserSessions = [];
+let projectSessionExpired = false, compareSessionExpired = false;
 const poster = 'f'.repeat(24);
 const intro = 'Intro line one.\nAda wrote this sentence.\nThird line.\n';
 await context.route('**/api/**', async route => {
@@ -53,11 +54,18 @@ await context.route('**/api/**', async route => {
   if (url.pathname === '/api/overleaf/browsers') return json({ sessions: browserSessions });
   if (url.pathname === '/api/overleaf/sign-in') {
     if (!/^overleaf_session2=s%3A/.test(body.cookies) && !browserSessions.some(session => session.id === body.browser)) return route.fulfill({ status: 400, json: { error: 'Overleaf did not accept this sign-in. Sign in again.' } });
+    projectSessionExpired = compareSessionExpired = false;
     overleaf = { ...overleaf, accounts: [{ origin: OVERLEAF, email: 'author@example.com' }] };
     return json({ origin: OVERLEAF, email: 'author@example.com' });
   }
-  if (url.pathname === '/api/overleaf/projects') return json({ projects: [{ id: projectId, name: 'Thesis draft', updatedAt: Date.now() - 3600_000, owner: 'Ada Lovelace', access: 'readAndWrite' }, { id: 'f'.repeat(24), name: 'Workshop poster', updatedAt: Date.now() - 86400_000 * 40, owner: 'Author', access: 'owner' }] });
-  if (url.pathname === '/api/projects/paper/overleaf/compare') return json({ name: body.url.includes(poster) ? 'Workshop poster' : 'Thesis draft', same: 12, overleaf: ['figures/new.pdf'], local: ['notes.md'], different: ['main.tex', 'chapters/intro.tex'], origin: OVERLEAF, overleafId: projectId });
+  if (url.pathname === '/api/overleaf/projects') {
+    if (projectSessionExpired) return route.fulfill({ status: 401, json: { error: 'Sign in to Overleaf again.', signIn: OVERLEAF } });
+    return json({ projects: [{ id: projectId, name: 'Thesis draft', updatedAt: Date.now() - 3600_000, owner: 'Ada Lovelace', access: 'readAndWrite' }, { id: 'f'.repeat(24), name: 'Workshop poster', updatedAt: Date.now() - 86400_000 * 40, owner: 'Author', access: 'owner' }] });
+  }
+  if (url.pathname === '/api/projects/paper/overleaf/compare') {
+    if (compareSessionExpired) return route.fulfill({ status: 401, json: { error: 'Sign in to Overleaf again.', signIn: OVERLEAF } });
+    return json({ name: body.url.includes(poster) ? 'Workshop poster' : 'Thesis draft', same: 12, overleaf: ['figures/new.pdf'], local: ['notes.md'], different: ['main.tex', 'chapters/intro.tex'], origin: OVERLEAF, overleafId: projectId });
+  }
   if (url.pathname === '/api/projects/paper/overleaf/link') { overleaf = { ...overleaf, syncs: [body.replace ? { ...linked(), name: 'Workshop poster', overleafId: poster, url: `${OVERLEAF}/project/${poster}`, conflicts: [] } : linked()] }; return json(overleaf); }
   if (url.pathname === '/api/projects/paper/overleaf/conflicts/c1/use-mine') { overleaf = { ...overleaf, syncs: [{ ...linked(), conflicts: [] }] }; return json(overleaf); }
   if (url.pathname === '/api/projects/paper/overleaf/unlink') { overleaf = { ...overleaf, syncs: [] }; return json(overleaf); }
@@ -92,8 +100,29 @@ try {
   // The account's projects, then the comparison and the choice.
   await expect(dialog.getByRole('button', { name: /Thesis draft/ })).toBeVisible();
   await page.screenshot({ path: 'test-results/overleaf-projects.png', animations: 'disabled' });
+  // The account stays stored when its session expires. Opening the picker
+  // must offer sign-in again and load projects afterwards without a state refresh.
+  await page.keyboard.press('Escape');
+  projectSessionExpired = true;
+  await page.locator('.project-switcher').click();
+  await page.getByRole('menuitem', { name: 'Sync with Overleaf…' }).click();
+  await expect(dialog.getByLabel('Session cookie from overleaf.com')).toBeFocused();
+  await expect(dialog.getByText('Loading projects…')).toBeHidden();
+  await page.screenshot({ path: 'test-results/overleaf-reauth.png', animations: 'disabled' });
+  await dialog.getByLabel('Session cookie from overleaf.com').fill('overleaf_session2=s%3Arenewed');
+  await dialog.getByRole('button', { name: 'Sign in' }).click();
+  await expect(dialog.getByRole('button', { name: /Thesis draft/ })).toBeVisible();
+  // Expiry during comparison keeps the selected project and resumes that
+  // comparison after sign-in, rather than asking the author to choose it again.
+  compareSessionExpired = true;
   await dialog.getByRole('button', { name: /Thesis draft/ }).click();
+  await expect(dialog.getByLabel('Session cookie from overleaf.com')).toBeFocused();
+  await dialog.getByLabel('Session cookie from overleaf.com').fill('overleaf_session2=s%3Arenewed-again');
+  await dialog.getByRole('button', { name: 'Sign in' }).click();
   await expect(dialog.getByText('2 files differ')).toBeVisible();
+  assert.deepEqual(posts.filter(post => post.path.endsWith('/overleaf/compare')).map(post => post.body), [
+    { url: `${OVERLEAF}/project/${projectId}` }, { url: `${OVERLEAF}/project/${projectId}` },
+  ]);
   await expect(dialog.getByRole('button', { name: 'Keep Overleaf’s' })).toHaveAttribute('aria-pressed', 'true');
   await dialog.getByRole('button', { name: 'Keep this paper’s' }).click();
   await page.screenshot({ path: 'test-results/overleaf-compare.png', animations: 'disabled' });

@@ -113,6 +113,9 @@ function mergeCharacters(base: string, ours: string, theirs: string): { text: st
  *  if that passage can still be found without doubt. */
 export function restore(text: string, conflict: Conflict): string | null {
   const { ours, theirs, before, after } = conflict;
+  // A whole-file deletion has no surrounding text. It is unambiguous only
+  // while the file is still empty; searching for an empty needle never ends.
+  if (!theirs && !before && !after) return text === '' ? ours : null;
   const places: number[] = [];
   if (theirs) for (let at = text.indexOf(theirs); at >= 0; at = text.indexOf(theirs, at + 1)) places.push(at);
   else for (let at = text.indexOf(before + after); at >= 0; at = text.indexOf(before + after, at + 1)) places.push(at + before.length);
