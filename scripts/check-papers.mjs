@@ -13,7 +13,17 @@ const projects = [{ id: 'alpha', name: 'Alpha paper', path: '/papers/alpha', cre
 const state = { version: '0.6.0', csrf: 'fixture', projects: structuredClone(projects), tasks: [], requests: [], runtime: { connected: true, authenticated: false, account: null, error: null, models: [] } };
 const git = { branch: 'main', upstream: null, ahead: 0, behind: 0, files: [], head: null };
 const requests = [], errors = [];
+let releaseInitialState;
+const initialState = new Promise(resolve => { releaseInitialState = resolve; });
 fs.mkdirSync('test-results', { recursive: true });
+async function checkSearchSpacing(page) {
+  const gap = await page.locator('.sidebar').evaluate(sidebar => {
+    const actions = sidebar.querySelector('.sidebar-actions');
+    const above = actions.getClientRects().length ? actions : sidebar.querySelector('.sidebar-header');
+    return sidebar.querySelector('.task-list-tools').getBoundingClientRect().top - above.getBoundingClientRect().bottom;
+  });
+  assert.equal(gap, 8, 'Task search keeps one gap below the visible divider, with or without paper navigation');
+}
 try {
   const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1280, height: 800 } });
   await context.route('**/api/**', route => {
@@ -27,7 +37,7 @@ try {
       return route.fulfill({ json: paper || { ok: true } });
     }
     if (url.pathname === '/api/runtime/requirements') return route.fulfill({ json: readyRequirements });
-    if (url.pathname === '/api/state') return route.fulfill({ json: state });
+    if (url.pathname === '/api/state') return initialState.then(() => route.fulfill({ json: state }));
     if (url.pathname === '/api/updates') return route.fulfill({ json: { currentVersion: state.version, latestVersion: state.version, phase: 'idle' } });
     if (url.pathname === '/api/events') return route.fulfill({ contentType: 'text/event-stream', body: ': fixture\n\n' });
     if (url.pathname.endsWith('/skills')) return route.fulfill({ json: { skills: [] } });
@@ -37,7 +47,12 @@ try {
   });
   const page = await context.newPage(); page.on('pageerror', error => errors.push(error.message));
   await page.goto(`http://127.0.0.1:${server.server.address().port}`);
+  await page.getByRole('searchbox', { name: 'Search tasks', exact: true }).waitFor();
+  await checkSearchSpacing(page);
+  releaseInitialState();
   const switcher = page.getByRole('button', { name: 'Paper: Alpha paper', exact: true });
+  await switcher.waitFor();
+  await checkSearchSpacing(page);
   async function edit(name) { await switcher.click(); await page.getByRole('menuitem', { name: `Edit ${name}`, exact: true }).click(); }
   await switcher.click(); await page.getByRole('menuitemradio', { name: 'Beta paper', exact: true }).waitFor();
   assert.equal(await page.locator('.paper-menu [aria-haspopup="menu"]').count(), 0, 'Paper edits have no submenu');
@@ -79,10 +94,21 @@ try {
   await edit('Alpha paper'); await dialog.getByRole('button', { name: 'Remove paper', exact: true }).click();
   await confirmation.getByRole('button', { name: 'Remove from Papilot', exact: true }).click(); await confirmation.waitFor({ state: 'hidden' });
   await page.getByRole('heading', { name: 'Add your first paper', exact: true }).waitFor();
+  for (const colorScheme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme });
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 800 });
+      if (width < 680) await page.getByRole('button', { name: 'Show task list', exact: true }).click();
+      await checkSearchSpacing(page);
+      await page.screenshot({ path: `test-results/task-search-empty-${width}-${colorScheme}.png`, animations: 'disabled' });
+      if (width < 680) await page.getByRole('button', { name: 'Hide task list', exact: true }).click();
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.emulateMedia({ colorScheme: 'light' });
   state.projects = structuredClone(projects);
   await page.reload(); await edit('Beta paper');
   assert.equal(await name.isEnabled(), true); assert.equal(await repo.isEnabled(), true);
   assert.equal(await dialog.getByRole('button', { name: 'Remove paper', exact: true }).count(), 1);
   assert.deepEqual(errors, []);
   console.log('PASS: Pencil opens one paper editor, both fields save together, failed saves are atomic, removal stays in the dialog, mobile and controls after reload');
-} finally { await browser.close(); await server.close(); }
+} finally { releaseInitialState(); await browser.close(); await server.close(); }
