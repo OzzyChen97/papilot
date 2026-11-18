@@ -25,6 +25,7 @@
 .import-link{margin:0 0 16px}
 .import-link-hint{display:flex;flex-wrap:wrap;gap:4px 12px;margin:8px 0 0;color:var(--text-3);font-size:11px;line-height:1.45}
 .import-source{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:var(--text-2)}
+.modal .import-path>.import-sync{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:12px;font-weight:400;color:var(--text);cursor:pointer}
 .import-reading{display:flex;align-items:center;gap:8px;margin:12px 0 0;font-size:12px;color:var(--text-2)}
 
 /* Phase 2: stepper */
@@ -104,7 +105,7 @@
 
 @media (max-width:680px){
   .import-dialog .button{min-height:36px;height:auto;padding-block:6px}
-  .import-drop-hint,.import-host-folder,.import-reading,.import-steps,.import-location-path,.import-notice,.import-status,.import-success,.import-problem,.import-summary{font-size:13px}
+  .import-drop-hint,.import-host-folder,.import-reading,.modal .import-path>.import-sync,.import-steps,.import-location-path,.import-notice,.import-status,.import-success,.import-problem,.import-summary{font-size:13px}
   .import-link-hint,.import-location-label,.import-settings>label,.import-elapsed,.import-pages,.import-problem-actions>span,.import-summary>.import-summary-note{font-size:13px}
 }
 
