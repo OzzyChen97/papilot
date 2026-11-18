@@ -44,7 +44,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 ### Fixed
 
 - Move keyboard focus into a skill after its details finish rendering, so opening it on a busy device does not leave focus on a hidden list item.
-- Align Overleaf sign-in fields, import switches and sidebar spacing with the workspace controls, including larger touch inputs and consistent labels on phones.
+- Align Overleaf sign-in fields, import switches and sidebar spacing with the workspace controls, including larger touch inputs and consistent labels on phones. Long settings category lists scroll without hiding the heading, search or footer.
 - Keep reasoning sliders visible while focused: the input no longer covers the track, knob and keyboard focus ring. Collaboration role headings use ordinary text spacing and cursors; the enable switch retains its touch target.
 - Keep pdfLaTeX selected when Unicode package or class examples appear only in comments, including comments inside multiline package lists. Escaped percent signs no longer hide active XeLaTeX hints during import or compilation. ([#123](https://github.com/PapilotAI/papilot/pull/123))
 

@@ -59,12 +59,27 @@ try {
           continue;
         }
         if (!await category.isVisible()) await page.locator('.settings-mobile-back').click();
+        if (language === 'en' && name === 'about' && width < 500) {
+          await category.scrollIntoViewIfNeeded();
+          const sidebar = await page.locator('.settings-sidebar').boundingBox();
+          const title = await page.locator('.settings-sidebar-title').boundingBox();
+          const footer = await page.locator('.settings-footer').boundingBox();
+          assert.ok(Math.abs(title.y - sidebar.y) <= 1, `${width}px: the phone settings heading stays visible at the end of the category list`);
+          assert.ok(footer.y + footer.height <= sidebar.y + sidebar.height, `${width}px: the settings footer stays in view`);
+          await expect(category).toBeInViewport();
+          await page.screenshot({ animations: 'disabled', path: `test-results/settings-navigation-${width}.png` });
+        }
         await category.click();
         if (name === 'latex') await page.locator('.latex-installation-facts').waitFor();
         if (name === 'updates') await page.locator('.settings-content-updates [role=alert]').waitFor();
         if (name === 'skills') await expect(page.locator('.skill-library-new')).toBeEnabled();
         if (name === 'quickNotes') await page.locator('.quick-note-text strong').getByText('Literaturverzeichnis', { exact: true }).waitFor();
         await page.evaluate(() => document.fonts.ready);
+        if (width > 760) {
+          const sidebar = await page.locator('.settings-sidebar').boundingBox();
+          const title = await page.locator('.settings-sidebar-title').boundingBox();
+          assert.ok(Math.abs(title.y - sidebar.y) <= 1, `${language}/${width}/${name}: scrolling to a category keeps the sidebar heading in place`);
+        }
         const content = page.locator('.settings-content');
         const overflow = await content.evaluate(root => {
           const issues = [root, ...root.querySelectorAll('*')].filter(element => {
