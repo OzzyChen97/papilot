@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { noteOptionsSummary, readPreparedNoteOptions, preparedOptionEdits, savePreparedNoteOptions, prepareNoteComparisons } from '../src/server/prepared-note-options.ts';
-import { noteOptionContext } from '../src/server/note-options.ts';
+import { noteOptionContext, noteOptionsKey } from '../src/server/note-options.ts';
 import { Store } from '../src/server/store.ts';
 import type { PreparedNoteOptions, Run, Task } from '../src/shared.ts';
 import type { NoteRound } from '../src/server/note-results.ts';
@@ -22,6 +22,42 @@ const prepared: PreparedNoteOptions = { note: 1, current: { label: 'Efficient', 
   { label: 'Specific', reason: 'Specify computational efficiency.', edits: [{ file: 'main.tex', find: after, replace: after.replace('efficient', 'computationally efficient') }] },
 ] };
 const response = (notes: unknown = [prepared]) => 'Revised the speed description.\n\n```papilot-note-options\n' + JSON.stringify({ notes }) + '\n```';
+
+for (const change of ['accept', 'reject another change', 'new round'] as const) test(`background previews discard stale results after ${change}`, async () => {
+  const store = new Store(':memory:');
+  let release!: () => void, started!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const rendering = new Promise<void>(resolve => { started = resolve; });
+  const task = { id: 'task', name: 'task', status: 'reviewing', review: { round: 1 } } as Task;
+  const run: Run = { id: 'run', taskId: task.id, requestKey: 'run', prompt: '', status: 'completed', createdAt: 1, finishedAt: 2, reviewRound: 1, noteOptions: [prepared] };
+  const key = noteOptionsKey(task.id, 'run:0', 1);
+  const choices = { round: 1, key: 'run:0', selected: 'current', options: ['efficient', 'quick', 'concise'].map((text, i) => ({
+    id: i ? text : 'current', label: text, reason: 'Clarify speed.', edits: [{ unit: 'c001', text }],
+  })) };
+  const state = { latest: 1, closed: false, decisions: { c001: 'pending', c002: 'pending' } };
+  const requests: unknown[] = [];
+  const client = {
+    url: `http://preview-test/${encodeURIComponent(change)}`,
+    get: async (route: string) => route.includes('/rounds/') ? { round: 1, before: 'before', after: 'after', units, sections: [], loose: [{ kind: 'change', units: ['c001', 'c002'] }] } : structuredClone(state),
+    post: async (_route: string, body: unknown) => { requests.push(body); started(); await gate; throw new Error('Obsolete preview failed'); },
+  } as unknown as ReviewClient;
+  let work: Promise<void> | undefined;
+  try {
+    store.saveRun(run);
+    store.saveItem({ id: run.id, taskId: task.id, type: 'user', text: '', createdAt: 1, meta: { notes: [{ where: 'main.tex line 1', quote: 'fast', comment: 'Clarify speed.' }] } });
+    store.savePreference(key, choices);
+    work = prepareNoteComparisons(store, task, client);
+    await rendering;
+    if (change === 'accept') state.decisions.c001 = 'accepted';
+    else if (change === 'new round') state.latest = 2;
+    else state.decisions.c002 = 'rejected';
+    release();
+    await work;
+    assert.equal(requests.length, 1, 'Obsolete comparisons stop before the next candidate');
+    assert.deepEqual((requests[0] as { rejected: string[] }).rejected, []);
+    assert.deepEqual(store.preference(key), choices, 'A stale failure cannot lock choices behind Retry');
+  } finally { release(); await work; store.close(); }
+});
 
 test('prepared choice counts are guidance, with a bounded response size', () => {
   for (const count of [0, 1, 2, 3, 5, 6]) {

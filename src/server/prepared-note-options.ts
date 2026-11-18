@@ -149,8 +149,8 @@ export async function savePreparedNoteOptions(store: Store, task: Task, run: Run
   }
 }
 
-/** Finish the saved choices before the task becomes reviewable. Also covers
- * rebased choices after a local acceptance publishes the next round. */
+/** Warm optional PDFs after publication. Decisions and newer rounds can
+ * supersede this work; they must never wait for it or inherit stale errors. */
 export async function prepareNoteComparisons(store: Store, task: Task, client: ReviewClient,
   progress: (completed: number, total: number) => void = () => {}, stopped = () => false) {
   const runs = store.runs().filter(run => run.taskId === task.id);
@@ -170,17 +170,29 @@ export async function prepareNoteComparisons(store: Store, task: Task, client: R
   for (const options of contexts) for (const option of options.options) {
     if (stopped()) return;
     if (option.id === options.selected) continue;
+    const context = await noteOptionContext(store, task, options.key, client);
+    if (stopped()) return;
+    if (context.options.locked || context.options.comparisonKey !== options.comparisonKey) break;
+    let previewError: string | undefined;
     try {
-      await client.post(`${taskRoute(task.name)}/source/options/preview`, { id: option.id, round: options.round, edits: option.edits }, 1850000);
-      delete option.previewError;
+      await client.post(`${taskRoute(task.name)}/source/options/preview`, { id: option.id, round: options.round, edits: option.edits, rejected: context.rejected }, 1850000);
     } catch (error) {
-      // A broken optional choice must not discard the main review or spin on
-      // every tab switch. An explicit Retry can try rendering it again.
-      option.previewError = (error as Error).message;
-      console.warn('Could not prepare note comparison:', task.name, option.label, option.previewError);
+      previewError = (error as Error).message;
     }
     if (stopped()) return;
-    store.savePreference(noteOptionsKey(task.id, options.key, options.round), options);
+    const fresh = await noteOptionContext(store, task, options.key, client);
+    if (stopped()) return;
+    if (fresh.options.locked || fresh.options.comparisonKey !== options.comparisonKey) break;
+    const saved = fresh.options.options.find(candidate => candidate.id === option.id);
+    if (saved) {
+      // Read the latest choices again: a decision or another preview may have
+      // finished while this PDF compiled. Never replace their cached state.
+      if (previewError) {
+        saved.previewError = previewError;
+        console.warn('Could not prepare note comparison:', task.name, option.label, previewError);
+      } else delete saved.previewError;
+      store.savePreference(noteOptionsKey(task.id, options.key, options.round), fresh.options);
+    }
     progress(++completed, total);
   }
 }

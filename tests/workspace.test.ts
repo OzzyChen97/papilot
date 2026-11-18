@@ -34,11 +34,11 @@ const preparation = (f: { workspace: Workspace }, id: string) => {
   return job;
 };
 
-test('publication stays building until all saved option comparisons are ready', async () => {
+for (const mode of ['publication', 'a selected option', 'a superseded publication', 'shutdown'] as const) test(`${mode} does not wait for optional comparisons`, async () => {
   const gate = deferred<unknown>(), started = deferred<void>();
   const detail = { round: 1, before: 'before', after: 'after', units: [{ id: 'word', file: 'main.tex', old_start: 1, old_end: 1, old_text: 'fast', new_text: 'efficient', text_ops: [['replace', 0, 4, 0, 9]] }], sections: [], loose: [{ kind: 'change', units: ['word'] }] };
   const f = fixture(async (_method, route) => {
-    if (route.endsWith('/source/options/preview')) { started.resolve(); return gate.promise; }
+    if (route.endsWith('/source/options/preview')) { started.resolve(); await gate.promise; throw new Error('Invalid optional LaTeX'); }
     if (route.includes('/rounds/')) return detail;
     if (route.includes('/state?')) return { latest: 1, closed: false, decisions: { word: 'pending' } };
     if (route.endsWith('/publish')) return { job: 'job' };
@@ -54,17 +54,28 @@ test('publication stays building until all saved option comparisons are ready', 
       { id: 'current', label: 'Current', edits: [{ unit: 'word', text: 'efficient' }] },
       { id: 'quick', label: 'Concise', reason: 'A familiar term.', edits: [{ unit: 'word', text: 'quick' }] },
     ] });
-    const published = f.workspace.publish(f.task.id, run);
+    const resume = mode === 'a selected option';
+    if (resume) f.store.updateTask(f.task.id, { status: 'building', pendingBuild: { requestId: 'choice', job: 'job', runs: [run.id], sendBack: false, restarts: 0 } });
+    let finished = false;
+    const published = (resume ? f.workspace.resumeBuild(f.task.id) : f.workspace.publish(f.task.id, run)).then(() => { finished = true; });
     await started.promise;
-    assert.equal(f.store.task(f.task.id).status, 'building');
-    assert.equal(f.store.task(f.task.id).review?.job?.phase, 'options');
-    assert.deepEqual(f.store.task(f.task.id).review?.job?.options, { completed: 0, total: 1 });
-    assert.ok(f.store.task(f.task.id).pendingBuild, 'The preparation can recover after restart');
-    gate.resolve({});
-    await published;
+    await tick();
+    assert.equal(finished, true, 'Publication must finish without waiting for an optional PDF');
     assert.equal(f.store.task(f.task.id).status, 'reviewing');
     assert.equal(f.store.task(f.task.id).pendingBuild, null);
     assert.equal(f.store.task(f.task.id).review?.job?.status, 'done');
+    assert.equal(f.workspace.busyForUpdate, false, 'Optional previews do not keep the workspace busy');
+    const background = (f.workspace as any).optionPreparations.get(f.task.id) as Promise<void>;
+    assert.ok(background);
+    if (mode === 'a superseded publication') f.store.updateTask(f.task.id, { status: 'building', pendingBuild: { requestId: 'new', job: 'next', runs: [], sendBack: false, restarts: 0 }, review: { state: 'building', round: 2, counts: {}, job: { id: 'next', phase: 'render', status: 'running' } } });
+    if (mode === 'shutdown') f.workspace.close();
+    const current = f.store.task(f.task.id);
+    gate.resolve({});
+    await Promise.all([published, background]);
+    assert.deepEqual(f.store.task(f.task.id), current, 'An optional PDF must not change task or publication state');
+    const error = f.store.preference<any>(noteOptionsKey(f.task.id, run.id + ':0', 1)).options[1].previewError;
+    if (mode === 'a superseded publication' || mode === 'shutdown') assert.equal(error, undefined, 'Obsolete work must not write errors');
+    else assert.match(error, /Invalid optional LaTeX/);
   } finally { gate.resolve({}); f.close(); }
 });
 
