@@ -43,19 +43,19 @@ export function TaskDocument({ task, projectId, manuscript, placeholder, ...revi
   const comments = useMemo<PdfComment[]>(() => draft.notes.flatMap((note, index) => note.paper && note.strip.startsWith('paper:') ? [{ id: note.id, page: note.paper.page, rects: note.paper.rects, number: index + 1 }] : []), [draft.notes]);
   // Until a task has a review, its PDF takes every marking tool. The marks
   // join the same unsent message as comments: each is drawn on the PDF it was
-  // made on and goes to the agent with the next follow-up. A task with a
-  // review marks the review instead.
+  // made on (PdfView picks those of the build on screen) and goes to the agent
+  // with the next follow-up. A task with a review marks the review instead.
   const markable = Boolean(review.onComment) && !hasReview;
   const busy = draft.busy || task.status === 'deleting';
   const [region, setRegion] = useState(false), [group, setGroup] = useState<NoteGroup | null>(null);
   const marks = useMemo(() => draft.notes.flatMap((note, index) => {
     const paper = note.paper;
-    if (!paper || !note.strip.startsWith('paper:') || (lastRound ? paper.round !== lastRound : paper.key !== key)) return [];
+    if (!paper || !note.strip.startsWith('paper:') || (lastRound && paper.round !== lastRound)) return [];
     const box: Rect = [Math.min(...paper.rects.map(r => r[0])), Math.min(...paper.rects.map(r => r[1])), Math.max(...paper.rects.map(r => r[2])), Math.max(...paper.rects.map(r => r[3]))];
     const shown: Annotation = { id: note.id, projectId, key: paper.key || '', page: paper.page, rect: box, ...(note.region ? {} : { rects: paper.rects }), comment: note.comment, quote: note.quote, source: null, createdAt: 0,
       ...(note.group ? { group: note.group } : {}), ...(note.kind ? { kind: note.kind } : {}), ...(note.stamp ? { stamp: note.stamp } : {}) };
     return [{ note: shown, number: index + 1 }];
-  }), [draft.notes, projectId, lastRound, key]);
+  }), [draft.notes, projectId, lastRound]);
   const mark = useCallback(async (page: number, rect: Rect, rects: Rect[], quote: string, text: string, noteGroup?: NoteGroup, options?: { kind?: MarkKind; stamp?: string; key?: string }) => {
     const marked = rects.length ? rects : [rect];
     const id = reviewDraft(task.id).add({ strip: `paper:${page}`, round: lastRound || task.review?.round || 0, where: `PDF page ${page + 1}`, quote, rects: marked, region: !rects.length && options?.kind !== 'point',
@@ -86,7 +86,7 @@ export function TaskDocument({ task, projectId, manuscript, placeholder, ...revi
     <div className={'task-document' + (visibleReview ? ' has-review' : '')}>
     <div className="task-document-preview" aria-hidden={visibleReview} inert={visibleReview}>
       {url ? <Suspense fallback={<div className="review-loading"><p role="status">{t('Opening the PDF…')}</p></div>}>
-        {markable ? <PdfView ref={reader} pdfKey={lastRound ? undefined : key} place={'task-pdf:' + task.id} url={url} notes={marks} active={draft.editing?.id ?? ''} region={region} setRegion={setRegion}
+        {markable ? <PdfView ref={reader} pdfKey={lastRound ? undefined : key} keyedNotes={!lastRound} place={'task-pdf:' + task.id} url={url} notes={marks} active={draft.editing?.id ?? ''} region={region} setRegion={setRegion}
           group={group} onGroupChange={setGroup} markingDisabled={busy} onCreate={mark} onSelect={note => { reviewDraft(task.id).focus(note.id); review.onComment?.(); }}
           history={{ canUndo: !busy && draft.canUndo, canRedo: !busy && draft.canRedo, undo: () => { reviewDraft(task.id).undo(); }, redo: () => { reviewDraft(task.id).redo(); } }}
           outline={outline} section={section} onOutline={setOutline} onSection={setSection} lead={(review.lead || modes) ? <>{review.lead}{modes}</> : undefined} tools={review.tools}/>

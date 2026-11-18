@@ -90,11 +90,18 @@ try {
   const rail = preview.getByRole('toolbar', { name: 'Marking tools' });
   await expect(rail.getByRole('button', { name: 'Note', exact: true })).toBeVisible();
   const word = preview.locator('.page[data-page-number="1"] .textLayer span').filter({ hasText: /\S/ }).first();
-  const selectWord = () => word.evaluate(element => {
-    const range = document.createRange(); range.selectNodeContents(element);
-    const selection = document.getSelection(); selection.removeAllRanges(); selection.addRange(range);
-    document.dispatchEvent(new Event('selectionchange'));
-  }).then(() => expect(preview.locator('.add-note')).toBeVisible());
+  // pdf.js redraws the pages under a selection when the reader resizes, such
+  // as when a failed build's message appears; select again until the page
+  // offers its tools.
+  const addNote = preview.locator('.add-note');
+  const selectWord = () => expect.poll(async () => {
+    if (!await addNote.isVisible()) await word.evaluate(element => {
+      const range = document.createRange(); range.selectNodeContents(element);
+      const selection = document.getSelection(); selection.removeAllRanges(); selection.addRange(range);
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+    return addNote.isVisible();
+  }).toBe(true);
   const unsent = () => page.evaluate(() => JSON.parse(localStorage.getItem('papilot:review-notes:task') || '{"notes":[]}').notes);
   await selectWord(); await rail.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect.poll(async () => (await unsent()).map(note => [note.kind, note.paper?.key, note.strip])).toEqual([['delete', 'baseline', 'paper:0']]);
@@ -113,13 +120,27 @@ try {
   await expect.poll(async () => (await unsent()).length).toBe(0);
   await expect(preview.locator('.note-mark')).toHaveCount(0);
   // Unsent notes resize the reader, which redraws its pages; compare the
-  // pages loaded from here on.
-  await readable(); original = await canvas.elementHandle();
+  // pages loaded once the same canvas stays on screen between polls.
+  await readable();
+  original = null;
+  await expect.poll(async () => {
+    const current = await canvas.elementHandle(), settled = Boolean(original) && await current.evaluate((element, last) => element === last, original);
+    original = current; return settled;
+  }, { intervals: [500] }).toBe(true);
   // A new, unavailable PDF must leave the successfully loaded pages intact.
   manuscript.build = { status: 'failed', key: 'broken', current: false, error: 'Compile failed' };
   await sync();
   await expect.poll(() => requests.some(url => url.includes('key=broken'))).toBe(true);
   await readable(); assert.ok(await original.evaluate(el => el.isConnected));
+  // The retained PDF still takes marks: they name its build, show on it, and
+  // undo takes them back.
+  await rail.getByRole('button', { name: 'Select', exact: true }).click();
+  await selectWord(); await rail.getByRole('button', { name: 'Delete', exact: true }).click();
+  await expect.poll(async () => (await unsent()).map(note => [note.kind, note.paper?.key])).toEqual([['delete', 'baseline']]);
+  await expect(preview.locator('.note-mark[data-kind="delete"]').first()).toBeVisible();
+  await rail.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect.poll(async () => (await unsent()).length).toBe(0);
+  await expect(preview.locator('.note-mark')).toHaveCount(0);
   manuscript.build.key = 'baseline';
   task.status = 'building'; task.review = { state: 'building', round: 1, counts: {} }; await sync();
   await expect(page.locator('.review-viewport')).toHaveClass(/review-pending/);

@@ -1,6 +1,6 @@
 import type { NoteGroup } from '../note-groups.ts';
 import { GroupPicker, GroupAction, groupName, groupStyle } from './note-groups.tsx';
-import { forwardRef, Fragment, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from 'react';
+import { forwardRef, Fragment, useEffect, useImperativeHandle, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentLoadingTask, PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
@@ -196,6 +196,10 @@ export const PdfView = forwardRef<PdfHandle, {
   url: string; words?: string; notes: { note: Annotation; number: number }[]; active: string; region: boolean; setRegion: (on: boolean) => void;
   /** The build `url` shows; new marks name the build whose pages they were made on. */
   pdfKey?: string;
+  /** `notes` span builds, each naming the build it was made on in `key`;
+   *  the reader shows those of the build on screen, also while a replacement
+   *  downloads or after it fails. */
+  keyedNotes?: boolean;
   /** Source binding is available for a live manuscript; task PDFs are immutable snapshots. */
   anchorApi?: (action: 'capture' | 'resolve', body: unknown) => Promise<any>;
   onCreate: (page: number, rect: Rect, rects: Rect[], quote: string, comment: string, group?: NoteGroup, options?: { reveal?: boolean; quote?: boolean; kind?: MarkKind; stamp?: string; key?: string }) => Promise<void>;
@@ -254,7 +258,8 @@ export const PdfView = forwardRef<PdfHandle, {
   const [shown, setShown] = useState({ url: props.url, words: props.words, key: props.pdfKey }), shownRef = useRef(shown); shownRef.current = shown;
   const heldNotes = useRef(props.notes), held = shown.url !== props.url;
   if (!held) heldNotes.current = props.notes;
-  const notes = held ? heldNotes.current : props.notes, notesRef = useRef(notes); notesRef.current = notes;
+  const shownNotes = useMemo(() => props.keyedNotes ? props.notes.filter(({ note }) => note.key === (shown.key ?? '')) : null, [props.keyedNotes, props.notes, shown.key]);
+  const notes = shownNotes ?? (held ? heldNotes.current : props.notes), notesRef = useRef(notes); notesRef.current = notes;
   const picking = useRef<ReturnType<typeof touchSelection> | null>(null);
   const [draft, updateDraft] = useState<{ page: number; rect: Rect } | null>(null), draftRef = useRef(draft);
   const setDraft = (value: typeof draft) => { draftRef.current = value; updateDraft(value); };
