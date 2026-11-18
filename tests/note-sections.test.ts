@@ -3,11 +3,45 @@ import path from 'node:path';
 import test from 'node:test';
 import { groupSectionNotes, type SectionHeading } from '../src/server/note-sections.ts';
 import { PdfReader } from '../src/server/pdf-reader.ts';
+import { readSectionHeadings, readSectionNotes } from '../src/server/pdf-sections.ts';
 import { notesInstructions, readNotesInstructions, summarizeNotes } from '../src/notes.ts';
 import type { Annotation } from '../src/shared.ts';
 
 const note = (id: string, extra: Partial<Annotation> = {}): Annotation => ({ id, projectId: 'paper', key: 'pdf', page: 0, rect: [0.1, 0.5, 0.3, 0.52], comment: 'Clarify this.', quote: 'the result', source: null, createdAt: 1, ...extra });
 const source = (line: number, file = 'main.tex'): Annotation['source'] => ({ file, lines: [line, line] });
+
+test('a long outline reads page boxes only; grouping parses only pages containing current marks', async t => {
+  const { PdfDocument } = await import('../engine/src/render/pdf.ts');
+  const document = new PdfDocument(path.resolve('tests/fixtures/outline.pdf'));
+  try {
+    document.outline = Array.from({ length: 100 }, () => document.outline).flat();
+    const parsed = t.mock.method(document, 'page');
+    const build = { pdf: path.resolve('tests/fixtures/outline.pdf'), root: path.resolve('tests/fixtures'), sourceDir: '' };
+    const headings = readSectionHeadings(document, build);
+    assert.equal(headings.length, 300);
+    assert.equal(parsed.mock.callCount(), 0, 'bookmark positions never extract text or glyphs');
+    const result = await readSectionNotes(document, build, 'pdf', [note('current', { page: 1 }), note('old', { key: 'old' })], headings, async () => { throw Error('Bookmark-only grouping needs no SyncTeX'); });
+    assert.deepEqual(parsed.mock.calls.map(call => call.arguments[0]), [1]);
+    assert.equal(result.unplaced, 1);
+  } finally { document.close(); }
+});
+
+test('section page reads yield between pages so foreground locations can run', async t => {
+  const { PdfDocument } = await import('../engine/src/render/pdf.ts');
+  const document = new PdfDocument(path.resolve('tests/fixtures/outline.pdf'));
+  try {
+    const original = document.page.bind(document), parsed: number[] = [], observed: number[] = [];
+    t.mock.method(document, 'page', (number: number) => {
+      parsed.push(number);
+      setImmediate(() => observed.push(parsed.length));
+      return original(number);
+    });
+    const compiled = { pdf: path.resolve('tests/fixtures/outline.pdf'), root: path.resolve('tests/fixtures'), sourceDir: '' };
+    await readSectionNotes(document, compiled, 'pdf', [note('first'), note('second', { page: 1 })], readSectionHeadings(document, compiled), async () => null);
+    assert.deepEqual(parsed, [0, 1]);
+    assert.equal(observed[0], 1, 'other queued work runs before the next page is parsed');
+  } finally { document.close(); }
+});
 
 test('section scopes include descendant notes across pages, files and color groups', () => {
   const headings: SectionHeading[] = [
@@ -49,6 +83,15 @@ test('no outline and stale locations stay unassigned rather than selecting a who
   assert.deepEqual(groupSectionNotes([note('n')], 'pdf', []), { sections: [], contexts: {}, unplaced: 1 });
   const result = groupSectionNotes([note('n')], 'pdf', [{ id: 'one', title: 'One', level: 1, position: { page: 0, top: 0.1 } }, { id: 'unknown', title: 'Unknown', level: 1 }]);
   assert.equal(result.unplaced, 1);
+});
+
+test('a heading on a later page does not require its column layout to place an earlier mark', () => {
+  const headings: SectionHeading[] = [
+    { id: 'first', title: 'First', level: 1, position: { page: 0, top: 0.1 } },
+    { id: 'later', title: 'Later', level: 1, position: { page: 1, top: 0.1 } },
+  ];
+  const result = groupSectionNotes([note('first')], 'pdf', headings, new Map([[1, { gutter: 0.5, spanning: [] }]]));
+  assert.deepEqual(result.sections.map(section => section.notes), [['first'], []]);
 });
 
 test('the PDF worker reads real bookmark hierarchy and same-page subsection boundaries', async () => {
