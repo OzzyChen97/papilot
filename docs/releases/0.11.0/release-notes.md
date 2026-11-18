@@ -4,17 +4,29 @@
 
 Write with Papilot Writer, keep an Overleaf project in sync, and annotate and review on a redesigned PDF canvas. This release also brings paper templates, reading anchors, more agent integrations, and experimental incremental compilation.
 
+![The PDF canvas showing a typeset before-and-after change beside its note](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/assets/readme-showcase/hero.png)
+
+*Workspace illustration. Feature screenshots below use sample papers and demo accounts.*
+
 ## Papilot Writer
 
 **Papilot Writer is a built-in agent for manuscript work.** It searches the paper, follows its outline and references, and uses a paper map derived from compilation. The conversation shows file edits inline, locates changes by section or PDF passage, and exposes a breakdown of the context sent to the model. Provider setup is available inside Papilot. ([#166](https://github.com/PapilotAI/papilot/pull/166), [#180](https://github.com/PapilotAI/papilot/pull/180))
 
 Sign in with ChatGPT or GitHub Copilot, or connect a provider with an API key. Claude in Writer requires an Anthropic API key. Writer keeps its credentials separate from the native Pi CLI; provider subscriptions and API usage are not included with Papilot.
 
+![Papilot Writer provider setup with ChatGPT, GitHub Copilot and API-key providers](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/writer.png)
+
+*Connect your model provider inside Writer.*
+
 ## Work with Overleaf coauthors
 
 **Link a paper to Overleaf and sync while Papilot runs.** Applied edits, incoming text changes, and file creation, renaming and deletion travel both ways. Papilot shows coauthors' cursors and source changes, uses Overleaf's selected main file and compiler, and reconnects after interruptions. Sign in through Overleaf's own page in the desktop app, reuse a supported browser session, or provide a session cookie. Self-hosted Overleaf servers are supported. ([#212](https://github.com/PapilotAI/papilot/pull/212), [#214](https://github.com/PapilotAI/papilot/pull/214))
 
 After time apart, conflicting passages keep Overleaf's text and retain your version for **Use mine**. Read-only and review-only access can receive changes but cannot upload local edits. Build output, secrets and ignored new files stay local; files over 50 MB and unsupported names are listed as not synced. See [setup and sync limits](https://github.com/PapilotAI/papilot/blob/main/docs/guide.md#sync-with-overleaf).
+
+![Overleaf sync panel showing coauthors and a passage changed on both sides](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/overleaf.png)
+
+*See who is editing and choose which version of a conflicting passage to keep.*
 
 ## A clearer workspace for reading and review
 
@@ -23,11 +35,22 @@ After time apart, conflicting passages keep Overleaf's text and retain your vers
 - **Send a section's comments to a task.** Choose a section and its nested subsections in **My notes → Add to task**, then adjust individual selections before sending. A compiled outline or PDF bookmarks provides the section hierarchy. Grouping runs without blocking new annotations or source lookup. ([#176](https://github.com/PapilotAI/papilot/pull/176), [#221](https://github.com/PapilotAI/papilot/pull/221))
 - **Manage tasks together.** Archive or delete tasks in bulk with progress and retry support. Choose another agent through the model menu to restart the original request in a linked replacement task; choosing another model on the same agent keeps the conversation. ([#199](https://github.com/PapilotAI/papilot/pull/199), [#201](https://github.com/PapilotAI/papilot/pull/201))
 
+<p>
+  <img src="https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/crop-editor.png" alt="Crop margins on a phone by dragging the four edges" width="300">
+  <img src="https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/crop-reading.png" alt="The same sample paper after applying the margin crop" width="300">
+</p>
+
+*Adjust the margins, then read the same paper with more room for its content.*
+
 ## Start and organize papers
 
 - **Templates, blank papers and imports share one flow.** Browse [Papilot Universe](https://papilot.ai/universe/) templates, start from the bundled example, or import source from arXiv, Overleaf sharing links, public GitHub repositories and HTTPS archives. Template selection retains drafts and offers recovery when the catalog is unavailable. ([#185](https://github.com/PapilotAI/papilot/pull/185), [#198](https://github.com/PapilotAI/papilot/pull/198), [#202](https://github.com/PapilotAI/papilot/pull/202), [#203](https://github.com/PapilotAI/papilot/pull/203))
 - **Open a folder or import a copy explicitly.** Folder pickers and clearer labels distinguish editing originals from copying them. Local folder and ZIP uploads stream to disk without the former 64 MiB / 5,000-file caps. ([#208](https://github.com/PapilotAI/papilot/pull/208))
 - **Compile different documents in one repository.** Browse source files and switch between a paper, slides or response letter. Each document keeps its build settings, notes and reading position; an existing task stays with the document it was created for. ([#188](https://github.com/PapilotAI/papilot/pull/188))
+
+![New paper template gallery with example, NeurIPS, ICML, ICLR, CVPR and ECCV papers](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/templates.png)
+
+*Browse real template previews without leaving the new-paper dialog.*
 
 ## More agents and opt-in experiments
 
@@ -37,6 +60,10 @@ Two features are off by default in **Settings → Experiments**:
 
 - **Compile with PhiTeX.** Reuse incremental compiler state between builds while keeping each review's output stable. Install PhiTeX separately on the Papilot host; it has its own license and still needs a TeX installation. LuaLaTeX papers and existing chapter-only reviews retain latexmk. New PhiTeX comparisons compile the whole document without individual-pass previews; custom latexmk rules are unsupported, and XeLaTeX support is less complete with a slow initial font index. See [PhiTeX setup and limitations](https://github.com/PapilotAI/papilot/blob/main/docs/guide.md#compile-with-phitex-experimental). ([#222](https://github.com/PapilotAI/papilot/pull/222))
 - **Collaboration mode.** Codex coordinates selected workers for quick edits, polishing, and checks and reasoning. Isolated edits are integrated and a separate Codex pass audits annotation coverage, with worker activity visible in the chat. Workers are limited to selected existing text files; model audits do not guarantee correctness. See [setup and limitations](https://github.com/PapilotAI/papilot/blob/main/docs/annotation-routing.md). ([#204](https://github.com/PapilotAI/papilot/pull/204))
+
+![Experiments settings with PhiTeX enabled and separate collaboration worker choices for three roles](https://raw.githubusercontent.com/PapilotAI/papilot/407b9f9a1008b7d24e2920b7dc5b85c37cd15fb4/docs/releases/0.11.0/images/experiments.png)
+
+*Opt into incremental compilation and choose who handles each kind of annotation.*
 
 ## Fixes that keep work moving
 
