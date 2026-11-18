@@ -1602,6 +1602,13 @@ body {
 .review-body > #paper::-webkit-scrollbar {
   display: none;
 }
+/* A narrow pane keeps the change map's gutter tight: the current change's
+   tools need the width. */
+@media (max-width: 720px) {
+  .review-body > #paper {
+    padding-right: 26px;
+  }
+}
 /* The change map replaces the paper's scrollbar: a thin rule with the
    visible part as a thumb and each change as a mark in its decision's
    colour, widening under the pointer. */

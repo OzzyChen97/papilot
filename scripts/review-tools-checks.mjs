@@ -47,7 +47,7 @@ export async function checkReviewTools(page, writes, sent) {
   await viewer().locator('.review-note-layer').first().waitFor({ state: 'attached' });
   await expect(tool('Expand marking tools')).toBeVisible();
   await tool('Expand marking tools').click();
-  await expect.poll(() => viewer().locator('.review-body').evaluate(element => parseFloat(getComputedStyle(element).marginLeft))).toBe(46);
+  await expect.poll(() => viewer().locator('.review-body').evaluate(element => parseFloat(getComputedStyle(element).marginLeft))).toBe(56);
   await tool('Note').click(); await select();
   await expect(page.getByRole('textbox', { name: 'Comment 1', exact: true })).toBeFocused();
   await page.getByRole('textbox', { name: 'Comment 1', exact: true }).fill('Keep this phrase.');
