@@ -60,7 +60,8 @@ const routeApi = async route => {
   }
   if (url.pathname === '/api/overleaf/projects') {
     if (projectSessionExpired) return route.fulfill({ status: 401, json: { error: 'Sign in to Overleaf again.', signIn: OVERLEAF } });
-    return json({ projects: [{ id: projectId, name: 'Thesis draft', updatedAt: Date.now() - 3600_000, owner: 'Ada Lovelace', access: 'readAndWrite' }, { id: 'f'.repeat(24), name: 'Workshop poster', updatedAt: Date.now() - 86400_000 * 40, owner: 'Author', access: 'owner' }] });
+    return json({ projects: [{ id: projectId, name: 'Thesis draft', updatedAt: Date.now() - 3600_000, owner: 'Ada Lovelace', access: 'readAndWrite' }, { id: 'f'.repeat(24), name: 'Workshop poster', updatedAt: Date.now() - 86400_000 * 40, owner: 'Author', access: 'owner' },
+      ...Array.from({ length: 8 }, (_, index) => ({ id: String(index).padStart(24, '0'), name: `Research notes ${index + 1}`, updatedAt: null, owner: 'Author', access: 'owner' }))] });
   }
   if (url.pathname === '/api/projects/paper/overleaf/compare') {
     if (compareSessionExpired) return route.fulfill({ status: 401, json: { error: 'Sign in to Overleaf again.', signIn: OVERLEAF } });
@@ -372,6 +373,43 @@ try {
   await expect(phoneKeep).toBeChecked();
   await phone.screenshot({ path: 'test-results/overleaf-import-touch-320-dark.png', animations: 'disabled' });
   await touch.close();
+  // More than eight projects exposes search beside the translated heading.
+  // CJK text must not be compressed into several lines by the modal input styles.
+  overleaf = { accounts: [{ origin: OVERLEAF, email: 'author@example.com' }], syncs: [] };
+  projectSessionExpired = false;
+  const chinese = await browser.newContext({ locale: 'zh-CN', viewport: { width: 1440, height: 960 }, hasTouch: true, isMobile: true });
+  await chinese.route('**/api/**', routeApi);
+  const picker = await chinese.newPage();
+  picker.on('pageerror', error => errors.push(error.message));
+  await picker.addInitScript(() => localStorage.setItem('papilot:language', 'zh-CN'));
+  await picker.goto(origin);
+  await picker.locator('.project-switcher').click();
+  await picker.getByRole('menuitem', { name: '与 Overleaf 同步…', exact: true }).click();
+  const heading = picker.locator('.overleaf-projects-head > span');
+  const search = picker.getByRole('searchbox', { name: '搜索项目' });
+  await expect(heading).toHaveText('你的项目');
+  await expect(search).toBeVisible();
+  for (const width of [1440, 390, 320]) {
+    await picker.setViewportSize({ width, height: 960 });
+    for (const colorScheme of ['light', 'dark']) {
+      await picker.emulateMedia({ colorScheme });
+      await expect(picker.locator('html')).toHaveAttribute('data-theme', colorScheme);
+      await picker.screenshot({ path: `test-results/overleaf-projects-zh-${width}-${colorScheme}.png`, animations: 'disabled' });
+      const lines = await heading.evaluate(element => { const range = document.createRange(); range.selectNodeContents(element); return range.getClientRects().length; });
+      assert.equal(lines, 1, `Chinese project heading stays on one line at ${width}px`);
+      const titleBox = await heading.boundingBox(), searchBox = await search.boundingBox();
+      assert.ok(searchBox.x >= 0 && searchBox.x + searchBox.width <= width, 'project search stays in the viewport');
+      assert.ok(searchBox.x >= titleBox.x + titleBox.width || searchBox.y >= titleBox.y + titleBox.height, 'project search does not overlap the heading');
+      await search.fill('Workshop');
+      await expect(picker.locator('.overleaf-projects li')).toHaveCount(1);
+      await expect(picker.locator('.overleaf-projects li')).toContainText('Workshop poster');
+      await search.fill('no such project');
+      await expect(picker.locator('.overleaf-projects li')).toHaveText('无匹配项目');
+      await search.clear();
+      await expect(picker.locator('.overleaf-projects li')).toHaveCount(10);
+    }
+  }
+  await chinese.close();
   assert.deepEqual(errors, []);
   console.log('Overleaf sync UI checks passed.');
 } finally {

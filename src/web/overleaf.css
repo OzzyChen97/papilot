@@ -28,8 +28,9 @@ form.overleaf-link { margin-top: 16px; }
 .overleaf-quiet { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--text-2); }
 
 .overleaf-projects { margin-top: 18px; }
-.overleaf-projects-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--text-3); }
-.overleaf-projects-head input { width: 180px; margin: 0; }
+.overleaf-projects-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px; font-size: 12px; font-weight: 500; color: var(--text-3); }
+.overleaf-projects-head > span { flex: none; max-width: 100%; }
+.modal .overleaf-projects-head input { width: 180px; min-width: 0; max-width: 100%; margin: 0; }
 .overleaf-projects ul { overscroll-behavior: contain; list-style: none; margin: 0; padding: 4px; max-height: 280px; overflow: auto; border-radius: var(--r-lg); background: var(--bg-subtle); box-shadow: inset 0 0 0 1px var(--line); }
 .overleaf-projects li > button { display: flex; align-items: baseline; gap: 12px; width: 100%; padding: 8px 10px; border-radius: var(--r); text-align: left; font-size: 13.5px; color: var(--text); }
 .overleaf-projects li > button:hover:not(:disabled), .overleaf-projects li > button:focus-visible { background: var(--bg-hover); }
@@ -100,5 +101,5 @@ button.overleaf-person-file:focus-visible { outline: 2px solid var(--accent); ou
 
 @media (max-width: 520px) {
   .overleaf-versions { grid-template-columns: 1fr; }
-  .overleaf-projects-head input { width: 140px; }
+  .modal .overleaf-projects-head input { width: 140px; }
 }

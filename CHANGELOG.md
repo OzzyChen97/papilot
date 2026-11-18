@@ -47,6 +47,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- Keep the Overleaf project-picker heading on one line beside search, including Chinese labels; let controls wrap when space is limited.
 - Keep space above task search while the workspace loads or no paper is open, so the field does not touch the sidebar divider.
 - Move keyboard focus into a skill after its details finish rendering, so opening it on a busy device does not leave focus on a hidden list item.
 - Align Overleaf sign-in fields, import switches and sidebar spacing with the workspace controls, including larger touch inputs and consistent labels on phones. Long settings category lists scroll without hiding the heading, search or footer.
