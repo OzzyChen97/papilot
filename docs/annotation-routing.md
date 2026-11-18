@@ -20,6 +20,8 @@ Below the switch, each role has a worker and, when the model offers it, a reason
 
 A worker can be any model of **Codex**, **Antigravity** (`agy`) or **OpenCode** found on the Papilot host. By default every role uses Codex with the coordinator's model and effort (**Same as coordinator**), so the mode works with Codex alone. The coordinator is told which worker runs each role. Changes apply to the next delegation, including in running tasks.
 
+Choosing an Antigravity or OpenCode **Default** model resolves that host's current default when the worker starts. The selected reasoning effort still applies; an unavailable Antigravity effort fails explicitly even if the model no longer offers any effort variants.
+
 For example, to send quick edits to DeepSeek and polishing to Gemini:
 
 1. Install OpenCode, open its TUI, use `/connect` to add a provider (such as **OpenCode Go** or a DeepSeek API key) and check `/models`. OpenCode owns the credentials; Papilot does not read or copy them, and the provider's billing settings apply.
@@ -27,6 +29,8 @@ For example, to send quick edits to DeepSeek and polishing to Gemini:
 3. Select **Reconnect** in **Settings → Agents**, then choose the models under **Quick edits** and **Polishing**, for example `opencode-go/deepseek-v4.1-flash` at **Max** and `gemini-4-argon` at **High**.
 
 A chosen model must still be offered by the host when a worker starts; otherwise the delegation fails with an explicit error instead of switching models, and the coordinator handles that work itself after explaining why. `PAPILOT_OPENCODE_BIN` and `PAPILOT_AGY_BIN` override CLI paths. `PAPILOT_AGY_PROXY` applies an HTTP proxy only to Antigravity.
+
+OpenCode workers also retain providers and models configured through `OPENCODE_CONFIG_CONTENT`, while replacing its permission rules with the restrictions on delegated files.
 
 See [OpenCode providers](https://opencode.ai/docs/providers/) and [Antigravity CLI](https://antigravity.google/docs/cli/headless).
 
@@ -54,7 +58,7 @@ Each delegation is a line in the task's chat, named by its role. While a worker 
 
 ![Delegations with a running, a finished and a stopped worker](assets/collaboration-workers.png)
 
-**Stop worker** stops only that worker. None of its edits are merged; the coordinator is told and does that work itself. Other workers and edits that were already merged are unaffected. Nothing stops a worker automatically, so use this when one seems stuck.
+**Stop worker** stops only that worker. None of its edits are merged; the coordinator is told and does that work itself. Once a worker's edits have been integrated, it is finished and a stop request reports that it has already finished. Other workers and edits that were already merged are unaffected. Nothing stops a worker automatically, so use this when one seems stuck.
 
 ## Development checks
 

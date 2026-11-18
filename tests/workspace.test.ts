@@ -3676,6 +3676,31 @@ test('a worker\'s steps and changes appear under its delegation, and the author 
     assert.throws(() => f.workspace.stopWorker(f.task.id, line('call-hang')), /already finished/);
   } finally { f.close(); }
 });
+test('a worker cannot be stopped after integration while its temporary files are being removed', async (t) => {
+  const f = await collaborationFixture(), cleanup = deferred<void>(), release = deferred<void>();
+  const originalRm = fs.promises.rm;
+  let copy = '', work: Promise<void> | undefined;
+  const removal = t.mock.method(fs.promises, 'rm', async (target: fs.PathLike, options?: fs.RmOptions) => {
+    if (String(target) === copy) { cleanup.resolve(); await release.promise; }
+    return originalRm(target, options);
+  });
+  try {
+    const turn = f.store.task(f.task.id).turnId!, callId = 'call-polish';
+    f.workspace.workflowGenerate = async (_worker, _prompt, _signal, edit) => {
+      copy = edit!.cwd;
+      fs.writeFileSync(path.join(copy, 'main.tex'), 'Polished text.'); return 'Polished.';
+    };
+    work = (f.workspace as any).toolCall(f.store.task(f.task.id), { id: callId, params: { tool: 'workflow_delegate', turnId: turn, callId, arguments: { role: 'polish', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] } } }, f.collaboration);
+    await cleanup.promise;
+    assert.equal(fs.readFileSync(path.join(f.root, 'main.tex'), 'utf8'), 'Polished text.');
+    assert.throws(() => f.workspace.stopWorker(f.task.id, `${f.task.id}:${turn}:${callId}`), /already finished/);
+    release.resolve(); await work;
+    const reply = f.collaboration.replies.at(-1)!.result as { success: boolean; contentItems: { text: string }[] };
+    assert.equal(reply.success, true);
+    assert.deepEqual(JSON.parse(reply.contentItems[0].text).appliedFiles, ['main.tex']);
+    assert.equal(fs.existsSync(copy), false);
+  } finally { release.resolve(); await work; removal.mock.restore(); f.close(); }
+});
 test('an active audit rejects new delegates and old delegate cleanup cannot clear a newer run', async () => {
   const f = await collaborationFixture(), gate = deferred<void>();
   const args = { role: 'polish', annotationIds: [f.run.id + ':1'], instruction: 'Polish.', sources: [{ file: 'main.tex', quote: 'Original text.' }] };

@@ -5,7 +5,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
-import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow as delegateTo, sourceEvidence, workflowInstructions, workflowItem, workflowNotes, workflowRequests, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, type WorkflowGenerate, type WorkflowWorker } from '../src/server/collaboration.ts';
+import { WORKFLOW_TOOLS, auditWorkflow, delegateWorkflow as delegateTo, sourceEvidence, workflowInstructions, workflowItem, workflowNotes, workflowRequests, workflowSnapshot, runWorkflowHelper, workflowOpenCodeConfig, workflowOpenCodeProfile, type WorkflowGenerate, type WorkflowWorker } from '../src/server/collaboration.ts';
 import { offeredAgents, noAgent, chosenAgent } from '../src/web/agent-choice.ts';
 import { AGENT_IDS, collaborationRoutes, validRoutes, type CollaborationRole, type CollaborationRoutes, type RuntimeStatus } from '../src/shared.ts';
 
@@ -205,6 +205,25 @@ test('OpenCode editing rules allow only selected files and keep unrelated native
   assert.equal(config.agent['papilot-default'].permission.edit['*'], 'deny');
   assert.equal(config.agent['papilot-default'].permission.edit['main.tex'], 'allow');
 });
+test('OpenCode workers retain host provider configuration while replacing permissions', () => {
+  const previous = process.env.OPENCODE_CONFIG_CONTENT;
+  const own = {
+    provider: { custom: { npm: '@ai-sdk/openai-compatible', options: { baseURL: 'https://example.invalid/v1' }, models: { manuscript: { name: 'Manuscript model' } } } },
+    model: 'custom/manuscript', permission: 'allow', permissions: [{ action: '*', resource: '*', effect: 'allow' }],
+    agent: { 'papilot-default': { permission: 'allow' } }, agents: { 'papilot-default': { permissions: [{ action: '*', resource: '*', effect: 'allow' }] } },
+  };
+  try {
+    process.env.OPENCODE_CONFIG_CONTENT = JSON.stringify(own);
+    const edit = { cwd: '/isolated', files: ['main.tex'] };
+    const config = JSON.parse(workflowOpenCodeProfile(edit).env!().OPENCODE_CONFIG_CONTENT!);
+    assert.deepEqual(config.provider, own.provider);
+    assert.equal(config.model, own.model);
+    const scoped = JSON.parse(workflowOpenCodeConfig(edit));
+    for (const key of ['permission', 'permissions', 'agent', 'agents']) assert.deepEqual(config[key], scoped[key], `${key} must retain worker isolation`);
+  } finally {
+    if (previous === undefined) delete process.env.OPENCODE_CONFIG_CONTENT; else process.env.OPENCODE_CONFIG_CONTENT = previous;
+  }
+});
 test('cancelled and stale runs never integrate late edits', async () => {
   for (const mode of ['cancel', 'stale']) {
     const f = paper(), controller = new AbortController(); let current = true, copy = '';
@@ -274,7 +293,7 @@ test('audit enforces exact coverage and independent verification, including unre
 });
 class Helper extends EventEmitter {
   ready = false; cwd = ''; closed = false; calls: any[] = [];
-  models: { model: string; supportedReasoningEfforts?: { reasoningEffort: string }[] }[] = [{ model: 'opencode-go/deepseek-v4.1-flash' }, { model: 'gemini-3.8-flash' }, { model: 'gemini-4-argon', supportedReasoningEfforts: ['low', 'medium', 'high'].map(reasoningEffort => ({ reasoningEffort })) }];
+  models: { model: string; isDefault?: boolean; supportedReasoningEfforts?: { reasoningEffort: string }[] }[] = [{ model: 'opencode-go/deepseek-v4.1-flash' }, { model: 'gemini-3.8-flash' }, { model: 'gemini-4-argon', supportedReasoningEfforts: ['low', 'medium', 'high'].map(reasoningEffort => ({ reasoningEffort })) }];
   async start() { this.ready = true; }
   async request(method: string, params: any): Promise<any> {
     this.calls.push({ method, params });
@@ -342,6 +361,21 @@ test('unavailable models and efforts fail without a fallback or model turn', asy
     await assert.rejects(runWorkflowHelper(worker, 'Polish', signal(), undefined, undefined, () => helper), error);
     assert.equal(helper.calls.some(entry => entry.method === 'thread/start'), false); assert.equal(helper.closed, true);
   }
+});
+test('Antigravity default models and models without effort variants reject unavailable efforts', async () => {
+  for (const [model, efforts] of [[null, ['low']], ['gemini-4-argon', []]] as const) {
+    const helper = new Helper();
+    helper.models = [{ model: 'gemini-4-argon', isDefault: true, supportedReasoningEfforts: efforts.map(reasoningEffort => ({ reasoningEffort })) }];
+    await assert.rejects(runWorkflowHelper({ agent: 'antigravity', model, effort: 'high' }, 'Polish', signal(), undefined, undefined, () => helper), /gemini-4-argon does not support high/);
+    assert.equal(helper.calls.some(entry => entry.method === 'thread/start'), false);
+    assert.equal(helper.closed, true);
+  }
+});
+test('Antigravity workers reject a selected effort when the default model is unknown', async () => {
+  const helper = new Helper();
+  await assert.rejects(runWorkflowHelper({ agent: 'antigravity', model: null, effort: 'high' }, 'Polish', signal(), undefined, undefined, () => helper), /does not offer a default model/);
+  assert.equal(helper.calls.some(entry => entry.method === 'thread/start'), false);
+  assert.equal(helper.closed, true);
 });
 test('saved routes default to Codex with the task model and reject unknown workers', () => {
   assert.deepEqual(collaborationRoutes(undefined), { quick: { agent: 'codex', model: null, effort: null }, polish: { agent: 'codex', model: null, effort: null }, rigorous: { agent: 'codex', model: null, effort: null } });

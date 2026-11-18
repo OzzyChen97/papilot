@@ -1126,6 +1126,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
       const callId = String(message.params?.callId || ''), parent = tool === 'workflow_delegate' && /^[\w-]{1,100}$/.test(callId) ? `${task.id}:${String(message.params?.turnId || task.turnId || '')}:${callId}` : '';
       const own = new AbortController();
       if (parent) this.workflowWorkers.set(parent, { taskId: task.id, controller: own });
+      const finished = () => { if (parent && this.workflowWorkers.get(parent)?.controller === own) this.workflowWorkers.delete(parent); };
       try {
         if (!controller || !run) throw new Error('The workflow is no longer active.');
         if (tool === 'workflow_delegate') {
@@ -1135,7 +1136,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         const notes = this.workflowNotesFor(task, run);
         this.store.saveRun({ ...this.store.runByKey(run.requestKey)!, workflowAudit: undefined });
         const signal = AbortSignal.any([controller.signal, own.signal]), live = () => Boolean(current()) && !signal.aborted;
-        const progress = parent ? { step: (step: WorkflowStep) => { if (live()) this.workerStep(task, parent, step); }, changes: (changes: WorkflowChange[]) => { if (live()) this.workerChanges(task, parent, changes); } } : {};
+        const progress = parent ? { step: (step: WorkflowStep) => { if (live()) this.workerStep(task, parent, step); }, changes: (changes: WorkflowChange[]) => { if (live()) this.workerChanges(task, parent, changes); }, integrated: finished } : {};
         const result = tool === 'workflow_delegate'
           ? await delegateWorkflow(task.worktree, notes, args, this.workflowGenerate, signal, () => Boolean(current()), role => this.workflowWorker(task, role), progress)
           : await auditWorkflow(task.worktree, notes, args, this.workflowGenerate, controller.signal, this.coordinator(task), this.workflowRequestsFor(task, run));
@@ -1147,7 +1148,7 @@ ${this.agentOf(task) === 'antigravity' ? 'Use file tools for manuscript edits. S
         reply(true, JSON.stringify(result));
       } catch (error) { if (!controller?.signal.aborted && this.workflowStops.get(task.id) === controller) reply(false, own.signal.aborted ? WORKER_STOPPED : errorText(error)); }
       finally {
-        if (parent && this.workflowWorkers.get(parent)?.controller === own) this.workflowWorkers.delete(parent);
+        finished();
         if (parent) this.settleWorker(task.id, parent, Boolean(controller?.signal.aborted));
         if (tool === 'workflow_audit' && this.workflowAudits.get(task.id) === run?.id) this.workflowAudits.delete(task.id);
         if (delegation && this.workflowDelegations.get(task.id) === delegation && --delegation.count === 0) this.workflowDelegations.delete(task.id);

@@ -45,7 +45,7 @@ async function integrate<T>(root: string, work: () => Promise<T>) {
   finally { release(); if (integrations.get(root) === tail) integrations.delete(root); }
 }
 
-export async function editWorkflowSources(root: string, sources: Source[], run: (edit: WorkflowEdit) => Promise<string>, signal: AbortSignal, current: () => boolean, changed?: (changes: WorkflowChange[]) => void) {
+export async function editWorkflowSources(root: string, sources: Source[], run: (edit: WorkflowEdit) => Promise<string>, signal: AbortSignal, current: () => boolean, changed?: (changes: WorkflowChange[]) => void, integrated?: () => void) {
   const baseRoot = realPath(root);
   const active = () => { signal.throwIfAborted(); if (!current() || realPath(root) !== baseRoot) throw new Error('The workflow is no longer active.'); };
   active();
@@ -104,6 +104,9 @@ export async function editWorkflowSources(root: string, sources: Source[], run: 
       const written: typeof writes = [];
       try { for (const write of writes) { atomicWrite(write.target, write.after, write.mode & 0o7777); written.push(write); } }
       catch (error) { for (const write of written.reverse()) { const now = sourceFile(baseRoot, write.file, true); if (now?.bytes.equals(write.after)) atomicWrite(write.target, write.before, write.mode & 0o7777); } throw error; }
+      // Edits are committed now; cancellation must stop being offered before
+      // asynchronous cleanup yields while the integrated result is retained.
+      integrated?.();
       return { status: conflicts.length ? 'conflict' : writes.length ? 'applied' : 'unchanged', appliedFiles: writes.map(write => write.file), conflicts, summary };
     });
   } finally { await fs.promises.rm(cwd, { recursive: true, force: true, maxRetries: 5 }); }
