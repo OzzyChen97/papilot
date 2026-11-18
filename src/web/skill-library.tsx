@@ -1,4 +1,4 @@
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from 'react';
 import type { Project, Skill } from '../shared.ts';
 import type { LibrarySkill, SkillCatalog, SkillDocument } from '../skill-library.ts';
 import { Icon } from './icons.tsx';
@@ -33,6 +33,7 @@ function skillError(failure: unknown) {
 export function SkillLibraryPanel({ project, api, onChanged, onClose, controls }: SkillLibraryOptions & { onClose: () => void; controls: Ref<SkillLibraryControls> }) {
   const panel = useRef<HTMLDivElement>(null), sequence = useRef(0), mounted = useRef(true), pending = useRef(false);
   const listOpener = useRef<HTMLButtonElement | null>(null);
+  const focusHeading = useRef(false);
   const [catalog, setCatalog] = useState<SkillCatalog | null>(null), [editor, setEditor] = useState<Editor | null>(null);
   const [query, setQuery] = useState(''), [filter, setFilter] = useState<Skill['source'] | 'all'>('all');
   const [busy, setBusy] = useState(false), [loading, setLoading] = useState(false), [error, setError] = useState(''), [saved, setSaved] = useState(false);
@@ -55,6 +56,12 @@ export function SkillLibraryPanel({ project, api, onChanged, onClose, controls }
     return () => window.removeEventListener('beforeunload', prevent);
   }, [dirty]);
   useEffect(() => { if (leaving || confirmDelete) panel.current?.querySelector<HTMLButtonElement>('[data-keep-editing]')?.focus(); }, [leaving, confirmDelete]);
+  // Move focus once the requested skill's loading state and content have committed.
+  useLayoutEffect(() => {
+    if (!focusHeading.current || loading) return;
+    const heading = panel.current?.querySelector<HTMLElement>('.skill-library-editor-heading h3');
+    if (heading) { focusHeading.current = false; heading.focus(); }
+  }, [editor, loading]);
   useImperativeHandle(controls, () => ({ cancel, navigate }));
 
   function navigate(proceed: () => void) {
@@ -63,18 +70,20 @@ export function SkillLibraryPanel({ project, api, onChanged, onClose, controls }
   }
   async function choose(skill: LibrarySkill) {
     const request = ++sequence.current;
+    focusHeading.current = false;
     setDetailOpen(true); setLoading(true); setError(''); setSaved(false); setConfirmDelete(false); setEditor(null);
     try {
       const document = await api<SkillDocument>(`/skills/${key(skill)}${suffix}`);
       if (mounted.current && request === sequence.current) {
+        focusHeading.current = true;
         setEditor({ ...document, saved: document }); setView(document.source === 'builtin' ? 'preview' : 'edit');
-        requestAnimationFrame(() => panel.current?.querySelector<HTMLElement>('.skill-library-editor-heading h3')?.focus());
       }
     } catch (failure) { if (mounted.current && request === sequence.current) setError(skillError(failure)); }
     finally { if (mounted.current && request === sequence.current) setLoading(false); }
   }
   async function reload() {
     const request = ++sequence.current;
+    focusHeading.current = false;
     setDetailOpen(false); setLoading(true); setError(''); setEditor(null); setSaved(false); setConfirmDelete(false);
     try {
       const next = await api<SkillCatalog>(`/skills${suffix}`);
@@ -83,6 +92,7 @@ export function SkillLibraryPanel({ project, api, onChanged, onClose, controls }
     } catch (failure) { if (mounted.current && request === sequence.current) { setError(skillError(failure)); setLoading(false); } }
   }
   function create(copy?: Editor) {
+    focusHeading.current = false;
     sequence.current++; setDetailOpen(true); setLoading(false); setError(''); setSaved(false); setView('edit'); setConfirmDelete(false);
     let id = copy?.id || '';
     if (copy) {
@@ -95,6 +105,7 @@ export function SkillLibraryPanel({ project, api, onChanged, onClose, controls }
   }
   function back() {
     navigate(() => {
+      focusHeading.current = false;
       sequence.current++; setDetailOpen(false); setEditor(null); setLoading(false); setError('');
       requestAnimationFrame(() => {
         const opener = listOpener.current;

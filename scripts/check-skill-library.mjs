@@ -29,8 +29,11 @@ const page = await browser.newPage({ locale: 'en-US', viewport: { width: 1440, h
 const errors = []; page.on('pageerror', error => errors.push(error.message));
 const snapshot = { version: 'test', csrf: 'fixture', projects: [project], tasks: [], requests: [], runtime: { connected: true, authenticated: true, account: null, error: null, models: [] } };
 const git = { branch: 'main', upstream: null, ahead: 0, behind: 0, head: null, files: [] };
+let releaseSkillRead;
+const skillRead = new Promise(resolve => { releaseSkillRead = resolve; });
 await page.route('**/api/**', async route => {
   const url = new URL(route.request().url()), json = data => route.fulfill({ json: data });
+  if (url.pathname === '/api/skills/builtin/check-math') await skillRead;
   if (url.pathname.startsWith('/api/skills')) return route.continue();
   if (url.pathname === '/api/runtime/requirements') return route.fulfill({ json: readyRequirements });
   if (url.pathname === '/api/state') return json(snapshot);
@@ -71,7 +74,12 @@ try {
   await dialog.getByRole('searchbox', { name: 'Search skills' }).fill('math');
   await expect(dialog.locator('.skill-library-item')).toHaveCount(1);
   await dialog.locator('.skill-library-item').click();
+  await expect(dialog.locator('.skill-library-detail').getByRole('status')).toHaveText('Loading skills…');
+  await expect(dialog.getByRole('heading', { name: 'Check math', exact: true })).toHaveCount(0);
+  releaseSkillRead();
   await expect(dialog.getByRole('heading', { name: 'Check math', exact: true })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: 'Copy and edit', exact: true })).toBeFocused();
   await expect(dialog.locator('.settings-sidebar')).toBeVisible();
   await page.screenshot({ path: '/tmp/papilot-skills-detail-desktop.png' });
   await dialog.getByRole('button', { name: 'All skills', exact: true }).click();
@@ -91,6 +99,7 @@ try {
   await content.fill('---\nname: Draft\ndescription: Draft description\ncustom-field: preserve me\n---\n\nUse short sentences.\n');
   await dialog.getByRole('button', { name: 'Edit', exact: true }).click();
   await dialog.getByLabel('Skill name', { exact: true }).fill('House style');
+  await expect(dialog.getByLabel('Skill name', { exact: true })).toBeFocused();
   await dialog.getByLabel('Description', { exact: true }).fill('Keep terminology consistent');
   await dialog.getByRole('button', { name: 'Choose an icon', exact: true }).click();
   await expect(picker.getByRole('radio')).toHaveCount(48);
