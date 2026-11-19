@@ -23,7 +23,7 @@ test('SSH picker follows Include paths, ignores patterns and deduplicates aliase
 test('SSH folder routes browse and save only the selected files and preserve competing edits', {
   skip: process.platform === 'win32' || spawnSync('python3', ['-V']).status !== 0,
 }, async t => {
-  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-ssh-')), root = path.join(temp, "Author's papers");
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-ssh-')), parent = path.join(temp, 'group'), root = path.join(parent, "Author's papers");
   t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'chapters'), { recursive: true });
   const name = "chapters/A's draft.tex", target = path.join(root, name);
@@ -73,8 +73,8 @@ test('SSH folder routes browse and save only the selected files and preserve com
   fs.writeFileSync(target, 'external revision');
   assert.equal((await op('save', edit)).statusCode, 409);
   assert.equal(fs.readFileSync(target, 'utf8'), 'external revision');
-  fs.renameSync(root, root + '-moved');
-  fs.symlinkSync(root + '-moved', root);
+  fs.renameSync(parent, parent + '-moved');
+  fs.symlinkSync(parent + '-moved', parent);
   assert.equal((await op('read', { path: name })).statusCode, 400);
   assert.equal((await op('forget', {})).statusCode, 200);
   assert.equal((await op('list', { path: '' })).statusCode, 400);

@@ -74,7 +74,12 @@ def save(directory, name, file, original, request, raw, text):
                     number = ctypes.get_errno()
                     raise OSError(number, os.strerror(number))
             elif hasattr(os, "listxattr"):
-                for key in os.listxattr(file.fileno()):
+                keys = os.listxattr(file.fileno())
+                # Drop a directory default ACL that was absent on the source.
+                acl = "system.posix_acl_access"
+                if acl not in keys and acl in os.listxattr(out.fileno()):
+                    os.removexattr(out.fileno(), acl)
+                for key in keys:
                     os.setxattr(out.fileno(), key, os.getxattr(file.fileno(), key))
             os.fsync(out.fileno())
         current = os.stat(name, dir_fd=directory, follow_symlinks=False)
