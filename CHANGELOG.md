@@ -6,6 +6,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- Keep successful task statuses green, including **Completed** answers without manuscript changes. Use gray for current results applied or committed to the manuscript. ([#227](https://github.com/PapilotAI/papilot/issues/227))
 - Show “Creating your paper…” in **New paper** only after **Create paper**, not while choosing a save folder. ([#224](https://github.com/PapilotAI/papilot/issues/224))
 
 ## [0.11.0] - 2026-11-18

@@ -133,6 +133,17 @@ await page.route('**/api/**', appRoutes);
 await page.route('**/review/**', reviewRoutes);
 const viewer = () => page.frameLocator('.review-frame');
 const sync = async () => page.evaluate(() => window.dispatchEvent(new Event('online')));
+async function expectStatus(locator, label, token) {
+  await expect(locator).toBeVisible();
+  await expect(locator).toHaveText(label);
+  const color = await page.evaluate(token => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(${token})`; document.body.append(probe);
+    const color = getComputedStyle(probe).color; probe.remove(); return color;
+  }, token);
+  await expect(locator).toHaveCSS('color', color);
+  await expect(locator.locator('i')).toHaveCSS('background-color', color);
+}
 try {
   await page.goto(origin);
   await viewer().locator('.change.current').waitFor();
@@ -745,7 +756,8 @@ try {
   const question = { ...task, id: 'question-fixture', name: 'question', title: 'What does this equation mean?', status: 'reviewing', review: { state: 'editing', round: null, counts: {}, job: { status: 'done', outcome: 'empty' } } };
   snapshot.tasks.push(question); await sync();
   await page.locator('[data-task="question-fixture"] .task-link').click();
-  await expect(page.locator('[data-task="question-fixture"] .status')).toHaveText('Completed');
+  const questionStatus = page.locator('[data-task="question-fixture"] .status');
+  await expectStatus(questionStatus, 'Completed', '--green');
   await expect(page.getByText('This equation expresses conservation of mass.', { exact: true })).toBeVisible();
   await expect(page.locator('.review-panel')).toBeVisible();
   const questionViews = page.getByRole('group', { name: 'Workspace view' });
@@ -756,6 +768,53 @@ try {
   await expect(page.locator('.review-panel')).toBeVisible();
   await expect(page.getByText('This equation expresses conservation of mass.', { exact: true })).toBeVisible();
   await page.screenshot({ path: 'test-results/answer-only-desktop.png', fullPage: true });
+  // Successful results stay green until the current changes reach the manuscript.
+  // Exercise an unselected row so status fixtures do not alter the open answer.
+  const savedReview = { state: 'done', round: 1, counts: { accepted: 1 }, unsent: 0, comments: 0, files: [] };
+  const applied = { mode: 'workspace', accepted: 'accepted' };
+  const committed = { mode: 'commit', accepted: 'accepted', commit: 'abc1234', branch: 'main' };
+  const statusBase = { ...question, id: 'status-fixture', name: 'status', title: 'Task status', review: savedReview, delivery: null, deferred: true };
+  const statusFixture = { ...statusBase };
+  const statusCases = [
+    ['Awaiting decisions', { review: { ...savedReview, state: 'reviewing', counts: { pending: 1 }, files: ['main.tex'] } }, 'Ready for review', '--green'],
+    ['Awaiting application', { review: { ...savedReview, files: ['main.tex'] } }, 'Review complete', '--green'],
+    ['Review without delivery', {}, 'Review complete', '--green'],
+    ['Applied changes', { delivery: applied }, 'Applied to manuscript', '--text-3'],
+    ['Committed changes', { delivery: committed }, 'Committed', '--text-3'],
+    ['Task branch only', { delivery: { ...committed, mode: 'branch' } }, 'Review complete', '--green'],
+    ['New changes after delivery', { delivery: committed, review: { ...savedReview, round: 2, files: ['main.tex'] } }, 'Review complete', '--green'],
+    ...['editing', 'done'].flatMap(state => [null, applied, committed].map(delivery => [
+      `Answer (${state}, ${delivery?.mode || 'no delivery'})`, { review: { ...question.review, state }, delivery }, 'Completed', '--green',
+    ])),
+    ...[
+      ['running', 'Codex is working', '--accent'], ['queued', 'Queued', '--accent'],
+      ['building', 'Preparing task results', '--accent'], ['waiting_input', 'Needs your reply', '--purple'],
+      ['interrupted', 'Paused', '--text-3'], ['failed', 'Needs attention', '--red'], ['uncertain', 'Check task status', '--red'],
+    ].map(([status, label, token]) => [status, { status, delivery: committed }, label, token]),
+  ];
+  snapshot.tasks.push(statusFixture); await sync();
+  for (const theme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme: theme });
+    await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 844 });
+      if (width === 390) await page.getByRole('button', { name: 'Show task list', exact: true }).click();
+      for (const [title, overrides, label, token] of statusCases) {
+        Object.assign(statusFixture, statusBase, overrides, { title }); await sync();
+        const row = page.locator('[data-task="status-fixture"]');
+        await expect(row.locator('.task-link')).toContainText(title);
+        await expectStatus(row.locator('.status'), label, token);
+      }
+      Object.assign(statusFixture, statusBase, { title: 'Applied changes', delivery: applied }); await sync();
+      await expectStatus(page.locator('[data-task="status-fixture"] .status'), 'Applied to manuscript', '--text-3');
+      await expectStatus(questionStatus, 'Completed', '--green');
+      await page.screenshot({ path: `test-results/answer-status-${theme}-${width}.png`, fullPage: true, animations: 'disabled' });
+      if (width === 390) await page.getByRole('button', { name: 'Hide task list', exact: true }).click();
+    }
+  }
+  snapshot.tasks = snapshot.tasks.filter(item => item !== statusFixture); await sync();
+  await page.emulateMedia({ colorScheme: 'light' });
+  console.log('PASS: Status labels and dots distinguish available results from applied or committed changes in light and dark themes on desktop and mobile');
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(questionViews.getByRole('button')).toHaveCount(2);
   await questionViews.getByRole('button', { name: 'Review', exact: true }).click();
