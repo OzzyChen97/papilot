@@ -24,11 +24,13 @@ test('SSH folder routes browse and save only the selected files and preserve com
   skip: process.platform === 'win32' || spawnSync('python3', ['-V']).status !== 0,
 }, async t => {
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-ssh-')), parent = path.join(temp, 'group'), root = path.join(parent, "Author's papers");
-  t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'chapters'), { recursive: true });
+  t.after(() => {
+    fs.chmodSync(fs.existsSync(parent + '-moved') ? parent + '-moved' : parent, 0o700);
+    fs.rmSync(temp, { recursive: true, force: true });
+  });
   // Shared lab servers often allow traversal but not listing in this parent.
-  fs.chmodSync(parent, 0o711);
-  t.after(() => { if (fs.existsSync(parent + '-moved')) fs.chmodSync(parent + '-moved', 0o700); });
+  fs.chmodSync(parent, 0o111);
   const name = "chapters/A's draft.tex", target = path.join(root, name);
   fs.writeFileSync(target, '\ufeffOriginal\r\n', { mode: 0o640 });
   fs.symlinkSync(temp, path.join(root, 'outside'));
@@ -76,6 +78,7 @@ test('SSH folder routes browse and save only the selected files and preserve com
   fs.writeFileSync(target, 'external revision');
   assert.equal((await op('save', edit)).statusCode, 409);
   assert.equal(fs.readFileSync(target, 'utf8'), 'external revision');
+  fs.chmodSync(parent, 0o700);
   fs.renameSync(parent, parent + '-moved');
   fs.symlinkSync(parent + '-moved', parent);
   assert.equal((await op('read', { path: name })).statusCode, 400);
