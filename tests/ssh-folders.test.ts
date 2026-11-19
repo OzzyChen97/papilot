@@ -26,6 +26,9 @@ test('SSH folder routes browse and save only the selected files and preserve com
   const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'papilot-ssh-')), parent = path.join(temp, 'group'), root = path.join(parent, "Author's papers");
   t.after(() => fs.rmSync(temp, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'chapters'), { recursive: true });
+  // Shared lab servers often allow traversal but not listing in this parent.
+  fs.chmodSync(parent, 0o711);
+  t.after(() => { if (fs.existsSync(parent + '-moved')) fs.chmodSync(parent + '-moved', 0o700); });
   const name = "chapters/A's draft.tex", target = path.join(root, name);
   fs.writeFileSync(target, '\ufeffOriginal\r\n', { mode: 0o640 });
   fs.symlinkSync(temp, path.join(root, 'outside'));

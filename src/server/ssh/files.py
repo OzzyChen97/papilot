@@ -9,7 +9,8 @@ import stat
 import sys
 
 LIMIT = 2_000_000  # Same document size as Papilot's manuscript editor.
-DIRECTORY = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+DIRECTORY = os.O_DIRECTORY | os.O_NOFOLLOW
+SEARCH = getattr(os, "O_PATH", getattr(os, "O_SEARCH", os.O_RDONLY)) | DIRECTORY
 CONFLICT = "conflict"
 
 
@@ -99,26 +100,27 @@ def handle(request):
     root = request["root"]
     if action == "connect":
         root = os.path.realpath(os.path.expanduser(root))
-    directory = os.open("/", DIRECTORY)
+    parts = request.get("path", "").split("/") if request.get("path") else []
+    if any(part in ("", ".", "..") for part in parts):
+        raise ValueError("Invalid file path.")
+    browsing = action in ("connect", "list")
+    if not browsing and (not parts or action not in ("read", "save")):
+        raise ValueError("Invalid file path.")
+    # Walk the canonical root and the requested directories without following
+    # symlinks. A shared ancestor can grant search permission but not listing.
+    parents = [part for part in root.split("/") if part] + (parts if browsing else parts[:-1])
+    directory = os.open("/", SEARCH)
     try:
-        # Reopen the canonical root without following replaced ancestors.
-        for part in root.split("/"):
-            if part:
-                child = os.open(part, DIRECTORY, dir_fd=directory)
-                os.close(directory)
-                directory = child
-        parts = request.get("path", "").split("/") if request.get("path") else []
-        if any(part in ("", ".", "..") for part in parts):
-            raise ValueError("Invalid file path.")
-        browsing = action in ("connect", "list")
-        for part in parts if browsing else parts[:-1]:
-            child = os.open(part, DIRECTORY, dir_fd=directory)
+        for part in parents:
+            child = os.open(part, SEARCH, dir_fd=directory)
             os.close(directory)
             directory = child
+        if browsing or action == "save":
+            readable = os.open(".", os.O_RDONLY | DIRECTORY, dir_fd=directory)
+            os.close(directory)
+            directory = readable
         if browsing:
             return {"root": root, "entries": listing(directory)}
-        if not parts or action not in ("read", "save"):
-            raise ValueError("Invalid file path.")
         writing = action == "save"
         if writing:
             # All Papilot clients lock the same parent even across atomic renames.
