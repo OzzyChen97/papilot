@@ -70,7 +70,9 @@ Papilot uses the `codex` on your `PATH` when it is version 0.164.0 or newer; oth
 
 ### Edit a remote folder over SSH
 
-Choose **Import or open → SSH remote folder**. Pick a host from the computer’s `~/.ssh/config`, including literal aliases in `Include` files, or select **Manual connection** and enter the host, username, port and optional identity file. A blank user or port uses OpenSSH’s configuration. Choose **Connect** to browse from your remote home directory, or enter a starting path first. Use the up arrow to browse a parent directory, open the folder you want, then select **Use this folder**. That folder appears under **Saved connections** the next time you open the dialog.
+Choose **Import or open → SSH remote folder**. Pick a host from the computer’s `~/.ssh/config`, including literal aliases in `Include` files, or select **Manual connection** and enter the host, username, port and optional identity file. A blank user or port uses OpenSSH’s configuration. Choose **Preview remote folders** to start at the server root (`/`). Open directories to see their subfolders and filenames. Select any parent in the path to go back. **Go to folder…** also accepts a known path. When you see your manuscript, choose **Use this folder**. That folder appears under **Saved connections** the next time you open the dialog. Choose **Open saved folder** to return to it directly.
+
+![Previewing the folders and filenames on an SSH server](assets/ssh-folder-preview.png)
 
 Select a folder to browse it, then select a source file to edit it in Papilot. **Save**, **⌘S** or **Ctrl+S** writes it back to the server. If another editor changed the file, your draft stays open. Copy your changes, reload the current source, then reapply the parts you want to keep. **Forget connection** removes the saved bookmark.
 

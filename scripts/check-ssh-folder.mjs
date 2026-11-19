@@ -13,6 +13,7 @@ export async function checkSshFolder(page) {
     'Table~\\ref{tab:results} summarizes the measurements.', '',
   ].join('\n');
   let text = initial, revision = 1, failSave = false, folder = null, saved = false;
+  const browsed = [];
   const entries = [{ name: 'sections', folder: true }, { name: 'main.tex', folder: false }, { name: 'references.bib', folder: false }];
   const match = '**/api/ssh{,/**}';
   await page.route(match, async route => {
@@ -21,10 +22,19 @@ export async function checkSshFolder(page) {
     if (url === '/api/ssh') return json({ aliases: ['research-lab'], folders: saved ? [folder] : [] });
     if (url.endsWith('/browse')) {
       if (body.host === 'offline') return route.fulfill({ status: 400, json: { error: 'Connection timed out.' } });
+      if (body.host === 'shared-server') {
+        if (body.root === '/') return route.fulfill({ status: 403, json: { error: 'Permission denied' } });
+        assert.equal(body.root, '/home/alex/thesis');
+        assert.equal(body.canonical, false);
+        return json({ root: body.root, page: 0, pages: 1, entries });
+      }
       assert.equal(body.host, 'research-lab');
-      const tree = { '~': ['/home/alex', ['thesis']], '/home': ['/home', ['alex']], '/home/alex': ['/home/alex', ['thesis']], '/home/alex/thesis': ['/home/alex/thesis', ['sections']] };
-      const [root, directories] = tree[body.root];
-      return json({ root, entries: directories.map(name => ({ name, folder: true })) });
+      browsed.push(body.root);
+      const tree = { '/': ['data', 'home', 'restricted'], '/data': [], '/home': ['alex'], '/home/alex': ['thesis'], '/home/alex/thesis': entries };
+      if (body.root === '/restricted') return route.fulfill({ status: 400, json: { error: 'Permission denied' } });
+      if (body.root === '/') return json({ root: '/', page: body.page, pages: 2,
+        entries: (body.page === 0 ? tree['/'] : ['work']).map(name => ({ name, folder: true })) });
+      return json({ root: body.root, page: 0, pages: 1, entries: tree[body.root].map(item => typeof item === 'string' ? { name: item, folder: true } : item) });
     }
     if (url.endsWith('/connect')) {
       assert.equal(body.root, '/home/alex/thesis');
@@ -46,13 +56,52 @@ export async function checkSshFolder(page) {
   try {
     await entry.click();
     await dialog.getByLabel('SSH host').fill('offline');
-    await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Preview remote folders', exact: true }).click();
     await expect(dialog.getByRole('alert')).toContainText('timed out');
+    await expect(dialog.getByRole('button', { name: 'Use this folder' })).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await dialog.getByLabel('SSH host').fill('shared-server');
+    await dialog.getByRole('button', { name: 'Preview remote folders' }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Permission denied');
+    const jump = dialog.getByText('Go to folder…', { exact: true });
+    const confirm = dialog.getByRole('button', { name: 'Use this folder' });
+    await expect(confirm).toBeDisabled();
+    await jump.click();
+    await dialog.getByRole('textbox', { name: 'Folder path' }).fill('/home/alex/thesis');
+    await dialog.getByRole('button', { name: 'Open', exact: true }).click();
+    await expect(dialog.getByText('main.tex', { exact: true })).toBeVisible();
+    await expect(confirm).toBeEnabled();
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
     await dialog.getByLabel('SSH connection', { exact: true }).selectOption('config:research-lab');
-    await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
-    await dialog.getByRole('button', { name: 'Parent folder' }).click();
+    await dialog.getByRole('button', { name: 'Preview remote folders', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'home', exact: true })).toBeVisible();
+    assert.equal(browsed.at(-1), '/');
+    await dialog.getByRole('button', { name: 'Next page' }).click();
+    await expect(dialog.getByRole('button', { name: 'work', exact: true })).toBeVisible();
+    await expect(dialog.getByRole('button', { name: 'Next page' })).toBeDisabled();
+    await dialog.getByRole('button', { name: 'Previous page' }).click();
+    await dialog.getByRole('button', { name: 'restricted', exact: true }).click();
+    await expect(dialog.getByRole('alert')).toContainText('Permission denied');
+    await dialog.getByRole('button', { name: 'data', exact: true }).click();
+    await expect(dialog.getByText('This folder is empty.')).toBeVisible();
+    await dialog.getByRole('button', { name: '/', exact: true }).click();
+    await dialog.getByRole('button', { name: 'home', exact: true }).click();
     await dialog.getByRole('button', { name: 'alex', exact: true }).click();
     await dialog.getByRole('button', { name: 'thesis', exact: true }).click();
+    const preview = dialog.getByRole('list', { name: 'Folder contents' });
+    await expect(preview.getByText('main.tex', { exact: true })).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'main.tex', exact: true })).toHaveCount(0);
+    await jump.click();
+    await dialog.getByRole('textbox', { name: 'Folder path' }).fill('/unfinished');
+    await expect(confirm).toBeDisabled();
+    await jump.click();
+    await expect(confirm).toBeEnabled();
+    assert.equal(saved, false);
+    await dialog.locator('section.modal').screenshot({ animations: 'disabled', path: 'test-results/ssh-folder-preview.png' });
+    await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+    assert.ok(await dialog.evaluate(el => el.scrollWidth <= el.clientWidth));
+    await dialog.locator('section.modal').screenshot({ animations: 'disabled', path: 'test-results/ssh-folder-preview-mobile.png' });
+    await page.setViewportSize({ width: 1280, height: 850 }); await page.emulateMedia({ colorScheme: 'light' });
     await dialog.getByRole('button', { name: 'Use this folder' }).click();
     await dialog.getByRole('button', { name: 'sections', exact: true }).click();
     await dialog.getByRole('button', { name: 'introduction.tex', exact: true }).click();
@@ -83,6 +132,11 @@ export async function checkSshFolder(page) {
     await dialog.getByRole('button', { name: 'Close', exact: true }).click();
     await entry.click();
     await dialog.getByLabel('SSH connection', { exact: true }).selectOption('sample');
+    await dialog.getByRole('button', { name: 'Preview remote folders' }).click();
+    await expect(dialog.getByRole('button', { name: 'home', exact: true })).toBeVisible();
+    assert.equal(browsed.at(-1), '/', 'choosing another folder starts at root even for a saved connection');
+    await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+    await expect(dialog.getByRole('button', { name: 'Open saved folder' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Forget connection' }).click();
     await expect(dialog.getByLabel('SSH host')).toBeVisible();
     assert.equal(saved, false);

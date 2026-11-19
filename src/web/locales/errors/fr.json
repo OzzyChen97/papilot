@@ -473,5 +473,6 @@
   "SSH connection not found.": "Connexion SSH introuvable.",
   "The remote file changed. Copy your edits before reloading.": "Le fichier distant a changé. Copiez vos modifications avant de le recharger.",
   "This file uses mixed line endings. Normalize them before editing.": "Ce fichier contient plusieurs types de fins de ligne. Uniformisez-les avant de le modifier.",
-  "Unexpected SSH response. Check that the remote shell can run Python 3.": "Réponse SSH inattendue. Vérifiez que le shell distant peut exécuter Python 3."
+  "Unexpected SSH response. Check that the remote shell can run Python 3.": "Réponse SSH inattendue. Vérifiez que le shell distant peut exécuter Python 3.",
+  "Invalid page number.": "Numéro de page non valide."
 }

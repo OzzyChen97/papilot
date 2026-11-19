@@ -6,7 +6,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Added
 
-- Open an [SSH remote folder](docs/guide.md#edit-a-remote-folder-over-ssh) from **Import or open**. Choose an OpenSSH alias or enter a server manually, then browse and edit remote manuscript files in the source editor.
+- Open an [SSH remote folder](docs/guide.md#edit-a-remote-folder-over-ssh) from **Import or open**. Choose an OpenSSH alias or enter a server manually, preview directories and filenames starting at the server root (`/`), then open the manuscript folder in the source editor.
 
 ### Fixed
 

@@ -1603,5 +1603,10 @@
   "SSH remote folder": "SSH リモートフォルダー",
   "SSH user": "SSH ユーザー名",
   "Saved connections": "保存した接続",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "最初にターミナルでホスト鍵を確認してください。SSH 鍵またはエージェントと、Python 3.7 以降を備えた Unix サーバーが必要です。"
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "最初にターミナルでホスト鍵を確認してください。SSH 鍵またはエージェントと、Python 3.7 以降を備えた Unix サーバーが必要です。",
+  "Folder contents": "フォルダーの内容",
+  "Go to folder…": "フォルダーへ移動…",
+  "Open saved folder": "保存したフォルダーを開く",
+  "Preview remote folders": "リモートフォルダーをプレビュー",
+  "This folder is empty.": "このフォルダーは空です。"
 }

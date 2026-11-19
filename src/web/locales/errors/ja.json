@@ -473,5 +473,6 @@
   "SSH connection not found.": "SSH 接続が見つかりません。",
   "The remote file changed. Copy your edits before reloading.": "リモートファイルが変更されました。再読み込みする前に編集内容をコピーしてください。",
   "This file uses mixed line endings. Normalize them before editing.": "改行コードが混在しています。編集前に統一してください。",
-  "Unexpected SSH response. Check that the remote shell can run Python 3.": "SSH の応答が想定外です。リモートシェルで Python 3 が動作するか確認してください。"
+  "Unexpected SSH response. Check that the remote shell can run Python 3.": "SSH の応答が想定外です。リモートシェルで Python 3 が動作するか確認してください。",
+  "Invalid page number.": "ページ番号が無効です。"
 }

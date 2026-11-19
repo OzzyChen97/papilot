@@ -1603,5 +1603,10 @@
   "SSH remote folder": "Fjärrmapp via SSH",
   "SSH user": "SSH-användare",
   "Saved connections": "Sparade anslutningar",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Verifiera först värdnyckeln i en terminal. Använd en SSH-nyckel eller SSH-agent och en Unix-server med Python 3.7 eller senare."
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Verifiera först värdnyckeln i en terminal. Använd en SSH-nyckel eller SSH-agent och en Unix-server med Python 3.7 eller senare.",
+  "Folder contents": "Mappinnehåll",
+  "Go to folder…": "Gå till mapp…",
+  "Open saved folder": "Öppna sparad mapp",
+  "Preview remote folders": "Förhandsvisa fjärrmappar",
+  "This folder is empty.": "Mappen är tom."
 }

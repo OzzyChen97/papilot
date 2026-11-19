@@ -473,5 +473,6 @@
   "SSH connection not found.": "SSH-anslutningen hittades inte.",
   "The remote file changed. Copy your edits before reloading.": "Fjärrfilen har ändrats. Kopiera dina ändringar innan du läser in filen igen.",
   "This file uses mixed line endings. Normalize them before editing.": "Filen innehåller olika radslut. Gör dem enhetliga innan du redigerar.",
-  "Unexpected SSH response. Check that the remote shell can run Python 3.": "Oväntat SSH-svar. Kontrollera att fjärrskalet kan köra Python 3."
+  "Unexpected SSH response. Check that the remote shell can run Python 3.": "Oväntat SSH-svar. Kontrollera att fjärrskalet kan köra Python 3.",
+  "Invalid page number.": "Ogiltigt sidnummer."
 }

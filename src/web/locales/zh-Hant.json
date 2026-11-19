@@ -1603,5 +1603,10 @@
   "SSH remote folder": "SSH 遠端資料夾",
   "SSH user": "SSH 使用者名稱",
   "Saved connections": "已儲存的連線",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "首次連線請在終端機核對主機指紋。請使用 SSH 金鑰或代理程式登入，Unix 伺服器須安裝 Python 3.7 或更新版本。"
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "首次連線請在終端機核對主機指紋。請使用 SSH 金鑰或代理程式登入，Unix 伺服器須安裝 Python 3.7 或更新版本。",
+  "Folder contents": "資料夾內容",
+  "Go to folder…": "前往資料夾…",
+  "Open saved folder": "開啟已儲存的資料夾",
+  "Preview remote folders": "預覽遠端資料夾",
+  "This folder is empty.": "此資料夾是空的。"
 }

@@ -18,16 +18,16 @@ def revision(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def listing(directory, folders_only):
+def listing(directory):
     entries = []
     with os.scandir(directory) as items:
         for entry in items:
             if entry.name.startswith("."):
                 continue
             folder = entry.is_dir(follow_symlinks=False)
-            if folder or (not folders_only and entry.is_file(follow_symlinks=False)):
+            if folder or entry.is_file(follow_symlinks=False):
                 entries.append({"name": entry.name, "folder": folder})
-    return sorted(entries, key=lambda e: (not e["folder"], e["name"].casefold()))
+    return sorted(entries, key=lambda e: (not e["folder"], e["name"].casefold(), e["name"]))
 
 
 def source(file):
@@ -122,7 +122,15 @@ def handle(request):
             os.close(directory)
             directory = readable
         if browsing:
-            return {"root": root, "entries": listing(directory, folders_only=action == "browse")}
+            entries = listing(directory)
+            if action == "browse":
+                # Bound each preview response and the number of visible rows.
+                size = 100
+                pages = max(1, (len(entries) + size - 1) // size)
+                page = min(request.get("page", 0), pages - 1)
+                return {"root": root, "entries": entries[page * size:(page + 1) * size],
+                        "page": page, "pages": pages}
+            return {"root": root, "entries": entries}
         writing = action == "save"
         if writing:
             # All Papilot clients lock the same parent even across atomic renames.

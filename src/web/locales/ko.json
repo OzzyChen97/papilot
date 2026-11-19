@@ -1603,5 +1603,10 @@
   "SSH remote folder": "SSH 원격 폴더",
   "SSH user": "SSH 사용자 이름",
   "Saved connections": "저장된 연결",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "먼저 터미널에서 호스트 키를 확인하세요. SSH 키 또는 에이전트와 Python 3.7 이상이 설치된 Unix 서버가 필요합니다."
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "먼저 터미널에서 호스트 키를 확인하세요. SSH 키 또는 에이전트와 Python 3.7 이상이 설치된 Unix 서버가 필요합니다.",
+  "Folder contents": "폴더 내용",
+  "Go to folder…": "폴더로 이동…",
+  "Open saved folder": "저장된 폴더 열기",
+  "Preview remote folders": "원격 폴더 미리보기",
+  "This folder is empty.": "이 폴더는 비어 있습니다."
 }

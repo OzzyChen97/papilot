@@ -378,5 +378,10 @@
   "SSH remote folder": "SSH 远程文件夹",
   "SSH user": "SSH 用户名",
   "Saved connections": "已保存的连接",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "首次连接请在终端核对主机指纹。使用 SSH 密钥或 SSH 代理登录，Unix 服务器需安装 Python 3.7 或更高版本。"
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "首次连接请在终端核对主机指纹。使用 SSH 密钥或 SSH 代理登录，Unix 服务器需安装 Python 3.7 或更高版本。",
+  "Folder contents": "文件夹内容",
+  "Go to folder…": "前往文件夹…",
+  "Open saved folder": "打开已保存的文件夹",
+  "Preview remote folders": "预览远程文件夹",
+  "This folder is empty.": "此文件夹为空。"
 }

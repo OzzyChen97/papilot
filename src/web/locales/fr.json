@@ -1603,5 +1603,10 @@
   "SSH remote folder": "Dossier distant SSH",
   "SSH user": "Nom d’utilisateur SSH",
   "Saved connections": "Connexions enregistrées",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Vérifiez d’abord la clé d’hôte dans un terminal. Utilisez une clé ou un agent SSH et un serveur Unix équipé de Python 3.7 ou ultérieur."
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Vérifiez d’abord la clé d’hôte dans un terminal. Utilisez une clé ou un agent SSH et un serveur Unix équipé de Python 3.7 ou ultérieur.",
+  "Folder contents": "Contenu du dossier",
+  "Go to folder…": "Aller au dossier…",
+  "Open saved folder": "Ouvrir le dossier enregistré",
+  "Preview remote folders": "Parcourir les dossiers distants",
+  "This folder is empty.": "Ce dossier est vide."
 }

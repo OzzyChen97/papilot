@@ -745,12 +745,12 @@
     "model": "gemini-4-argon-medium"
   },
   "Choose folder": {
-    "revision": "6cf410d719fa17d20ab65059f900f7ba5094d698ba1f7f28ee5a305304797395",
+    "revision": "1018fc50d9221661f0b717b0777f5622a94e369fb44141fb74a4c6d030fe5b20",
     "textHash": "7630bc441a57379624a58e5b4730d519193adffc1357427e122a83bb7fe2da4d",
     "model": "manual-review"
   },
   "Choose folder…": {
-    "revision": "d066c2772eedff6a71304e59e14ffd80f1b059cabc19389c4c75be467202c7bc",
+    "revision": "52b7b95a4bbc72ad37ec7d1d5852e6debbda6d8f8ba07bc253835d13b29e6c84",
     "textHash": "2abc2ff76b7b6f74168c51895de52aaa0490b29b8e010d1eb83b58d6e297558b",
     "model": "manual"
   },
@@ -1105,7 +1105,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Connect": {
-    "revision": "279b80b90a439ed58c742caa60d1fff7c55bb9ba7765ee7b9951f8b44deb29e9",
+    "revision": "ad96b1eba8e215a7191a6114bf1733a5f4d046826ea1ecafc3ff22bd7b1beb73",
     "textHash": "3b0b0fdfe2e3a691cd74f988612c6997feab43bb1fadd343a0616ef885349b3c",
     "model": "gemini-4-argon-medium"
   },
@@ -1905,7 +1905,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Folder path": {
-    "revision": "db14e5aa17c9327b0182f9201fc195e280b78fc875d0e7307eaece61053ed2d7",
+    "revision": "83b09cd5b26953662af64a5f905313e8d43d9699277ed002b8146d852315ce6d",
     "textHash": "5fba829730b836ec9ffe1b3db13f4d36f00657560d54e68822c9c3caef67469f",
     "model": "manual-review"
   },
@@ -2655,7 +2655,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Next page": {
-    "revision": "81b2186106664309a8bb0be030b5f9c7b34d9219a67b5a23f1c6fffefbeb0990",
+    "revision": "fae14e4d0979e07a4631690b068b039af0dfcb97908d1b5f697781fd6aeef6b4",
     "textHash": "d537f9b442ea6fa2a8bd7b471461d4de43fe512176ede840abd65186e0c493c1",
     "model": "gemini-4-argon-medium"
   },
@@ -2720,7 +2720,7 @@
     "model": "gemini-4-argon-high"
   },
   "No folders inside.": {
-    "revision": "9083bafc959baad3e387d06e380d58a3b42b6126b1b6b67295be5133f1c41808",
+    "revision": "1d25261d75e843e18ea4d598db8091b527ed58b41806bf51517271bba17440b0",
     "textHash": "b6e890c5617c5f351aa1a54d4633b13a04b284637c16f00c9085f5af198663e1",
     "model": "manual"
   },
@@ -2975,7 +2975,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Open": {
-    "revision": "691f833852b8e33559d59ab97c005f6247cc949eebad53b0ca7175a8a213b6df",
+    "revision": "370d87f4dd7d3768d771ac5769e744f5695c2d6048ebce1d57b986747fa104b1",
     "textHash": "a01a5fce396edb612052db25ebeb325a72134c8369eb9c771d47ab18d8124247",
     "model": "manual"
   },
@@ -3445,7 +3445,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Previous page": {
-    "revision": "9de35126e37ea22f84b611b2d461af9ceb8f50a8745dee82455ac9ceb604223f",
+    "revision": "9adf8195febba8fd883a593c5ba4806c0c91471dbf42cb5fd78632ed7ae969eb",
     "textHash": "9bcad734827a849a17f488bdc58928de76c0e89785a20eeff88535dc4d5de3c2",
     "model": "gemini-4-argon-medium"
   },
@@ -6592,6 +6592,31 @@
   "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": {
     "revision": "d17b02032ba23cc29f10a9da2cad559e348998a27ba4c8f3d3e124b0aad724f8",
     "textHash": "82df58095add81ca4290195783b0c36ddf9dcd26a1645542ed2673fcd174f5b5",
+    "model": "gpt-6"
+  },
+  "Folder contents": {
+    "revision": "86472b539583df149e1cbb2107fc922238cb429c39785498532d33400f15485e",
+    "textHash": "2eebfb26f3c94b1c5e6fc8d3b4b5123ede1094bb5adc26622fee3ec55ee4c7a7",
+    "model": "gpt-6"
+  },
+  "Go to folder…": {
+    "revision": "0dbabe2f267b1e9ab28c7516fd502d3c5d901ae3b839c7e665512a3ae079ba68",
+    "textHash": "175766777459d3ac1afca434a935c6bf3e79dbbdfc4661846a8109124acc902d",
+    "model": "gpt-6"
+  },
+  "Open saved folder": {
+    "revision": "c167fe95a3636ad1035bcfe00693d81cc6f2bfe26b6c54e2bb8bff3cab1def63",
+    "textHash": "a6e567e8255c86ab4395a48f9da84acec18a36ecbd6a19d73f4a504a8dec6141",
+    "model": "gpt-6"
+  },
+  "Preview remote folders": {
+    "revision": "e3327e0789e922bbc24f1854f36fea998a8e8989cfa47451b24392c97af5b3e6",
+    "textHash": "759984349fa3d2bfbbe27fdd809437d64c3a4765f3df8e79536fb25f86a57771",
+    "model": "gpt-6"
+  },
+  "This folder is empty.": {
+    "revision": "0a439b40b3a4ea926f1366d17b9a352b5f5bda33831f7fbe3c0fa8516e9d077c",
+    "textHash": "73420f1b7c910842dd9ddb79b4bec16dbe4a8c07c732131f7fc4e07d9f51991c",
     "model": "gpt-6"
   }
 }

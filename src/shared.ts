@@ -352,4 +352,5 @@ export interface SshFolder {
   id: string; host: string; user?: string; port?: number; identity?: string; root: string;
 }
 export interface SshEntry { name: string; folder: boolean }
+export interface SshFolderPreview { root: string; entries: SshEntry[]; page: number; pages: number }
 export interface SshDocument { text: string; revision: string }

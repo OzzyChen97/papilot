@@ -18,7 +18,7 @@
 .ssh-location span, .ssh-file-bar strong { flex: 1 }
 .ssh-entry { width: 100%; text-align: left; padding: 7px; border-radius: var(--r-sm) }
 .ssh-entry svg { flex: none; color: var(--text-3) }
-.ssh-entry:hover, .ssh-entry[aria-current=true] { background: var(--bg-muted) }
+button.ssh-entry:hover, .ssh-entry[aria-current=true] { background: var(--bg-muted) }
 .ssh-source { display: flex; flex: 1; flex-direction: column; min-width: 0; min-height: 0 }
 .ssh-file-bar { padding: 3px 8px }
 .ssh-code { min-height: 0; flex: 1; overflow: hidden }
@@ -35,3 +35,17 @@
 
 .ssh-picker .ssh-files { max-height: min(46dvh, 360px); border: 1px solid var(--line); border-radius: var(--r) }
 .ssh-picker .button-row { margin-top: 12px }
+
+.ssh-trail ol, .ssh-preview-entries { margin: 0; padding: 0; list-style: none }
+.ssh-trail ol { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding-block: 6px; font-family: var(--mono); font-size: 13px }
+.ssh-trail li { min-width: 0; overflow-wrap: anywhere }
+.ssh-trail li + li::before { content: "›" / ""; margin-inline: 3px 6px; color: var(--text-3) }
+.ssh-trail button { text-decoration: underline; text-underline-offset: 2px }
+.ssh-trail [aria-current] { font-weight: 600 }
+.ssh-preview-file { color: var(--text-2) }
+.ssh-preview-pages, .ssh-jump form { display: flex; gap: 6px; align-items: center }
+.ssh-preview-pages { justify-content: center; font-variant-numeric: tabular-nums }
+.ssh-jump { margin-top: 10px; font-size: 12px }
+.ssh-jump summary { cursor: pointer; color: var(--text-2) }
+.ssh-jump form { margin-top: 4px }
+.ssh-jump input { min-width: 0; flex: 1 }

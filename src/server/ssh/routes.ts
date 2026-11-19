@@ -4,13 +4,13 @@ import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { FastifyInstance } from 'fastify';
-import type { SshDocument, SshEntry, SshFolder } from '../../shared.ts';
+import type { SshDocument, SshEntry, SshFolder, SshFolderPreview } from '../../shared.ts';
 import type { Store } from '../store.ts';
 import { hostName, sshAliases } from './config.ts';
 
 type Destination = Omit<SshFolder, 'id'>;
 type Listing = { root: string; entries: SshEntry[] };
-type Request = { action: 'browse' | 'list' | 'read' | 'save'; resolveRoot?: boolean; path?: string; revision?: string; text?: string };
+type Request = { action: 'browse' | 'list' | 'read' | 'save'; resolveRoot?: boolean; page?: number; path?: string; revision?: string; text?: string };
 const helper = readFileSync(new URL('./files.py', import.meta.url), 'utf8');
 // Only the bundled program crosses the remote login shell. File paths and
 // manuscript text travel as JSON on stdin, including spaces and quotes.
@@ -45,6 +45,7 @@ function response(output: string, action: Request['action']) {
     const known = Object.hasOwn(remoteErrors, result.error) ? remoteErrors[result.error] : undefined;
     throw Object.assign(new Error(known?.error ?? result.error), { statusCode: known?.status ?? 400 });
   }
+  if (action === 'browse' && (!Number.isSafeInteger(result.page) || !Number.isSafeInteger(result.pages) || result.page < 0 || result.page >= result.pages)) throw badReply();
   if (action === 'list' || action === 'browse') {
     if (typeof result.root !== 'string' || !result.root.startsWith('/') || result.root.includes('\0') ||
       !Array.isArray(result.entries) || !result.entries.every((entry: SshEntry | null) => entry && typeof entry.name === 'string' &&
@@ -80,9 +81,11 @@ export function registerSshRoutes(app: FastifyInstance, store: Store) {
   const key = 'ssh-folders';
   const folders = () => store.preference<SshFolder[]>(key) ?? [];
   app.get('/api/ssh', async () => ({ folders: folders(), aliases: await sshAliases() }));
-  app.post<{ Body: Partial<SshFolder> & { canonical?: boolean } }>('/api/ssh/browse', { bodyLimit: 16384 }, async req => {
-    const target = destination(req.body ?? {});
-    return sshRequest<Listing>(target, { action: 'browse', resolveRoot: req.body.canonical !== true });
+  app.post<{ Body: Partial<SshFolder> & { canonical?: boolean; page?: number } }>('/api/ssh/browse', { bodyLimit: 16384 }, async req => {
+    const target = destination({ ...req.body, root: req.body?.root ?? '/' });
+    const page = req.body?.page ?? 0;
+    if (!Number.isSafeInteger(page) || page < 0) throw new Error('Invalid page number.');
+    return sshRequest<SshFolderPreview>(target, { action: 'browse', page, resolveRoot: req.body?.canonical !== true });
   });
   app.post<{ Body: Partial<SshFolder> }>('/api/ssh/connect', { bodyLimit: 16384 }, async req => {
     const target = destination(req.body ?? {});

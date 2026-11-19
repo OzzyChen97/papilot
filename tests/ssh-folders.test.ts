@@ -53,7 +53,19 @@ test('SSH folder routes browse and save only the selected files and preserve com
   assert.equal((await post('connect', { ...connection, host: '-invalid' })).statusCode, 400);
   assert.equal((await post('connect', { ...connection, port: 65536 })).statusCode, 400);
   const picker = await post('browse', connection);
-  assert.deepEqual(picker.json().entries, [{ name: 'chapters', folder: true }]);
+  assert.deepEqual(picker.json(), { root: fs.realpathSync(root), page: 0, pages: 1, entries: [
+    { name: 'chapters', folder: true }, { name: 'image', folder: false }, { name: 'mixed.tex', folder: false },
+  ] });
+  assert.equal((await post('browse', { ...connection, page: -1 })).statusCode, 400);
+  const many = path.join(root, 'many');
+  fs.mkdirSync(many);
+  assert.deepEqual((await post('browse', { ...connection, root: many })).json().entries, []);
+  for (let i = 0; i < 103; i++) fs.writeFileSync(path.join(many, 'draft-' + String(i).padStart(3, '0') + '.tex'), '');
+  const first = (await post('browse', { ...connection, root: many })).json();
+  const last = (await post('browse', { ...connection, root: many, page: 1 })).json();
+  assert.equal(first.pages, 2); assert.equal(last.page, 1);
+  assert.equal(first.entries.length, 100);
+  assert.deepEqual(last.entries.map((entry: { name: string }) => entry.name), ['draft-100.tex', 'draft-101.tex', 'draft-102.tex']);
   assert.equal(store.preference('ssh-folders'), undefined, 'browsing does not create bookmarks');
   const picked = (await post('connect', { ...connection, root: path.join(picker.json().root, 'chapters') })).json().folder;
   assert.equal(picked.root, fs.realpathSync(path.join(root, 'chapters')));

@@ -473,5 +473,6 @@
   "SSH connection not found.": "找不到已保存的 SSH 连接。",
   "The remote file changed. Copy your edits before reloading.": "远端文件已被修改。请先复制你的改动，再重新加载。",
   "This file uses mixed line endings. Normalize them before editing.": "文件中有多种换行符。请先统一换行符再编辑。",
-  "Unexpected SSH response. Check that the remote shell can run Python 3.": "SSH 响应异常。请检查远程 shell 能否运行 Python 3。"
+  "Unexpected SSH response. Check that the remote shell can run Python 3.": "SSH 响应异常。请检查远程 shell 能否运行 Python 3。",
+  "Invalid page number.": "页码无效。"
 }

@@ -1603,5 +1603,10 @@
   "SSH remote folder": "Cartella remota SSH",
   "SSH user": "Nome utente SSH",
   "Saved connections": "Connessioni salvate",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Verifica prima la chiave dell’host in un terminale. Usa una chiave o un agente SSH e un server Unix con Python 3.7 o successivo."
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Verifica prima la chiave dell’host in un terminale. Usa una chiave o un agente SSH e un server Unix con Python 3.7 o successivo.",
+  "Folder contents": "Contenuto della cartella",
+  "Go to folder…": "Vai alla cartella…",
+  "Open saved folder": "Apri cartella salvata",
+  "Preview remote folders": "Esplora cartelle remote",
+  "This folder is empty.": "Questa cartella è vuota."
 }

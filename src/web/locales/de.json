@@ -1603,5 +1603,10 @@
   "SSH remote folder": "SSH-Remoteordner",
   "SSH user": "SSH-Benutzername",
   "Saved connections": "Gespeicherte Verbindungen",
-  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Prüfen Sie zuerst den Hostschlüssel im Terminal. Verwenden Sie einen SSH-Schlüssel oder SSH-Agenten und einen Unix-Server mit Python ab Version 3.7."
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": "Prüfen Sie zuerst den Hostschlüssel im Terminal. Verwenden Sie einen SSH-Schlüssel oder SSH-Agenten und einen Unix-Server mit Python ab Version 3.7.",
+  "Folder contents": "Ordnerinhalt",
+  "Go to folder…": "Zum Ordner wechseln…",
+  "Open saved folder": "Gespeicherten Ordner öffnen",
+  "Preview remote folders": "Remote-Ordner ansehen",
+  "This folder is empty.": "Dieser Ordner ist leer."
 }
