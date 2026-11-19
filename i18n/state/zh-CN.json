@@ -355,7 +355,7 @@
     "model": "manual-review"
   },
   "Parent folder": {
-    "revision": "dfb3c3fa5c73de42f6eff7c8049c2fc3c736b563ed49a00e2d118559a35231e7",
+    "revision": "e9f92031b0267be58f4ba774ae5cb467795782b352241b28a0bb38777b3e68e0",
     "textHash": "a1a5895f719a8733a29910356a3c41b99931e92d49cdfb834b1a4d298dc7e8b6",
     "model": "manual"
   },
@@ -713,5 +713,60 @@
     "revision": "ca126559433431aea0f4b1fbd61eb0a6dcdb40f3c76db0776192073c6a46286f",
     "textHash": "4c322f4b7d921c0fc50f269d3335f054c9730e9a81f0d5ba2ce22507de21a361",
     "model": "gemini-4-argon-medium"
+  },
+  "Forget connection": {
+    "revision": "afe6c907d1f3e8d4971778258dad3adf67d258354f26ceced3101c7a064355d8",
+    "textHash": "192b8d59b7f591726380387fa28b5baaa9a27b0307bd5ac275cd7bb46fe87756",
+    "model": "gpt-6"
+  },
+  "Identity file (optional)": {
+    "revision": "b35920d4ad40aa6b458ccd704d06e159d40639cda53f292bb7d1266f0e726b90",
+    "textHash": "da38ac5b95ab522538e82683462413cf03d2ab7dcea893f6826b4b45d3684600",
+    "model": "gpt-6"
+  },
+  "Manual connection": {
+    "revision": "e72b6eb2e54720fffac73acca40a4e7397ba16195d2a72621cb4902793033397",
+    "textHash": "8a1cbddd8f6a469c47337b3501c8a4fba0b302043a50ab34a9f574bb5382ea53",
+    "model": "gpt-6"
+  },
+  "Remote folder": {
+    "revision": "d0cc996288b10d267a0162bd0fa60c4a07426ede247dea7b67e1a73e9d5da6d7",
+    "textHash": "2f28c0356734105579d548194ea8dac1f5190be2408cc7b9dad8a920dbd12944",
+    "model": "gpt-6"
+  },
+  "SSH connection": {
+    "revision": "95f2d46cb39396650a81f6c50e741175a3154cc3c107c8ac61f715a7cae56502",
+    "textHash": "7f4405d0777004827c621ff8d265a2622a5c648e5305ee76e844379a0e2bfcb6",
+    "model": "gpt-6"
+  },
+  "SSH host": {
+    "revision": "51b28ead7c86952fb96e5a8c1b78eba0c83979a6fb1fd3bd4699cbb3674621f0",
+    "textHash": "2290354d1f888e0a637f00d7ff40292f68568f54f3c0803115971d1689c2db2e",
+    "model": "gpt-6"
+  },
+  "SSH port": {
+    "revision": "5a03f0cf665bc7cc02523e15cd605956b5ab88af6b1896248563e909aa4a6ef5",
+    "textHash": "1c22cc57aee8c65abc9c2f9711dd98e4c263bf2e7ee9131668a80ff468c70a07",
+    "model": "gpt-6"
+  },
+  "SSH remote folder": {
+    "revision": "a2f8d96d97dab9cd39a61fcf49ec669b0508c3283cf887cfc02c889baa14d9ae",
+    "textHash": "02df91d09c1c6dc9ce76857385525cf9c3d3881aaecab89b1571ccfed3fa3753",
+    "model": "gpt-6"
+  },
+  "SSH user": {
+    "revision": "457957e36f8305d50966980c6efae23fb642a640c6da1b9fac88b22d0e395334",
+    "textHash": "d9068f19ffe4985a009fb17df60846217b5916fbc99c4b2cdbcff0bf38113b6a",
+    "model": "gpt-6"
+  },
+  "Saved connections": {
+    "revision": "a90bf7ea618ade360fef6cd1dd1b0ac929610fc257369c7d93fa8a905eb8ec6b",
+    "textHash": "e5e74616124cb9bceff1ddc91b601b91fb73b8c9c4c6fc3233586d4697cfb04d",
+    "model": "gpt-6"
+  },
+  "Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.": {
+    "revision": "4d64f5bce0130f87dfec8f925f2459199a8ccd3dc20be82cd4152e02b0ccb3eb",
+    "textHash": "63bc9128b6b9f23298f65f4c7a0bf9ebb6bd7b9b6bc94e4e7f06e3d1b70b107b",
+    "model": "gpt-6"
   }
 }

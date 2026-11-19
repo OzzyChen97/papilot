@@ -4,6 +4,10 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ## [Unreleased]
 
+### Added
+
+- Open an [SSH remote folder](docs/guide.md#edit-a-remote-folder-over-ssh) from **Import or open**. Choose an OpenSSH alias or enter a server manually, then browse and edit remote manuscript files in the source editor.
+
 ### Fixed
 
 - Keep successful task statuses green, including **Completed** answers without manuscript changes. Use gray for current results applied or committed to the manuscript. ([#227](https://github.com/PapilotAI/papilot/issues/227))
