@@ -6,6 +6,7 @@ Notable changes to Papilot, newest first. The format follows [Keep a Changelog](
 
 ### Fixed
 
+- Preserve the full five-stripe Papilot logo at every size in the app, including the sidebar and Settings navigation. ([#226](https://github.com/PapilotAI/papilot/issues/226))
 - Show “Creating your paper…” in **New paper** only after **Create paper**, not while choosing a save folder. ([#224](https://github.com/PapilotAI/papilot/issues/224))
 
 ## [0.11.0] - 2026-11-18

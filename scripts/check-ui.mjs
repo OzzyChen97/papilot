@@ -274,6 +274,39 @@ async function openDelete(title = task.title) {
   await page.getByRole('menuitem', { name: 'Delete task…', exact: true }).click();
 }
 
+async function checkPapilotMark(mark, size, theme, reference) {
+  await mark.scrollIntoViewIfNeeded();
+  await expect(mark).toBeVisible();
+  assert.equal(await mark.getAttribute('width'), String(size));
+  assert.equal(await mark.getAttribute('height'), String(size));
+  const result = await mark.evaluate(svg => {
+    const box = svg.getBoundingClientRect();
+    return {
+      width: box.width, height: box.height,
+      geometry: svg.querySelector('g').outerHTML,
+      stripes: [...svg.querySelectorAll('rect')].map(rect => {
+        const bounds = rect.getBoundingClientRect();
+        return {
+          fill: getComputedStyle(rect).fill,
+          bounds: [(bounds.left - box.left) / box.width, (bounds.top - box.top) / box.height, (bounds.right - box.left) / box.width, (bounds.bottom - box.top) / box.height],
+        };
+      }),
+    };
+  });
+  assert.equal(result.stripes.length, 5, `${size}px mark keeps all five stripes`);
+  assert.ok(result.width > 0 && Math.abs(result.width - result.height) < 0.01, 'The mark keeps a square viewport');
+  const top = theme === 'dark' ? 'rgb(216, 226, 249)' : 'rgb(34, 53, 117)';
+  assert.deepEqual(result.stripes.map(stripe => stripe.fill), [top, top, 'rgb(255, 106, 100)', 'rgb(77, 147, 248)', 'rgb(77, 147, 248)']);
+  for (const stripe of result.stripes) assert.ok(stripe.bounds.every(value => value >= 0 && value <= 1), 'Every stripe fits inside the SVG without clipping');
+  if (reference) {
+    assert.equal(result.geometry, reference.geometry, 'Every size uses the same geometry and transform');
+    result.stripes.forEach((stripe, index) => stripe.bounds.forEach((value, edge) => {
+      assert.ok(Math.abs(value - reference.stripes[index].bounds[edge]) < 0.0001, 'The rendered stripes scale proportionally');
+    }));
+  }
+  return result;
+}
+
 try {
   await page.goto(origin);
   await page.getByRole('textbox', { name: 'Describe the revision' }).waitFor();
@@ -293,6 +326,31 @@ try {
     await page.waitForFunction(value => document.documentElement.dataset.theme === value, value);
     await page.frameLocator('.review-frame').locator(`html[data-theme="${value}"]`).waitFor();
   };
+  for (const theme of ['dark', 'light']) {
+    await chooseTheme(theme === 'dark' ? 'Dark' : 'Light');
+    await themeIs(theme);
+    const sidebarMark = await checkPapilotMark(page.locator('.brand-home .papilot-mark'), 16, theme);
+    await page.locator('.brand-home').screenshot({ path: `test-results/papilot-mark-sidebar-${theme}.png` });
+    await settingsButton.click();
+    await page.clock.runFor(300);
+    const about = settingsDialog.getByRole('button', { name: 'About Papilot', exact: true });
+    await checkPapilotMark(about.locator('.papilot-mark'), 18, theme, sidebarMark);
+    await about.click();
+    await checkPapilotMark(settingsDialog.locator('.settings-product .papilot-mark'), 52, theme, sidebarMark);
+    await page.screenshot({ path: `test-results/papilot-mark-about-desktop-${theme}.png` });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await checkPapilotMark(settingsDialog.locator('.settings-product .papilot-mark'), 52, theme, sidebarMark);
+    await page.screenshot({ path: `test-results/papilot-mark-about-mobile-${theme}.png` });
+    await settingsDialog.getByRole('button', { name: 'Settings', exact: true }).click();
+    await checkPapilotMark(about.locator('.papilot-mark'), 18, theme, sidebarMark);
+    await page.screenshot({ path: `test-results/papilot-mark-navigation-mobile-${theme}.png` });
+    await closeSettings();
+    await page.getByRole('button', { name: 'Show task list', exact: true }).click();
+    await page.clock.runFor(300);
+    await checkPapilotMark(page.locator('.brand-home .papilot-mark'), 16, theme, sidebarMark);
+    await page.screenshot({ path: `test-results/papilot-mark-sidebar-mobile-${theme}.png` });
+    await page.setViewportSize({ width: 1440, height: 900 });
+  }
   await settingsButton.click();
   await page.clock.runFor(300);
   assert.equal(await settingsDialog.getByRole('button', { name: /^(Sharing|Sign out)$/ }).count(), 0, 'Single-user settings have no collaboration controls');

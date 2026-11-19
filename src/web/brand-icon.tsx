@@ -33,6 +33,6 @@ export type Brand = keyof typeof marks;
 // Decorative beside a visible name. Local assets work offline and inherit theme colors.
 export function BrandIcon({ name, size = 24 }: { name: Brand; size?: number }) {
   // Papilot Writer is Papilot's own agent: it shows the app's mark in its colours.
-  if (name === 'papilot') return <PapilotMark size={size} full className="brand-icon"/>;
+  if (name === 'papilot') return <PapilotMark size={size} className="brand-icon"/>;
   return <i className="brand-icon" data-brand={name} aria-hidden="true" style={{ '--brand-image': `url("${marks[name]}")`, width: size, height: size } as CSSProperties}/>;
 }
