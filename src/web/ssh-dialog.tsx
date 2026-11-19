@@ -7,6 +7,7 @@ import './ssh-dialog.css';
 
 type Api = <T>(route: string, body?: unknown, signal?: AbortSignal) => Promise<T>;
 type OpenFile = SshDocument & { path: string };
+type FolderListing = { root: string; entries: SshEntry[] };
 type Connections = { folders: SshFolder[]; aliases: string[] };
 const blank = { host: '', user: '', port: '', root: '~', identity: '' };
 const label = (folder: SshFolder) => (folder.user ? folder.user + '@' : '') + folder.host + (folder.port ? ':' + folder.port : '');
@@ -15,6 +16,7 @@ export default function SshDialog({ api, onClose }: { api: Api; onClose: () => v
   const dialog = useRef<HTMLDialogElement>(null), title = useId();
   const [connections, setConnections] = useState<Connections>({ folders: [], aliases: [] });
   const [choice, setChoice] = useState('manual'), [form, setForm] = useState(blank);
+  const [picker, setPicker] = useState<FolderListing | null>(null);
   const [folder, setFolder] = useState<SshFolder | null>(null);
   const [directory, setDirectory] = useState(''), [entries, setEntries] = useState<SshEntry[]>([]);
   const [file, setFile] = useState<OpenFile | null>(null), [dirty, setDirty] = useState(false);
@@ -70,13 +72,17 @@ export default function SshDialog({ api, onClose }: { api: Api; onClose: () => v
     setForm(saved ? { host: saved.host, user: saved.user || '', port: saved.port?.toString() || '', root: saved.root, identity: saved.identity || '' }
       : { ...blank, host: value.startsWith('config:') ? value.slice(7) : '' });
   }
-  function connect() {
+  function target(root: string) {
+    return { host: form.host.trim(), root, user: form.user.trim() || undefined,
+      port: form.port ? Number(form.port) : undefined, identity: form.identity.trim() || undefined };
+  }
+  function chooseFolder(root: string, canonical = false) {
+    return run(async () => setPicker(await api<FolderListing>('/ssh/browse', { ...target(root), canonical })));
+  }
+  function connect(root: string) {
     return run(async () => {
-      const result = await api<{ folder: SshFolder; entries: SshEntry[] }>('/ssh/connect', {
-        host: form.host.trim(), root: form.root, user: form.user.trim() || undefined,
-        port: form.port ? Number(form.port) : undefined, identity: form.identity.trim() || undefined,
-      });
-      setFolder(result.folder); setDirectory(''); setEntries(result.entries);
+      const result = await api<{ folder: SshFolder; entries: SshEntry[] }>('/ssh/connect', target(root));
+      setPicker(null); setFolder(result.folder); setDirectory(''); setEntries(result.entries);
       setChoice(result.folder.id);
       setConnections(prev => ({ ...prev, folders: [...prev.folders.filter(f => f.id !== result.folder.id), result.folder] }));
     });
@@ -111,13 +117,22 @@ export default function SshDialog({ api, onClose }: { api: Api; onClose: () => v
       editor.current?.setBase(text); setDirty(false);
     });
   }
-  const savedChoice = connections.folders.some(f => f.id === choice);
+  const savedChoice = connections.folders.find(f => f.id === choice);
   return <dialog ref={dialog} aria-labelledby={title} className="modal-backdrop ssh-backdrop"
     onCancel={event => { event.preventDefault(); close(); }}>
     <section className={'modal ssh-dialog' + (folder ? ' ssh-open' : '')}>
       <button className="modal-close icon-button" type="button" aria-label={t('Close')} disabled={busy} onClick={close}><Icon name="close"/></button>
       <h2 id={title}><Icon name="terminal" size={16}/>{t('SSH remote folder')}</h2>
-      {!folder ? <form onSubmit={event => { event.preventDefault(); void connect(); }}>
+      {picker ? <div className="ssh-picker">
+        <div className="ssh-toolbar"><button type="button" className="button secondary compact" disabled={busy} onClick={() => { setPicker(null); setError(''); }}><Icon name="chevronLeft" size={15}/>{t('Back')}</button><strong>{t('Choose folder')}</strong></div>
+        <nav className="ssh-files" aria-label={t('Remote folder')}>
+          <div className="ssh-location"><button type="button" className="icon-button" aria-label={t('Parent folder')} disabled={busy || picker.root === '/'} onClick={() => void chooseFolder(picker.root.slice(0, picker.root.lastIndexOf('/')) || '/', true)}><Icon name="arrowUp" size={15}/></button><span dir="auto">{picker.root}</span></div>
+          {picker.entries.map(entry => <button type="button" className="ssh-entry" key={entry.name} disabled={busy} onClick={() => void chooseFolder(picker.root.replace(/\/$/, '') + '/' + entry.name, true)}><Icon name="folder" size={15}/><span>{entry.name}</span></button>)}
+          {!picker.entries.length && <p className="ssh-help">{t('No folders inside.')}</p>}
+        </nav>
+        <div className="button-row"><button type="button" className="button primary" disabled={busy} onClick={() => void connect(picker.root)}><Icon name="folder" size={15}/>{t('Use this folder')}</button></div>
+        {busy && <span role="status" className="ssh-help">{t('Loading folders…')}</span>}
+      </div> : !folder ? <form onSubmit={event => { event.preventDefault(); void (savedChoice?.root === form.root ? connect(form.root) : chooseFolder(form.root)); }}>
         <label><span id={title + '-connection'}>{t('SSH connection')}</span><select aria-labelledby={title + '-connection'} autoFocus value={choice} disabled={busy} onChange={e => select(e.target.value)}>
           <option value="manual">{t('Manual connection')}</option>
           {!!connections.folders.length && <optgroup label={t('Saved connections')}>{connections.folders.map(f => <option key={f.id} value={f.id}>{label(f)} · {f.root}</option>)}</optgroup>}
@@ -135,6 +150,7 @@ export default function SshDialog({ api, onClose }: { api: Api; onClose: () => v
         <label>{t('Remote folder')}<input required autoCapitalize="none" spellCheck={false} value={form.root} disabled={busy} onChange={e => setForm({ ...form, root: e.target.value })}/></label>
         <p className="ssh-help">{t('Verify the host key in a terminal first. Use an SSH key or agent and a Unix server with Python 3.7+.')}</p>
         <div className="button-row">{savedChoice && <button type="button" className="button ghost" disabled={busy} onClick={() => void forget()}>{t('Forget connection')}</button>}
+          {savedChoice && <button className="button secondary" type="button" disabled={busy} onClick={() => void chooseFolder(form.root, savedChoice.root === form.root)}>{t('Choose folder…')}</button>}
           <button className="button primary" type="submit" disabled={busy}>{busy ? t('Connecting…') : t('Connect')}</button></div>
       </form> : <>
         <div className="ssh-toolbar"><button className="button secondary compact" disabled={busy} onClick={() => {

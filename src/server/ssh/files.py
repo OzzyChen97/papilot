@@ -18,14 +18,14 @@ def revision(data):
     return hashlib.sha256(data).hexdigest()
 
 
-def listing(directory):
+def listing(directory, folders_only):
     entries = []
     with os.scandir(directory) as items:
         for entry in items:
             if entry.name.startswith("."):
                 continue
             folder = entry.is_dir(follow_symlinks=False)
-            if folder or entry.is_file(follow_symlinks=False):
+            if folder or (not folders_only and entry.is_file(follow_symlinks=False)):
                 entries.append({"name": entry.name, "folder": folder})
     return sorted(entries, key=lambda e: (not e["folder"], e["name"].casefold()))
 
@@ -98,12 +98,14 @@ def save(directory, name, file, original, request, raw, text):
 def handle(request):
     action = request["action"]
     root = request["root"]
-    if action == "connect":
+    if request.get("resolveRoot"):
         root = os.path.realpath(os.path.expanduser(root))
+    if not os.path.isabs(root) or os.path.normpath(root) != root:
+        raise ValueError("Invalid file path.")
     parts = request.get("path", "").split("/") if request.get("path") else []
     if any(part in ("", ".", "..") for part in parts):
         raise ValueError("Invalid file path.")
-    browsing = action in ("connect", "list")
+    browsing = action in ("browse", "list")
     if not browsing and (not parts or action not in ("read", "save")):
         raise ValueError("Invalid file path.")
     # Walk the canonical root and the requested directories without following
@@ -120,7 +122,7 @@ def handle(request):
             os.close(directory)
             directory = readable
         if browsing:
-            return {"root": root, "entries": listing(directory)}
+            return {"root": root, "entries": listing(directory, folders_only=action == "browse")}
         writing = action == "save"
         if writing:
             # All Papilot clients lock the same parent even across atomic renames.

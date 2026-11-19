@@ -19,12 +19,17 @@ export async function checkSshFolder(page) {
     const url = new URL(route.request().url()).pathname, body = route.request().postDataJSON();
     const json = value => route.fulfill({ json: value });
     if (url === '/api/ssh') return json({ aliases: ['research-lab'], folders: saved ? [folder] : [] });
-    if (url.endsWith('/connect')) {
+    if (url.endsWith('/browse')) {
       if (body.host === 'offline') return route.fulfill({ status: 400, json: { error: 'Connection timed out.' } });
       assert.equal(body.host, 'research-lab');
-      assert.equal(body.root, '~/papers/thesis');
+      const tree = { '~': ['/home/alex', ['thesis']], '/home': ['/home', ['alex']], '/home/alex': ['/home/alex', ['thesis']], '/home/alex/thesis': ['/home/alex/thesis', ['sections']] };
+      const [root, directories] = tree[body.root];
+      return json({ root, entries: directories.map(name => ({ name, folder: true })) });
+    }
+    if (url.endsWith('/connect')) {
+      assert.equal(body.root, '/home/alex/thesis');
       assert.equal(body.port, undefined, 'reuse the SSH config port');
-      folder = { ...body, id: 'sample', root: '/papers/thesis' }; saved = true;
+      folder = { ...body, id: 'sample', root: '/home/alex/thesis' }; saved = true;
       return json({ folder, entries });
     }
     if (url.endsWith('/list')) return json({ entries: body.path === 'sections' ? ['introduction.tex', 'methods.tex', 'results.tex'].map(name => ({ name, folder: false })) : entries });
@@ -44,8 +49,11 @@ export async function checkSshFolder(page) {
     await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
     await expect(dialog.getByRole('alert')).toContainText('timed out');
     await dialog.getByLabel('SSH connection', { exact: true }).selectOption('config:research-lab');
-    await dialog.getByLabel('Remote folder', { exact: true }).fill('~/papers/thesis');
     await dialog.getByRole('button', { name: 'Connect', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Parent folder' }).click();
+    await dialog.getByRole('button', { name: 'alex', exact: true }).click();
+    await dialog.getByRole('button', { name: 'thesis', exact: true }).click();
+    await dialog.getByRole('button', { name: 'Use this folder' }).click();
     await dialog.getByRole('button', { name: 'sections', exact: true }).click();
     await dialog.getByRole('button', { name: 'introduction.tex', exact: true }).click();
     const editor = dialog.locator('.cm-content');

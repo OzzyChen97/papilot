@@ -455,7 +455,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Back": {
-    "revision": "46a23a9954f635ad393a8e404ee2fc02b53019cfadf0b2b48c8ea8441cda570d",
+    "revision": "287919f9001560ef982f75470e8b158ffaf81453ddebefd2bad26a27892fb407",
     "textHash": "572cf45ba43634b3448aadbc48d5398a1b32ad8a97bf42b689c394de222c30a1",
     "model": "gemini-4-argon-medium"
   },
@@ -745,12 +745,12 @@
     "model": "gemini-4-argon-medium"
   },
   "Choose folder": {
-    "revision": "5d5223bf5bd46cb481ba768a530ca7d4620dbefff3a0c34ce3d2db8436a2e029",
+    "revision": "ff88163817d9c53cbe1b971f192c8a6c29bb1a35ffad370d4b12112843e76825",
     "textHash": "14be7288d550c7af9d00504db8ec4bd15127834e91febc7d62ef9569ee635d67",
     "model": "manual-review"
   },
   "Choose folder…": {
-    "revision": "0667b104151cf4276ba7cfa26751c4e594d9b8bc4077b57b568700feedc4db68",
+    "revision": "f1d2289ca2ca0625fbbc9573eeeebc4046c96474885da698b27250a2ce0280a6",
     "textHash": "2495150fd7adb2f88bd3e1fd69c5808eac3368214dc57dc829327f1689f54e29",
     "model": "manual"
   },
@@ -2385,7 +2385,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Loading folders…": {
-    "revision": "8811512044cc2e448f5f810ae96d1b1c2da446ac5e8b0df790e7b5581a356945",
+    "revision": "a61d33fa39231f92df1a95a9f752a091fa8b71fb89bb946433b99e69bd85613e",
     "textHash": "fb996f19cdf77d927a477485b8bed7a0784fbc3a57a02506c0e3017ebcae6885",
     "model": "manual"
   },
@@ -2720,7 +2720,7 @@
     "model": "gemini-4-argon-high"
   },
   "No folders inside.": {
-    "revision": "448207b8fdd7bf419e4e9be3fc56c1c3d9d67596ba34b58ab90e29743fa8b182",
+    "revision": "5c8b8d0a3a828711ddc8b24d446dd43b11ef691f346cf34eeac88f96a12b22c0",
     "textHash": "2a4c1eb8373f0602cf6918f3b618240ff7f295a57c6b7bc82ccaf6bbb8223b60",
     "model": "manual"
   },
@@ -5345,7 +5345,7 @@
     "model": "gemini-4-argon-medium"
   },
   "Use this folder": {
-    "revision": "45947838fb34e4c3f042ecb34a3cd3ce7bb85c223ed1abc76e5d96faff6889f4",
+    "revision": "c81247194f205007ac284fed7568a818e1fb94c34ad04d1e23b7ef079b440b1f",
     "textHash": "943c9eb58968286081f5d80164156f9b45b5c3b57d62c25973aef4a7bfd524ea",
     "model": "manual"
   },

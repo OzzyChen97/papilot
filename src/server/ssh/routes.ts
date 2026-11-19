@@ -10,7 +10,7 @@ import { hostName, sshAliases } from './config.ts';
 
 type Destination = Omit<SshFolder, 'id'>;
 type Listing = { root: string; entries: SshEntry[] };
-type Request = { action: 'connect' | 'list' | 'read' | 'save'; path?: string; revision?: string; text?: string };
+type Request = { action: 'browse' | 'list' | 'read' | 'save'; resolveRoot?: boolean; path?: string; revision?: string; text?: string };
 const helper = readFileSync(new URL('./files.py', import.meta.url), 'utf8');
 // Only the bundled program crosses the remote login shell. File paths and
 // manuscript text travel as JSON on stdin, including spaces and quotes.
@@ -45,7 +45,7 @@ function response(output: string, action: Request['action']) {
     const known = Object.hasOwn(remoteErrors, result.error) ? remoteErrors[result.error] : undefined;
     throw Object.assign(new Error(known?.error ?? result.error), { statusCode: known?.status ?? 400 });
   }
-  if (action === 'list' || action === 'connect') {
+  if (action === 'list' || action === 'browse') {
     if (typeof result.root !== 'string' || !result.root.startsWith('/') || result.root.includes('\0') ||
       !Array.isArray(result.entries) || !result.entries.every((entry: SshEntry | null) => entry && typeof entry.name === 'string' &&
         entry.name.length && !/[\x00/]/.test(entry.name) && entry.name !== '.' && entry.name !== '..' && typeof entry.folder === 'boolean')) throw badReply();
@@ -80,9 +80,15 @@ export function registerSshRoutes(app: FastifyInstance, store: Store) {
   const key = 'ssh-folders';
   const folders = () => store.preference<SshFolder[]>(key) ?? [];
   app.get('/api/ssh', async () => ({ folders: folders(), aliases: await sshAliases() }));
+  app.post<{ Body: Partial<SshFolder> & { canonical?: boolean } }>('/api/ssh/browse', { bodyLimit: 16384 }, async req => {
+    const target = destination(req.body ?? {});
+    return sshRequest<Listing>(target, { action: 'browse', resolveRoot: req.body.canonical !== true });
+  });
   app.post<{ Body: Partial<SshFolder> }>('/api/ssh/connect', { bodyLimit: 16384 }, async req => {
     const target = destination(req.body ?? {});
-    const { root, entries } = await sshRequest<Listing>(target, { action: 'connect' });
+    // The picker already resolved this path. A symlink substituted since
+    // selection must not redirect the bookmark to another directory.
+    const { root, entries } = await sshRequest<Listing>(target, { action: 'list' });
     const all = folders();
     let folder = all.find(f => f.root === root && f.host === target.host && f.user === target.user && f.port === target.port && f.identity === target.identity);
     if (!folder) {

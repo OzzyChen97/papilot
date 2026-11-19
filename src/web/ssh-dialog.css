@@ -32,3 +32,6 @@
   .ssh-dialog :is(.ssh-entry, .button, input, select, summary) { min-height: 44px }
   .ssh-dialog :is(input, select) { font-size: 16px }
 }
+
+.ssh-picker .ssh-files { max-height: min(46dvh, 360px); border: 1px solid var(--line); border-radius: var(--r) }
+.ssh-picker .button-row { margin-top: 12px }
